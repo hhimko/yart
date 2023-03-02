@@ -1,4 +1,4 @@
-# Ray Tracer
+# Yet Another Ray Tracer
 
 ## 1. Key Concepts
   - Interactive, Real-time* Path Tracing
