@@ -1,0 +1,18 @@
+build
+
+# Visual Studio
+_ReSharper*
+*.sdf
+*.suo
+*.dir
+*.vcxproj*
+*.sln
+.vs
+CMakeSettings.json
+Win32
+x64
+Debug
+Release
+MinSizeRel
+RelWithDebInfo
+*.opensdf
