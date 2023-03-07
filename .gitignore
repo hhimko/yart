@@ -1,5 +1,9 @@
 build
 
+# CMake
+CMakeFiles
+CMakeCache.txt
+
 # Visual Studio
 _ReSharper*
 *.sdf
