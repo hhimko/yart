@@ -17,6 +17,7 @@ Win32
 x64
 Debug
 Release
+Profile
 MinSizeRel
 RelWithDebInfo
 *.opensdf
