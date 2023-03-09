@@ -1,4 +1,10 @@
-add_executable(yart main.cpp)
+# ------------------------------------------------------------------------------------------------- #
+#   YART target 
+# ------------------------------------------------------------------------------------------------- #
+file(GLOB_RECURSE YART_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+file(GLOB_RECURSE YART_HEADER_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
+
+add_executable(yart ${YART_SOURCE_FILES} ${YART_HEADER_FILES})
 yart_set_compile_options(yart)
 
 set_target_properties(yart PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)

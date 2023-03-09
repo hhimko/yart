@@ -14,7 +14,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Avoid creation of cmake_install.cmake
+# Avoid creation of INSTALL target
 set(CMAKE_SKIP_INSTALL_RULES True)
 
 # Set up configuration types for multi config generators (Visual Studio\Xcode\Ninja Multi-Config)
