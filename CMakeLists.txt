@@ -45,7 +45,7 @@ function(yart_set_compile_options target)
         target_compile_options(${target} PRIVATE $<$<CONFIG:Debug>:-Og>) 
         target_compile_options(${target} PRIVATE $<$<CONFIG:Debug>:-g3>) 
         target_compile_options(${target} PRIVATE $<$<CONFIG:Debug>:-Wextra>)
-        target_compile_options(${target} PRIVATE $<$<CONFIG:Debug>:-pendantic>)
+        target_compile_options(${target} PRIVATE $<$<CONFIG:Debug>:-pedantic>)
     endif()
 
     # --- Release --- #
