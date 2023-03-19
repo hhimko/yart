@@ -105,6 +105,11 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "Build GLFW without examples" FORCE)
 set(GLFW_INSTALL OFF CACHE BOOL "Don't generate GLFW installation target" FORCE)
 add_subdirectory(lib/glfw EXCLUDE_FROM_ALL)
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    # Suppress MSVC compiler warning C4820 for glfw (bytes padding added after construct) 
+    target_compile_options(glfw PRIVATE /wd4820)
+endif()
+
 # Add GLM header-only library
 check_submodule_exists(glm)
 add_library(glm INTERFACE)
