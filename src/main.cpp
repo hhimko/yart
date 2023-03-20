@@ -1,9 +1,17 @@
+#include <iostream>
+
+#include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
 #include <glm/vec3.hpp>
 
 
 int main(void)
 {
+    uint32_t extensionCount = 0;
+    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+
+    std::cout << extensionCount << " extensions supported\n";
+
     GLFWwindow* window;
 
     /* Initialize the library */

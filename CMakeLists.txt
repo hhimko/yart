@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+include(VulkanExternal)
 
 
 # ------------------------------------------------------------------------------------------------- #
@@ -97,6 +99,24 @@ function(check_submodule_exists name)
     endif()
 endfunction()
 
+
+# Add Vulkan SDK
+find_vulkan()
+if(NOT ${Vulkan_FOUND})
+    message(FATAL_ERROR "Vulkan SDK could not be found")
+endif()
+
+if(WIN32)
+    add_compile_options(-DVK_USE_PLATFORM_WIN32_KHR)
+endif()
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    # Suppress MSVC compiler warnings for Vulkan
+    target_compile_options(Vulkan::Vulkan INTERFACE /wd4820)
+    target_compile_options(Vulkan::Vulkan INTERFACE /wd4668)
+    target_compile_options(Vulkan::Vulkan INTERFACE /wd5039)
+endif()
+
 # Build GLFW from source
 check_submodule_exists(glfw)
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "Build GLFW without docs" FORCE)
@@ -115,4 +135,5 @@ check_submodule_exists(glm)
 add_library(glm INTERFACE)
 target_include_directories(glm INTERFACE lib/glm)
 
+# Add yart source 
 add_subdirectory(src)
