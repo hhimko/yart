@@ -24,7 +24,7 @@ macro(_include_vulkan_from_path path)
 endmacro()
 
 
-function(find_vulkan)
+macro(find_vulkan)
     message(STATUS "Including Vulkan SDK")
 
     # Use builtin module
@@ -37,6 +37,9 @@ function(find_vulkan)
         if(EXISTS ${VULKAN_SDK})
             if(VULKAN_VERSION STREQUAL "")
                 _list_subdirs(subdirs "${VULKAN_SDK}")
+                if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.18)
+                    list(SORT subdirs COMPARE NATURAL ORDER DESCENDING)
+                endif()
 
                 foreach(path ${subdirs})
                     _include_vulkan_from_path(${path})
@@ -61,4 +64,4 @@ function(find_vulkan)
         endif() # if(EXISTS ${VULKAN_SDK})
         
     endif() # if(WIN32 AND NOT Vulkan_FOUND)
-endfunction()
+endmacro()
