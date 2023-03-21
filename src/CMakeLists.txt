@@ -15,4 +15,5 @@ target_link_libraries(yart
     PRIVATE Vulkan::Vulkan
     PRIVATE glfw
     PRIVATE glm
+    PRIVATE imgui
 )

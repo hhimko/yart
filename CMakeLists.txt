@@ -90,7 +90,7 @@ set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT $
 #   Build tree
 # ------------------------------------------------------------------------------------------------- #
 function(check_submodule_exists name)
-    if(NOT EXISTS "${PROJECT_SOURCE_DIR}/lib/${name}/CMakeLists.txt")
+    if(NOT EXISTS "${PROJECT_SOURCE_DIR}/lib/${name}/.gitignore")
         message(FATAL_ERROR 
             "${name} missing from lib directory! "
             "Make sure to clone with flag --recurse-submodules "
@@ -134,6 +134,24 @@ endif()
 check_submodule_exists(glm)
 add_library(glm INTERFACE)
 target_include_directories(glm INTERFACE lib/glm)
+
+# Build Dear ImGui from source with GLFW and Vulkan backends
+check_submodule_exists(imgui)
+set(ImGui_DIR ${CMAKE_SOURCE_DIR}/lib/imgui)
+add_library(imgui 
+    ${ImGui_DIR}/imgui.cpp
+    ${ImGui_DIR}/imgui_draw.cpp
+    ${ImGui_DIR}/imgui_demo.cpp
+    ${ImGui_DIR}/imgui_tables.cpp
+    ${ImGui_DIR}/imgui_widgets.cpp
+    ${ImGui_DIR}/backends/imgui_impl_glfw.cpp
+    ${ImGui_DIR}/backends/imgui_impl_vulkan.cpp
+)
+target_include_directories(imgui PUBLIC ${ImGui_DIR})
+target_link_libraries(imgui 
+    PRIVATE Vulkan::Vulkan
+    PRIVATE glfw
+)
 
 # Add yart source 
 add_subdirectory(src)

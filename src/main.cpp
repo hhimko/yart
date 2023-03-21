@@ -1,24 +1,28 @@
 #include <iostream>
 
 #include <vulkan/vulkan.h>
+#define GLFW_INCLUDE_NONE
+#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <glm/vec3.hpp>
+#include <imgui.h>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_vulkan.h>
 
 
 int main(void)
 {
     uint32_t extensionCount = 0;
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-
     std::cout << extensionCount << " extensions supported\n";
-
-    GLFWwindow* window;
 
     /* Initialize the library */
     if (!glfwInit())
         return -1;
 
     /* Create a windowed mode window and its OpenGL context */
+    GLFWwindow* window;
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
     if (!window)
     {
