@@ -5,6 +5,10 @@ bin
 CMakeFiles
 CMakeCache.txt
 
+# Visual Studio Code
+.vscode
+.settings
+
 # Visual Studio
 _ReSharper*
 *.sdf
