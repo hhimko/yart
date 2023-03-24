@@ -22,9 +22,9 @@ static VkBool32 VKAPI_PTR on_vulkan_debug_message(
     const VkDebugUtilsMessengerCallbackDataEXT* data,
     void* user_data) 
 {
-    UNUSED(msg_severity, msg_type, data, user_data);
+    UNUSED(msg_severity, msg_type, user_data);
 
-    std::cout << data->pMessage << std::endl;
+    std::cout << "[VK DEBUG]: " << data->pMessage << std::endl;
     return VK_FALSE;
 }
 #endif
@@ -48,8 +48,7 @@ namespace yart
 
     int Application::Run() 
     {
-        while (!glfwWindowShouldClose(m_window))
-        {
+        while (!glfwWindowShouldClose(m_window)) {
             glfwPollEvents();
         }
 
@@ -84,19 +83,13 @@ namespace yart
         if (exts.empty())
             return 0;
 
-        int res = utils::CheckVulkanExtensionsAvailable(exts);
-        if (res >= 0) {
-            std::cout << exts[(size_t)res] << " extension is not available" << std::endl;
-            return 0;
-        }
-
         m_vkInstance = CreateVulkanInstance(exts);
         if (m_vkInstance == VK_NULL_HANDLE) {
             return 0;
         }
 
     #ifdef YART_VULKAN_DEBUG_UTILS
-        VkDebugUtilsMessengerEXT debug_messenger = CreateVulkanDebugMessenger(on_vulkan_debug_message);
+        auto debug_messenger = CreateVulkanDebugMessenger(m_vkInstance, on_vulkan_debug_message);
         if (debug_messenger == VK_NULL_HANDLE) {
             return 0;
         }
@@ -106,6 +99,33 @@ namespace yart
             vkDestroyDebugUtilsMessengerEXT(m_vkInstance, var, nullptr);
         });
     #endif
+
+        VkPhysicalDeviceProperties gpu_properties = {};
+        auto gpu = SelectVulkanPhysicalDevice(m_vkInstance, gpu_properties);
+        if (gpu == VK_NULL_HANDLE) {
+            return 0;
+        }
+
+        // Select graphics queue family index from the gpu 
+        uint32_t queue_family;
+        if (!GetVulkanQueueFamilyIndex(gpu, &queue_family, VK_QUEUE_GRAPHICS_BIT)) {
+            return 0;
+        }
+
+        auto device = CreateVulkanLogicalDevice(gpu, queue_family);
+        if (device == VK_NULL_HANDLE) {
+            return 0;
+        }
+
+        m_ltStack.Push<VkDevice>(device, [&](auto var){ 
+            vkDestroyDevice(var, nullptr);
+        });
+
+        VkQueue queue = VK_NULL_HANDLE;
+        vkGetDeviceQueue(device, queue_family, 0, &queue);
+        if (queue == VK_NULL_HANDLE) {
+            return 0;
+        }
     
         return 1;
     }
@@ -120,6 +140,7 @@ namespace yart
         if (glfw_exts == NULL)
             return exts;
 
+        exts.reserve(glfw_ext_count);
         for (size_t i = 0; i < glfw_ext_count; ++i)
             exts.push_back(glfw_exts[i]);
 
@@ -133,7 +154,13 @@ namespace yart
 
     VkInstance Application::CreateVulkanInstance(std::vector<const char*> extensions)
     {
-        VkInstance instance;
+        VkInstance instance = VK_NULL_HANDLE;
+
+        int err = utils::CheckVulkanExtensionsAvailable(extensions);
+        if (err >= 0) {
+            std::cout << extensions[(size_t)err] << " extension is not available" << std::endl;
+            return VK_NULL_HANDLE;
+        }
 
         VkInstanceCreateInfo instance_ci = {};
         instance_ci.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -143,8 +170,8 @@ namespace yart
     #ifdef YART_VULKAN_DEBUG_UTILS
         // Enable Vulkan validation layers for debug reporting features 
         const char* layers[1] = { "VK_LAYER_KHRONOS_validation" };
-        instance_ci.enabledLayerCount = 1;
         instance_ci.ppEnabledLayerNames = layers;
+        instance_ci.enabledLayerCount = 1;
     #endif
 
         VkResult res = vkCreateInstance(&instance_ci, nullptr, &instance);
@@ -153,18 +180,18 @@ namespace yart
         return instance; 
     }
 
-    VkDebugUtilsMessengerEXT Application::CreateVulkanDebugMessenger(PFN_vkDebugUtilsMessengerCallbackEXT callback)
+    VkDebugUtilsMessengerEXT Application::CreateVulkanDebugMessenger(VkInstance instance, vk_debug_callback_t callback)
     {
         // Create a single all-purpose debug messenger object  
-        VkDebugUtilsMessengerEXT debug_messenger;
+        VkDebugUtilsMessengerEXT debug_messenger = VK_NULL_HANDLE;
 
-        VkDebugUtilsMessageSeverityFlagsEXT message_severity_flag =
-            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+        constexpr VkDebugUtilsMessageSeverityFlagsEXT message_severity_flag =
+          //VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT    |
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
 
-        VkDebugUtilsMessageTypeFlagsEXT message_type_flag =
+        constexpr VkDebugUtilsMessageTypeFlagsEXT message_type_flag =
             VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT     | 
             VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT  |
             VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
@@ -177,11 +204,91 @@ namespace yart
         debug_messenger_ci.messageType = message_type_flag;
 
         // Extension function pointers need to be retrieved from the VkInstance
-        LOAD_VK_INSTANCE_FP(m_vkInstance, vkCreateDebugUtilsMessengerEXT);
-        VkResult res = vkCreateDebugUtilsMessengerEXT(m_vkInstance, &debug_messenger_ci, nullptr, &debug_messenger);
+        LOAD_VK_INSTANCE_FP(instance, vkCreateDebugUtilsMessengerEXT);
+        VkResult res = vkCreateDebugUtilsMessengerEXT(instance, &debug_messenger_ci, nullptr, &debug_messenger);
         CHECK_VK_RESULT_RETURN(res, VK_NULL_HANDLE);
 
         return debug_messenger; 
+    }
+
+    /* Returns the first discrete GPU found on client machine, or the very first available one */
+    VkPhysicalDevice Application::SelectVulkanPhysicalDevice(VkInstance instance, VkPhysicalDeviceProperties& properties)
+    {
+        VkPhysicalDevice gpu = VK_NULL_HANDLE; 
+
+        uint32_t gpu_count;
+        VkResult res = vkEnumeratePhysicalDevices(instance, &gpu_count, NULL);
+        CHECK_VK_RESULT_RETURN(res, VK_NULL_HANDLE);
+
+        VkPhysicalDevice* gpus = new VkPhysicalDevice[gpu_count];
+        res = vkEnumeratePhysicalDevices(instance, &gpu_count, gpus);
+        CHECK_VK_RESULT_RETURN(res, VK_NULL_HANDLE);
+
+        VkPhysicalDeviceProperties props = {};
+        for (size_t i = 0; i < (size_t)gpu_count; ++i) {
+            vkGetPhysicalDeviceProperties(gpus[i], &props);
+            if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+                properties = props;
+                gpu = gpus[i];
+
+                delete[] gpus;
+                return gpu;
+            }
+        }
+
+        vkGetPhysicalDeviceProperties(gpus[0], &props);
+        properties = props;
+        gpu = gpus[0];
+
+        delete[] gpus;
+        return gpu;
+    }
+
+    bool Application::GetVulkanQueueFamilyIndex(VkPhysicalDevice physical_device, uint32_t* result, VkQueueFlags flags)
+    {
+        uint32_t queue_count;
+        vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_count, NULL);
+
+        VkQueueFamilyProperties* queues = new VkQueueFamilyProperties[queue_count];
+        vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_count, queues);
+
+        for (uint32_t i = 0; i < queue_count; i++) {
+            if (queues[i].queueFlags & flags) {
+                *result = i;
+
+                delete[] queues;
+                return true;
+            }
+        }
+
+        delete[] queues;
+        return false;
+    }
+
+    VkDevice Application::CreateVulkanLogicalDevice(VkPhysicalDevice physical_device, uint32_t queue_family)
+    {
+        VkDevice device = VK_NULL_HANDLE;
+
+        const float queue_priority[] = { 1.0f };
+        const char* device_extensions[] = { "VK_KHR_swapchain" };
+
+        VkDeviceQueueCreateInfo queue_ci[1] = {};
+        queue_ci[0].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queue_ci[0].pQueuePriorities = queue_priority;
+        queue_ci[0].queueFamilyIndex = queue_family;
+        queue_ci[0].queueCount = 1;
+
+        VkDeviceCreateInfo device_ci = {};
+        device_ci.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        device_ci.ppEnabledExtensionNames = device_extensions;
+        device_ci.pQueueCreateInfos = queue_ci;
+        device_ci.enabledExtensionCount = 1;
+        device_ci.queueCreateInfoCount = 1;
+
+        VkResult res = vkCreateDevice(physical_device, &device_ci, nullptr, &device);
+        CHECK_VK_RESULT_RETURN(res, VK_NULL_HANDLE);
+
+        return device;
     }
 
     void Application::Cleanup() 

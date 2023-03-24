@@ -17,6 +17,7 @@ namespace yart
 {
     namespace utils
     {
+        /* Stack-based object lifetime management structure */
         class LTStack {
         public:
             LTStack() = default;
@@ -61,5 +62,6 @@ namespace yart
             std::vector<Slot> m_slots;
             
         };
+        
     } // namespace utils
 } // namespace yart

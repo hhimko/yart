@@ -25,12 +25,16 @@ namespace yart
         int Run();
 
     private:
+        typedef PFN_vkDebugUtilsMessengerCallbackEXT vk_debug_callback_t;
         int InitGLFW(int win_w, int win_h);
 
         int InitVulkan();
         static std::vector<const char*> GetRequiredVulkanExtensions();
-        static VkInstance CreateVulkanInstance(std::vector<const char*> extensions); 
-        VkDebugUtilsMessengerEXT CreateVulkanDebugMessenger(PFN_vkDebugUtilsMessengerCallbackEXT callback);
+        static VkInstance CreateVulkanInstance(std::vector<const char*> extensions);
+        static VkDebugUtilsMessengerEXT CreateVulkanDebugMessenger(VkInstance instance, vk_debug_callback_t callback);
+        static VkPhysicalDevice SelectVulkanPhysicalDevice(VkInstance instance, VkPhysicalDeviceProperties& properties);
+        static bool GetVulkanQueueFamilyIndex(VkPhysicalDevice physical_device, uint32_t* result, VkQueueFlags flags);
+        static VkDevice CreateVulkanLogicalDevice(VkPhysicalDevice physical_device, uint32_t queue_family);
 
         void Cleanup();
 
