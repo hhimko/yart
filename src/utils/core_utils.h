@@ -26,7 +26,7 @@ namespace yart
             ~LTStack() { Release(); }
 
             template<typename T>
-            void Push(T var, std::function<void(T)> dtor) {
+            void Push(T var, std::function<void(T)>&& dtor) {
                 Push((void*)var, [dtor](void* var){ dtor( (T)var ); }); 
             }
 
@@ -46,7 +46,7 @@ namespace yart
             }
 
         private:
-            void Push(void* var, std::function<void(void*)> dtor) {
+            void Push(void* var, std::function<void(void*)>&& dtor) {
                 m_slots.emplace_back( var, dtor );
             };
 
@@ -55,7 +55,7 @@ namespace yart
                 void* var;
                 std::function<void(void*)> dtor;
 
-                Slot(void* var, std::function<void(void*)> dtor)
+                Slot(void* var, std::function<void(void*)>& dtor)
                     : var(var), dtor(dtor) {};
             };
 

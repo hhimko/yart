@@ -1,9 +1,11 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
 #define GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include <imgui.h>
+#include <backends/imgui_impl_glfw.h> // Platform backend
+#include <backends/imgui_impl_vulkan.h> // Renderer backend
 
 #include <vector>
 
@@ -22,7 +24,10 @@ namespace yart
         Application& operator=(Application const&) = delete;
         ~Application();
 
+        static Application& Get();
+
         int Run();
+        void Close();
 
     private:
         typedef PFN_vkDebugUtilsMessengerCallbackEXT vk_debug_callback_t;
@@ -39,6 +44,8 @@ namespace yart
         void Cleanup();
 
     private:
+        bool m_running = false;
+
         utils::LTStack m_ltStack;
 
         // GLFW types

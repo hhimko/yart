@@ -5,6 +5,12 @@
 #include "utils/vk_utils.h"
 
 
+#define ASSERT_HANDLE_INIT(handle, err)     \
+    if (handle == VK_NULL_HANDLE) {         \
+        std::cerr << err << std::endl;      \
+        return 0;                           \
+    }
+
 #define YART_WINDOW_TITLE "Yet Another Ray Tracer"
 
 
@@ -12,6 +18,12 @@
 static void on_glfw_error(int error_code, const char *description) 
 {
     std::cerr << "GLFW Error " << error_code << ": " << description << std::endl;
+}
+
+static void on_glfw_window_close(GLFWwindow* window)
+{
+    UNUSED(window);
+    yart::Application::Get().Close();    
 }
 
 // TODO: Proper vk debug logging
@@ -29,11 +41,14 @@ static VkBool32 VKAPI_PTR on_vulkan_debug_message(
 }
 #endif
 
+static yart::Application* s_instance = nullptr;
+
 
 namespace yart
 {
     Application::Application(int win_w, int win_h) 
     {
+        s_instance = this;
         if (!InitGLFW(win_w, win_h))
             return;
 
@@ -43,16 +58,31 @@ namespace yart
 
     Application::~Application() 
     {
+        s_instance = nullptr;
         Cleanup();
+    }
+
+    Application& Application::Get()
+    {
+        // TODO: assert s_instance
+        return *s_instance;
     }
 
     int Application::Run() 
     {
-        while (!glfwWindowShouldClose(m_window)) {
+        // TODO: assert not m_running
+        m_running = true;
+
+        while (m_running) {
             glfwPollEvents();
         }
 
         return EXIT_SUCCESS;
+    }
+
+    void Application::Close()
+    {
+        m_running = false;
     }
 
     int Application::InitGLFW(int win_w, int win_h) 
@@ -74,25 +104,28 @@ namespace yart
             return 0;
         }
 
+        // Set custom GLFW event callbacks
+        glfwSetWindowCloseCallback(m_window, on_glfw_window_close);
+
         return 1;
     }
 
     int Application::InitVulkan() 
     {
+        VkResult res;
+
         auto exts = GetRequiredVulkanExtensions();
-        if (exts.empty())
-            return 0;
 
         m_vkInstance = CreateVulkanInstance(exts);
-        if (m_vkInstance == VK_NULL_HANDLE) {
-            return 0;
-        }
+        ASSERT_HANDLE_INIT(m_vkInstance, "Failed to create Vulkan instance");
+
+        m_ltStack.Push<VkInstance>(m_vkInstance, [](auto var){ 
+            vkDestroyInstance(var, nullptr);
+        });
 
     #ifdef YART_VULKAN_DEBUG_UTILS
         auto debug_messenger = CreateVulkanDebugMessenger(m_vkInstance, on_vulkan_debug_message);
-        if (debug_messenger == VK_NULL_HANDLE) {
-            return 0;
-        }
+        ASSERT_HANDLE_INIT(debug_messenger, "Failed to create Vulkan debug messenger");
 
         m_ltStack.Push<VkDebugUtilsMessengerEXT>(debug_messenger, [&](auto var){ 
             LOAD_VK_INSTANCE_FP(m_vkInstance, vkDestroyDebugUtilsMessengerEXT);
@@ -102,9 +135,7 @@ namespace yart
 
         VkPhysicalDeviceProperties gpu_properties = {};
         auto gpu = SelectVulkanPhysicalDevice(m_vkInstance, gpu_properties);
-        if (gpu == VK_NULL_HANDLE) {
-            return 0;
-        }
+        ASSERT_HANDLE_INIT(gpu, "Failed to locate a physical Vulkan device");
 
         // Select graphics queue family index from the gpu 
         uint32_t queue_family;
@@ -112,18 +143,33 @@ namespace yart
             return 0;
         }
 
+        // Create a VkDevice with a single queue and `VK_KHR_swapchain` extension 
         auto device = CreateVulkanLogicalDevice(gpu, queue_family);
-        if (device == VK_NULL_HANDLE) {
-            return 0;
-        }
+        ASSERT_HANDLE_INIT(device, "Failed to create Vulkan device");
 
-        m_ltStack.Push<VkDevice>(device, [&](auto var){ 
+        m_ltStack.Push<VkDevice>(device, [](auto var){ 
             vkDestroyDevice(var, nullptr);
         });
 
+        // Extract the graphics queue from the logical device
         VkQueue queue = VK_NULL_HANDLE;
         vkGetDeviceQueue(device, queue_family, 0, &queue);
-        if (queue == VK_NULL_HANDLE) {
+        ASSERT_HANDLE_INIT(queue, "Failed to retrieve graphics queue from Vulkan device");
+
+        // Create a Vulkan surface for the main GLFW window
+        VkSurfaceKHR surface;
+        res = glfwCreateWindowSurface(m_vkInstance, m_window, nullptr, &surface);
+        CHECK_VK_RESULT_RETURN(res, 0);
+
+        m_ltStack.Push<VkSurfaceKHR>(surface, [&](auto var){ 
+            vkDestroySurfaceKHR(m_vkInstance, var, nullptr);
+        });
+
+        // Check for Windowing System Integration support on GPU
+        VkBool32 wsi_support;
+        res = vkGetPhysicalDeviceSurfaceSupportKHR(gpu, queue_family, surface, &wsi_support);
+        if (wsi_support != VK_TRUE) {
+            std::cerr << "No WSI support on physical Vulkan device" << std::endl;
             return 0;
         }
     
@@ -293,12 +339,8 @@ namespace yart
 
     void Application::Cleanup() 
     {
+        // Unwind all allocations from the LTStack
         m_ltStack.Release();
-
-        // Vulkan cleanup
-        vkDestroyInstance(m_vkInstance, nullptr);
-
-        // GLFW cleanup
         glfwTerminate();
     }
 } // namespace yart
