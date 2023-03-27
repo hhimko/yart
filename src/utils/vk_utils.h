@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <vector>
 
+#include "core_utils.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //  Helper Vulkan Macros & Definitions
@@ -47,7 +49,28 @@ namespace yart
          * @return Negative result if all extensions are available, or the index of the first not 
          *  available extension in `extensions` vector
          */
-        int CheckVulkanExtensionsAvailable(std::vector<const char*> extensions);
+        int CheckVulkanInstanceExtensionsAvailable(std::vector<const char*>& extensions);
+
+        /**
+         * @brief Check whether required Vulkan extensions are provided by the physical device driver
+         * @return Negative result if all extensions are available, or the index of the first not 
+         *  available extension in `extensions` vector
+         */
+        int CheckVulkanDeviceExtensionsAvailable(VkPhysicalDevice device, std::vector<const char*>& extensions);
+
+        /**
+         * @brief  Request a certain Vulkan surface format and confirm that it is supported on physical device
+         * @return Requested format or the first available one
+         */
+        VkSurfaceFormatKHR RequestVulkanSurfaceFormat(VkPhysicalDevice device, VkSurfaceKHR surface, VkFormat request_format, VkColorSpaceKHR request_color_space);
+
+        /**
+         * @brief Request a certain Vulkan present mode and confirm that it is supported on physical device
+         * @return Requested present mode if available or VK_PRESENT_MODE_FIFO_KHR (always guaranteed)
+         */
+        VkPresentModeKHR RequestVulkanSurfacePresentMode(VkPhysicalDevice device, VkSurfaceKHR surface, VkPresentModeKHR request_present_mode);
+
+        uint32_t GetMinImageCountFromPresentMode(VkPresentModeKHR mode);
 
     } // namespace utils
 } // namespace yart

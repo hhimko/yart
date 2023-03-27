@@ -1,5 +1,6 @@
 #include "application.h"
 
+#include <algorithm>
 #include <iostream>
 
 #include "utils/vk_utils.h"
@@ -11,7 +12,11 @@
         return 0;                           \
     }
 
-#define YART_WINDOW_TITLE "Yet Another Ray Tracer"
+// Helper macro to help locate all VkAllocationCallbacks dependencies
+#define DEFAULT_VK_ALLOC VK_NULL_HANDLE
+
+#define WINDOW_TITLE "Yet Another Ray Tracer"
+#define MIN_IMAGE_COUNT 2
 
 
 // TODO: error logging
@@ -54,6 +59,11 @@ namespace yart
 
         if (!InitVulkan())
             return;
+
+        if (!InitImGUI())
+            return;
+
+        m_initialized = true;
     }
 
     Application::~Application() 
@@ -70,11 +80,46 @@ namespace yart
 
     int Application::Run() 
     {
-        // TODO: assert not m_running
-        m_running = true;
+        if (!m_initialized) 
+            return EXIT_FAILURE;
 
+        // TODO: assert not m_running
+        m_running = true; // Directly controlled by Application::Close() and on_glfw_window_close
+
+        bool rebuild_swapchain = false;
         while (m_running) {
+            // Poll and handle incoming events
             glfwPollEvents();
+
+            // Resize the swapchain if previously invalidated  
+            if (rebuild_swapchain) {
+                int win_w, win_h;
+                glfwGetFramebufferSize(m_window, &win_w, &win_h);
+
+                // Don't rebuild if window is minimized
+                if (!(win_w && win_h))
+                    continue; 
+
+                WindowResize(static_cast<uint32_t>(win_w), static_cast<uint32_t>(win_h));
+                rebuild_swapchain = false;
+            }
+
+            // Begin an ImGui frame
+            // ImGui_ImplVulkan_NewFrame();
+            // ImGui_ImplGlfw_NewFrame();
+            // ImGui::NewFrame();
+
+            // // TODO: ImGui render commands 
+
+            // // Finalize frame and retrieve render commands from ImGui
+            // ImGui::Render();
+            // ImDrawData* draw_data = ImGui::GetDrawData();
+
+
+            // rebuild_swapchain |= FrameRender(draw_data);
+            // if (!rebuild_swapchain){
+            //     rebuild_swapchain |= FramePresent();
+            // }
         }
 
         return EXIT_SUCCESS;
@@ -99,7 +144,7 @@ namespace yart
 
         // Create window with Vulkan context
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        m_window = glfwCreateWindow(win_w, win_h, YART_WINDOW_TITLE, NULL, NULL);
+        m_window = glfwCreateWindow(win_w, win_h, WINDOW_TITLE, NULL, NULL);
         if (m_window == NULL) {
             return 0;
         }
@@ -120,7 +165,7 @@ namespace yart
         ASSERT_HANDLE_INIT(m_vkInstance, "Failed to create Vulkan instance");
 
         m_ltStack.Push<VkInstance>(m_vkInstance, [](auto var){ 
-            vkDestroyInstance(var, nullptr);
+            vkDestroyInstance(var, DEFAULT_VK_ALLOC);
         });
 
     #ifdef YART_VULKAN_DEBUG_UTILS
@@ -129,50 +174,55 @@ namespace yart
 
         m_ltStack.Push<VkDebugUtilsMessengerEXT>(debug_messenger, [&](auto var){ 
             LOAD_VK_INSTANCE_FP(m_vkInstance, vkDestroyDebugUtilsMessengerEXT);
-            vkDestroyDebugUtilsMessengerEXT(m_vkInstance, var, nullptr);
+            vkDestroyDebugUtilsMessengerEXT(m_vkInstance, var, DEFAULT_VK_ALLOC);
         });
     #endif
 
-        VkPhysicalDeviceProperties gpu_properties = {};
-        auto gpu = SelectVulkanPhysicalDevice(m_vkInstance, gpu_properties);
-        ASSERT_HANDLE_INIT(gpu, "Failed to locate a physical Vulkan device");
+        // Create a Vulkan surface for the main GLFW window
+        VkSurfaceKHR surface;
+        res = glfwCreateWindowSurface(m_vkInstance, m_window, DEFAULT_VK_ALLOC, &surface);
+        CHECK_VK_RESULT_RETURN(res, 0);
 
-        // Select graphics queue family index from the gpu 
-        uint32_t queue_family;
-        if (!GetVulkanQueueFamilyIndex(gpu, &queue_family, VK_QUEUE_GRAPHICS_BIT)) {
+        m_ltStack.Push<VkSurfaceKHR>(surface, [&](auto var){ 
+            vkDestroySurfaceKHR(m_vkInstance, var, DEFAULT_VK_ALLOC);
+        });
+
+        // Query a physical device from client machine, ideally a discrete GPU
+        VkPhysicalDeviceProperties gpu_properties = { };
+        m_vkPhysicalDevice = SelectVulkanPhysicalDevice(m_vkInstance, gpu_properties);
+        ASSERT_HANDLE_INIT(m_vkPhysicalDevice, "Failed to locate a physical Vulkan device");
+
+        // Make sure the physical device supports the `VK_KHR_swapchain` extension 
+        std::vector<const char*> swapchain_ext = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+        if (utils::CheckVulkanDeviceExtensionsAvailable(m_vkPhysicalDevice, swapchain_ext) >= 0) {
+            std::cout << "GPU does not support swapchain operations" << std::endl;
+            return 0;
+        }
+
+        // Select queue family index from the gpu with support for graphics and surface presentation (WSI)
+        if (!GetVulkanQueueFamilyIndex(m_vkPhysicalDevice, &m_queueFamily, VK_QUEUE_GRAPHICS_BIT, surface)) {
+            std::cerr << "No queue family with graphics and presentation support found on GPU" << std::endl;
             return 0;
         }
 
         // Create a VkDevice with a single queue and `VK_KHR_swapchain` extension 
-        auto device = CreateVulkanLogicalDevice(gpu, queue_family);
-        ASSERT_HANDLE_INIT(device, "Failed to create Vulkan device");
+        m_vkDevice = CreateVulkanLogicalDevice(m_vkPhysicalDevice, m_queueFamily, swapchain_ext);
+        ASSERT_HANDLE_INIT(m_vkDevice, "Failed to create Vulkan device");
 
-        m_ltStack.Push<VkDevice>(device, [](auto var){ 
-            vkDestroyDevice(var, nullptr);
+        m_ltStack.Push<VkDevice>(m_vkDevice, [](auto var){ 
+            vkDestroyDevice(var, DEFAULT_VK_ALLOC);
         });
 
         // Extract the graphics queue from the logical device
-        VkQueue queue = VK_NULL_HANDLE;
-        vkGetDeviceQueue(device, queue_family, 0, &queue);
-        ASSERT_HANDLE_INIT(queue, "Failed to retrieve graphics queue from Vulkan device");
+        vkGetDeviceQueue(m_vkDevice, m_queueFamily, 0, &m_vkQueue);
+        ASSERT_HANDLE_INIT(m_vkQueue, "Failed to retrieve graphics queue from Vulkan device");
 
-        // Create a Vulkan surface for the main GLFW window
-        VkSurfaceKHR surface;
-        res = glfwCreateWindowSurface(m_vkInstance, m_window, nullptr, &surface);
-        CHECK_VK_RESULT_RETURN(res, 0);
-
-        m_ltStack.Push<VkSurfaceKHR>(surface, [&](auto var){ 
-            vkDestroySurfaceKHR(m_vkInstance, var, nullptr);
-        });
-
-        // Check for Windowing System Integration support on GPU
-        VkBool32 wsi_support;
-        res = vkGetPhysicalDeviceSurfaceSupportKHR(gpu, queue_family, surface, &wsi_support);
-        if (wsi_support != VK_TRUE) {
-            std::cerr << "No WSI support on physical Vulkan device" << std::endl;
+        // Create the initial swapchain
+        if (!InitializeSwapchain(surface)) {
+            std::cerr << "Failed to initialize swapchain" << std::endl;
             return 0;
         }
-    
+
         return 1;
     }
 
@@ -198,11 +248,11 @@ namespace yart
         return exts;
     }
 
-    VkInstance Application::CreateVulkanInstance(std::vector<const char*> extensions)
+    VkInstance Application::CreateVulkanInstance(std::vector<const char*>& extensions)
     {
         VkInstance instance = VK_NULL_HANDLE;
 
-        int err = utils::CheckVulkanExtensionsAvailable(extensions);
+        int err = utils::CheckVulkanInstanceExtensionsAvailable(extensions);
         if (err >= 0) {
             std::cout << extensions[(size_t)err] << " extension is not available" << std::endl;
             return VK_NULL_HANDLE;
@@ -220,7 +270,7 @@ namespace yart
         instance_ci.enabledLayerCount = 1;
     #endif
 
-        VkResult res = vkCreateInstance(&instance_ci, nullptr, &instance);
+        VkResult res = vkCreateInstance(&instance_ci, DEFAULT_VK_ALLOC, &instance);
         CHECK_VK_RESULT_RETURN(res, VK_NULL_HANDLE);
 
         return instance; 
@@ -251,7 +301,7 @@ namespace yart
 
         // Extension function pointers need to be retrieved from the VkInstance
         LOAD_VK_INSTANCE_FP(instance, vkCreateDebugUtilsMessengerEXT);
-        VkResult res = vkCreateDebugUtilsMessengerEXT(instance, &debug_messenger_ci, nullptr, &debug_messenger);
+        VkResult res = vkCreateDebugUtilsMessengerEXT(instance, &debug_messenger_ci, DEFAULT_VK_ALLOC, &debug_messenger);
         CHECK_VK_RESULT_RETURN(res, VK_NULL_HANDLE);
 
         return debug_messenger; 
@@ -290,33 +340,45 @@ namespace yart
         return gpu;
     }
 
-    bool Application::GetVulkanQueueFamilyIndex(VkPhysicalDevice physical_device, uint32_t* result, VkQueueFlags flags)
+    bool Application::GetVulkanQueueFamilyIndex(VkPhysicalDevice physical_device, uint32_t* result, VkQueueFlags flags, VkSurfaceKHR surface)
     {
         uint32_t queue_count;
         vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_count, NULL);
 
-        VkQueueFamilyProperties* queues = new VkQueueFamilyProperties[queue_count];
-        vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_count, queues);
+        auto queues = std::make_unique<VkQueueFamilyProperties[]>(queue_count);
+        vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_count, queues.get());
 
         for (uint32_t i = 0; i < queue_count; i++) {
             if (queues[i].queueFlags & flags) {
-                *result = i;
+                // Queue family additionally requires a surface presentation support 
+                if (surface != VK_NULL_HANDLE) {
+                    // Check for Windowing System Integration support on GPU queue family
+                    VkBool32 wsi_support;
+                    VkResult res = vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, i, surface, &wsi_support);
+                    CHECK_VK_RESULT_RETURN(res, false);
+                    if (wsi_support != VK_TRUE)
+                        continue;
+                }
 
-                delete[] queues;
+                *result = i;
                 return true;
             }
         }
 
-        delete[] queues;
         return false;
     }
 
-    VkDevice Application::CreateVulkanLogicalDevice(VkPhysicalDevice physical_device, uint32_t queue_family)
+    VkDevice Application::CreateVulkanLogicalDevice(VkPhysicalDevice physical_device, uint32_t queue_family, std::vector<const char*>& extensions)
     {
         VkDevice device = VK_NULL_HANDLE;
 
+        int err = utils::CheckVulkanDeviceExtensionsAvailable(physical_device, extensions);
+        if (err >= 0) {
+            std::cout << extensions[(size_t)err] << " device extension is not available" << std::endl;
+            return VK_NULL_HANDLE;
+        }
+
         const float queue_priority[] = { 1.0f };
-        const char* device_extensions[] = { "VK_KHR_swapchain" };
 
         VkDeviceQueueCreateInfo queue_ci[1] = {};
         queue_ci[0].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -326,21 +388,167 @@ namespace yart
 
         VkDeviceCreateInfo device_ci = {};
         device_ci.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        device_ci.ppEnabledExtensionNames = device_extensions;
+        device_ci.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+        device_ci.ppEnabledExtensionNames = extensions.data();
         device_ci.pQueueCreateInfos = queue_ci;
-        device_ci.enabledExtensionCount = 1;
         device_ci.queueCreateInfoCount = 1;
 
-        VkResult res = vkCreateDevice(physical_device, &device_ci, nullptr, &device);
+        VkResult res = vkCreateDevice(physical_device, &device_ci, DEFAULT_VK_ALLOC, &device);
         CHECK_VK_RESULT_RETURN(res, VK_NULL_HANDLE);
 
         return device;
     }
 
-    void Application::Cleanup() 
+    VkSwapchainKHR Application::CreateVulkanSwapchain(VkDevice device, SwapchainData& data, VkExtent2D current_extent, VkSwapchainKHR old_swapchain)
     {
+        VkSwapchainKHR swapchain = VK_NULL_HANDLE;
+
+        VkSwapchainCreateInfoKHR swapchain_ci = {};
+        swapchain_ci.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+        swapchain_ci.surface          = data.surface;
+        swapchain_ci.imageFormat      = data.surface_format.format;
+        swapchain_ci.imageColorSpace  = data.surface_format.colorSpace;
+        swapchain_ci.presentMode      = data.present_mode;
+        swapchain_ci.imageExtent      = current_extent;
+        swapchain_ci.minImageCount    = data.min_image_count;
+        swapchain_ci.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE; // Only in case when graphics family = present family
+        swapchain_ci.imageArrayLayers = 1;
+        swapchain_ci.preTransform     = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+        swapchain_ci.compositeAlpha   = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+        swapchain_ci.oldSwapchain     = old_swapchain;
+        swapchain_ci.clipped          = VK_TRUE;
+
+        VkResult res = vkCreateSwapchainKHR(device, &swapchain_ci, DEFAULT_VK_ALLOC, &swapchain);
+        CHECK_VK_RESULT_RETURN(res, VK_NULL_HANDLE);
+
+        return swapchain; 
+    }
+
+    bool Application::InitializeSwapchain(VkSurfaceKHR surface)
+    {
+        VkResult res;
+
+        // Initialize m_swapchainData members
+        m_swapchainData.surface = surface;
+
+        // Select an available surface format (preferably (VK_FORMAT_B8G8R8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR))
+        m_swapchainData.surface_format = utils::RequestVulkanSurfaceFormat(m_vkPhysicalDevice, surface, VK_FORMAT_B8G8R8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR);
+ 
+        // Select surface presentation mode
+        VkPresentModeKHR preferred_present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
+        m_swapchainData.present_mode = utils::RequestVulkanSurfacePresentMode(m_vkPhysicalDevice, surface, preferred_present_mode);
+
+        VkSurfaceCapabilitiesKHR surface_capabilities = {};
+        res = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_vkPhysicalDevice, surface, &surface_capabilities);
+        CHECK_VK_RESULT_RETURN(res, false);
+
+        // NOTE: 
+        // min and max image count variables are set just once here and reused throughout the application runtime for swapchain rebuilds
+        // in case of the capabilities not being constant - these should probably be retrieved and set every rebuild, but I can't find much info of such possibility 
+        uint32_t min_img_count = utils::GetMinImageCountFromPresentMode(m_swapchainData.present_mode);
+        m_swapchainData.min_image_count = std::max<uint32_t>(min_img_count, surface_capabilities.minImageCount);
+
+        m_swapchainData.max_image_count = surface_capabilities.maxImageCount;
+        if (surface_capabilities.maxImageCount != 0) // maxImageCount = 0 means there is no maximum
+            m_swapchainData.min_image_count = std::min<uint32_t>(m_swapchainData.min_image_count, m_swapchainData.max_image_count);
+
+        m_vkSwapchain = CreateVulkanSwapchain(m_vkDevice, m_swapchainData, surface_capabilities.currentExtent);
+        ASSERT_HANDLE_INIT(m_vkSwapchain, "Failed to create Vulkan swapchain");
+
+        // Query the swapchain image count and the initial set of images
+        res = vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapchain, &m_swapchainData.image_count, nullptr);
+        CHECK_VK_RESULT_RETURN(res, false);
+
+        m_swapchainData.vkImages = std::make_unique<VkImage[]>(m_swapchainData.image_count);
+        res = vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapchain, &m_swapchainData.image_count, m_swapchainData.vkImages.get());
+        CHECK_VK_RESULT_RETURN(res, false);
+
+        return true;
+    }
+
+    int Application::InitImGUI()
+    {
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+
+        ImGuiIO& io = ImGui::GetIO();
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable keyboard controls
+
+        // Set ImGui style
+        ImGui::StyleColorsDark();
+
+        // Setup Platform/Renderer backends
+        ImGui_ImplGlfw_InitForVulkan(m_window, true);
+
+        ImGui_ImplVulkan_InitInfo init_info = {};
+        init_info.Instance       = m_vkInstance;
+        init_info.PhysicalDevice = m_vkPhysicalDevice;
+        init_info.Device         = m_vkDevice;
+        init_info.Queue          = m_vkQueue;
+        init_info.QueueFamily    = m_queueFamily;
+        // init_info.DescriptorPool = g_DescriptorPool;
+        init_info.MinImageCount  = m_swapchainData.min_image_count;
+        init_info.ImageCount     = m_swapchainData.image_count;
+        init_info.MSAASamples    = VK_SAMPLE_COUNT_1_BIT;
+        // init_info.CheckVkResultFn = check_vk_result;
+
+        // ImGui_ImplVulkan_Init(&init_info, wd->RenderPass);
+
+        return 1;
+    }
+
+    void Application::WindowResize(uint32_t width, uint32_t height)
+    {
+        // ImGui_ImplVulkan_SetMinImageCount(g_MinImageCount); // needed?
+        // ImGui_ImplVulkanH_CreateOrResizeWindow(g_Instance, g_PhysicalDevice, g_Device, &g_MainWindowData, g_QueueFamily, g_Allocator, width, height, g_MinImageCount);
+        // g_MainWindowData.FrameIndex = 0;
+    }
+
+    bool Application::FrameRender(ImDrawData* draw_data)
+    {
+        // VkSemaphore image_acquired_semaphore = wd->FrameSemaphores[wd->SemaphoreIndex].ImageAcquiredSemaphore;
+        // VkSemaphore render_complete_semaphore = wd->FrameSemaphores[wd->SemaphoreIndex].RenderCompleteSemaphore;
+        // VkResult res = vkAcquireNextImageKHR(g_Device, wd->Swapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &wd->FrameIndex);
+        // if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR) {
+        //     return true;
+        // }
+        // CHECK_VK_RESULT_RETURN(err, ???);
+
+        // Wait for frame fences 
+
+        // Reset command pool
+
+        // Begin command buffer
+
+        // Begin render pass
+
+        // Record dear imgui primitives into command buffer
+        // ImGui_ImplVulkan_RenderDrawData(draw_data, command_buffer);
+
+        // Submit command buffer
+
+        // End command buffer
+
+        // Submit queue 
+
+        return false;
+    }
+
+    bool Application::FramePresent()
+    {
+        return false;
+    }
+
+    void Application::Cleanup()
+    {
+        if (m_vkSwapchain != VK_NULL_HANDLE)
+            vkDestroySwapchainKHR(m_vkDevice, m_vkSwapchain, DEFAULT_VK_ALLOC);
+
         // Unwind all allocations from the LTStack
         m_ltStack.Release();
         glfwTerminate();
+
+        m_initialized = false;
     }
 } // namespace yart
