@@ -399,32 +399,6 @@ namespace yart
         return device;
     }
 
-    VkSwapchainKHR Application::CreateVulkanSwapchain(VkDevice device, SwapchainData& data, VkExtent2D current_extent, VkSwapchainKHR old_swapchain)
-    {
-        VkSwapchainKHR swapchain = VK_NULL_HANDLE;
-
-        VkSwapchainCreateInfoKHR swapchain_ci = {};
-        swapchain_ci.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-        swapchain_ci.surface          = data.surface;
-        swapchain_ci.imageFormat      = data.surface_format.format;
-        swapchain_ci.imageColorSpace  = data.surface_format.colorSpace;
-        swapchain_ci.presentMode      = data.present_mode;
-        swapchain_ci.imageExtent      = current_extent;
-        swapchain_ci.minImageCount    = data.min_image_count;
-        swapchain_ci.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE; // Only in case when graphics family = present family
-        swapchain_ci.imageArrayLayers = 1;
-        swapchain_ci.preTransform     = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-        swapchain_ci.compositeAlpha   = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-        swapchain_ci.oldSwapchain     = old_swapchain;
-        swapchain_ci.clipped          = VK_TRUE;
-
-        VkResult res = vkCreateSwapchainKHR(device, &swapchain_ci, DEFAULT_VK_ALLOC, &swapchain);
-        CHECK_VK_RESULT_RETURN(res, VK_NULL_HANDLE);
-
-        return swapchain; 
-    }
-
     bool Application::InitializeSwapchain(VkSurfaceKHR surface)
     {
         VkResult res;
@@ -453,18 +427,139 @@ namespace yart
         if (surface_capabilities.maxImageCount != 0) // maxImageCount = 0 means there is no maximum
             m_swapchainData.min_image_count = std::min<uint32_t>(m_swapchainData.min_image_count, m_swapchainData.max_image_count);
 
+        // Create initial Vulkan swapchain 
         m_vkSwapchain = CreateVulkanSwapchain(m_vkDevice, m_swapchainData, surface_capabilities.currentExtent);
         ASSERT_HANDLE_INIT(m_vkSwapchain, "Failed to create Vulkan swapchain");
+
+        // Create a Vulkan render pass with a single subpass
+        m_vkRenderPass = CreateVulkanRenderPass(m_vkDevice, m_swapchainData);
+        ASSERT_HANDLE_INIT(m_vkRenderPass, "Failed to create Vulkan render pass");
+
+        m_ltStack.Push<VkRenderPass>(m_vkRenderPass, [&](VkRenderPass var){
+            vkDestroyRenderPass(m_vkDevice, var, DEFAULT_VK_ALLOC);
+        });
 
         // Query the swapchain image count and the initial set of images
         res = vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapchain, &m_swapchainData.image_count, nullptr);
         CHECK_VK_RESULT_RETURN(res, false);
 
-        m_swapchainData.vkImages = std::make_unique<VkImage[]>(m_swapchainData.image_count);
-        res = vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapchain, &m_swapchainData.image_count, m_swapchainData.vkImages.get());
+        auto images = std::make_unique<VkImage[]>(m_swapchainData.image_count);
+        res = vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapchain, &m_swapchainData.image_count, images.get());
         CHECK_VK_RESULT_RETURN(res, false);
 
+        // Create image views for each swapchain image
+        m_swapchainData.vk_image_views = std::make_unique<VkImageView[]>(m_swapchainData.image_count);
+        for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
+            m_swapchainData.vk_image_views[i] = CreateVulkanImageView(m_vkDevice, m_swapchainData.surface_format.format, images[i]);
+            ASSERT_HANDLE_INIT(m_swapchainData.vk_image_views[i], "Failed to create swapchain image view");
+
+            m_swapchainData.ltStack.Push<VkImageView>(m_swapchainData.vk_image_views[i], [&](VkImageView var){
+                vkDestroyImageView(m_vkDevice, var, DEFAULT_VK_ALLOC);
+            });
+        }
+
+        // Create frame buffers for each image view
+
         return true;
+    }
+
+    VkSwapchainKHR Application::CreateVulkanSwapchain(VkDevice device, SwapchainData& data, VkExtent2D current_extent, VkSwapchainKHR old_swapchain)
+    {
+        YART_ASSERT(data.surface != VK_NULL_HANDLE);
+        VkSwapchainKHR swapchain = VK_NULL_HANDLE;
+
+        VkSwapchainCreateInfoKHR swapchain_ci = {};
+        swapchain_ci.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+        swapchain_ci.surface          = data.surface;
+        swapchain_ci.imageFormat      = data.surface_format.format;
+        swapchain_ci.imageColorSpace  = data.surface_format.colorSpace;
+        swapchain_ci.presentMode      = data.present_mode;
+        swapchain_ci.imageExtent      = current_extent;
+        swapchain_ci.minImageCount    = data.min_image_count;
+        swapchain_ci.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE; // Only in case when graphics family = present family
+        swapchain_ci.imageArrayLayers = 1;
+        swapchain_ci.preTransform     = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+        swapchain_ci.compositeAlpha   = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+        swapchain_ci.oldSwapchain     = old_swapchain;
+        swapchain_ci.clipped          = VK_TRUE;
+
+        VkResult res = vkCreateSwapchainKHR(device, &swapchain_ci, DEFAULT_VK_ALLOC, &swapchain);
+        CHECK_VK_RESULT_RETURN(res, VK_NULL_HANDLE);
+
+        return swapchain; 
+    }
+
+    VkRenderPass Application::CreateVulkanRenderPass(VkDevice device, SwapchainData& data)
+    {
+        YART_ASSERT(data.surface != VK_NULL_HANDLE);
+        VkRenderPass render_pass = VK_NULL_HANDLE;
+
+        VkAttachmentDescription attachment = {};
+        attachment.format         = data.surface_format.format;
+        attachment.samples        = VK_SAMPLE_COUNT_1_BIT;
+        attachment.loadOp         = VK_ATTACHMENT_LOAD_OP_DONT_CARE; // VK_ATTACHMENT_LOAD_OP_CLEAR
+        attachment.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
+        attachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachment.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+        VkAttachmentReference color_attachment = {};
+        color_attachment.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        color_attachment.attachment = 0;
+
+        VkSubpassDescription subpass = {};
+        subpass.pipelineBindPoint    = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass.pColorAttachments    = &color_attachment;
+        subpass.colorAttachmentCount = 1;
+
+        VkSubpassDependency dependency = {};
+        dependency.srcSubpass    = VK_SUBPASS_EXTERNAL;
+        dependency.dstSubpass    = 0;
+        dependency.srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.srcAccessMask = 0;
+        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+        VkRenderPassCreateInfo render_pass_ci = {};
+        render_pass_ci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        render_pass_ci.pAttachments    = &attachment;
+        render_pass_ci.attachmentCount = 1;
+        render_pass_ci.pSubpasses      = &subpass;
+        render_pass_ci.subpassCount    = 1;
+        render_pass_ci.pDependencies   = &dependency;
+        render_pass_ci.dependencyCount = 1;
+
+        VkResult res = vkCreateRenderPass(device, &render_pass_ci, DEFAULT_VK_ALLOC, &render_pass);
+        CHECK_VK_RESULT_RETURN(res, VK_NULL_HANDLE);
+
+        return render_pass;
+    }
+
+    VkImageView Application::CreateVulkanImageView(VkDevice device, VkFormat format, VkImage image)
+    {
+        VkImageView view = VK_NULL_HANDLE;
+
+        VkImageViewCreateInfo view_ci = {}; 
+        view_ci.sType    = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        view_ci.format   = format;
+        view_ci.image    = image;
+        view_ci.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        view_ci.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        view_ci.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        view_ci.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        view_ci.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        view_ci.subresourceRange.baseMipLevel   = 0;
+        view_ci.subresourceRange.levelCount     = 1;
+        view_ci.subresourceRange.baseArrayLayer = 0;
+        view_ci.subresourceRange.layerCount     = 1;
+
+        VkResult res = vkCreateImageView(device, &view_ci, DEFAULT_VK_ALLOC, &view);
+        CHECK_VK_RESULT_RETURN(res, VK_NULL_HANDLE);
+
+        return view;
     }
 
     int Application::InitImGUI()
@@ -493,7 +588,7 @@ namespace yart
         init_info.MSAASamples    = VK_SAMPLE_COUNT_1_BIT;
         // init_info.CheckVkResultFn = check_vk_result;
 
-        // ImGui_ImplVulkan_Init(&init_info, wd->RenderPass);
+        // ImGui_ImplVulkan_Init(&init_info, m_vkRenderPass);
 
         return 1;
     }
@@ -542,6 +637,7 @@ namespace yart
 
     void Application::Cleanup()
     {
+        m_swapchainData.ltStack.Release();
         if (m_vkSwapchain != VK_NULL_HANDLE)
             vkDestroySwapchainKHR(m_vkDevice, m_vkSwapchain, DEFAULT_VK_ALLOC);
 

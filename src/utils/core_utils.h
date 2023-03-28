@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <assert.h>
 #include <vector>
 
 
@@ -9,8 +10,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #define UNUSED(...) (void)sizeof(__VA_ARGS__)
 
-// TODO: undefined
-#define YART_UNREACHABLE()
+#define YART_ASSERT(expr) assert(expr)
+#define YART_UNREACHABLE() YART_ASSERT(0 && "Reached unreachable section")
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
