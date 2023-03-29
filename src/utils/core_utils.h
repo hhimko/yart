@@ -4,10 +4,18 @@
 #include <assert.h>
 #include <vector>
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //  Helper Core Macros & Definitions
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+#define YART_STRINGIFY(x) #x
+
+#define YART_SUPPRESS_PUSH(code) \
+    _Pragma("warning(push)")   \
+    _Pragma(YART_STRINGIFY(warning(disable: ## code)))
+
+#define YART_SUPPRESS_POP() \
+    _Pragma("warning(pop)") 
+
 #define UNUSED(...) (void)sizeof(__VA_ARGS__)
 
 #define YART_ASSERT(expr) assert(expr)

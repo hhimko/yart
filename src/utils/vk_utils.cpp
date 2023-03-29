@@ -64,7 +64,6 @@ VkSurfaceFormatKHR yart::utils::RequestVulkanSurfaceFormat(VkPhysicalDevice devi
     auto formats = std::make_unique<VkSurfaceFormatKHR[]>(format_count);
     vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_count, formats.get());
 
-    VkSurfaceFormatKHR result;
     for (uint32_t i = 0; i < format_count; ++i) {
         if (formats[i].format == request_format && formats[i].colorSpace == request_color_space)
             return formats[i];
@@ -91,6 +90,7 @@ VkPresentModeKHR yart::utils::RequestVulkanSurfacePresentMode(VkPhysicalDevice d
 
 uint32_t yart::utils::GetMinImageCountFromPresentMode(VkPresentModeKHR mode)
 {
+    YART_SUPPRESS_PUSH(4061); // enumerator not explicitly handled by a case label
     switch(mode) {
         case VK_PRESENT_MODE_MAILBOX_KHR:
             return 3;
@@ -99,7 +99,10 @@ uint32_t yart::utils::GetMinImageCountFromPresentMode(VkPresentModeKHR mode)
             return 2;
         case VK_PRESENT_MODE_IMMEDIATE_KHR:
             return 1;
+        default:
+            break;
     }
+    YART_SUPPRESS_POP();
 
     YART_UNREACHABLE();
     return 0;
