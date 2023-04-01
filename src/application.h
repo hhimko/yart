@@ -29,7 +29,7 @@ namespace yart
 
         /* Starts the main loop of the application if not already running */
         int Run();
-        void Close();
+        void Shutdown();
 
     private:
         typedef PFN_vkDebugUtilsMessengerCallbackEXT vk_debug_callback_t;
@@ -40,7 +40,7 @@ namespace yart
             VkSurfaceFormatKHR surface_format = {};
             VkPresentModeKHR present_mode;
 
-            std::unique_ptr<VkImageView[]> vk_image_views;
+            // std::unique_ptr<VkImageView[]> vk_image_views;
 
             uint32_t min_image_count; 
             uint32_t max_image_count; 
@@ -61,12 +61,14 @@ namespace yart
         static VkDebugUtilsMessengerEXT CreateVulkanDebugMessenger(VkInstance instance, vk_debug_callback_t callback);
         static VkPhysicalDevice SelectVulkanPhysicalDevice(VkInstance instance, VkPhysicalDeviceProperties& properties);
         static bool GetVulkanQueueFamilyIndex(VkPhysicalDevice physical_device, uint32_t* result, VkQueueFlags flags, VkSurfaceKHR surface = VK_NULL_HANDLE);
-        static VkDevice CreateVulkanLogicalDevice(VkPhysicalDevice physical_device, uint32_t queue_family, std::vector<const char*>& extensions);
+        static VkDevice CreateVulkanLogicalDevice(VkPhysicalDevice physical_device, uint32_t queue_family, const std::vector<const char*>& extensions);
+        static VkDescriptorPool CreateVulkanDescriptorPool(VkDevice device);
 
         bool InitializeSwapchain(VkSurfaceKHR surface);
-        static VkSwapchainKHR CreateVulkanSwapchain(VkDevice device, SwapchainData& data, VkExtent2D current_extent, VkSwapchainKHR old_swapchain = VK_NULL_HANDLE);
-        static VkRenderPass CreateVulkanRenderPass(VkDevice device, SwapchainData& data);
+        static VkSwapchainKHR CreateVulkanSwapchain(VkDevice device, const SwapchainData& data, VkExtent2D& current_extent, VkSwapchainKHR old_swapchain = VK_NULL_HANDLE);
+        static VkRenderPass CreateVulkanRenderPass(VkDevice device, const SwapchainData& data);
         static VkImageView CreateVulkanImageView(VkDevice device, VkFormat format, VkImage image);
+        static VkFramebuffer CreateVulkanFramebuffer(VkDevice device, VkRenderPass render_pass, VkExtent2D& extent, VkImageView image_view);
 
         int InitImGUI();
 
@@ -95,6 +97,7 @@ namespace yart
         VkDevice m_vkDevice = VK_NULL_HANDLE;
         VkQueue m_vkQueue = VK_NULL_HANDLE;
         uint32_t m_queueFamily = 0;
+        VkDescriptorPool m_vkDescriptorPool = VK_NULL_HANDLE;
         VkSwapchainKHR m_vkSwapchain = VK_NULL_HANDLE;
         SwapchainData m_swapchainData = {};
         VkRenderPass m_vkRenderPass = VK_NULL_HANDLE;

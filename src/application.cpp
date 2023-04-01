@@ -27,8 +27,8 @@ static void on_glfw_error(int error_code, const char *description)
 
 static void on_glfw_window_close(GLFWwindow* window)
 {
-    UNUSED(window);
-    yart::Application::Get().Close();    
+    YART_UNUSED(window);
+    yart::Application::Get().Shutdown();    
 }
 
 // TODO: Proper vk debug logging
@@ -39,7 +39,7 @@ static VkBool32 VKAPI_PTR on_vulkan_debug_message(
     const VkDebugUtilsMessengerCallbackDataEXT* data,
     void* user_data) 
 {
-    UNUSED(msg_severity, msg_type, user_data);
+    YART_UNUSED(msg_severity, msg_type, user_data);
 
     std::cout << "[VK DEBUG]: " << data->pMessage << std::endl;
     return VK_FALSE;
@@ -105,27 +105,26 @@ namespace yart
             }
 
             // Begin an ImGui frame
-            // ImGui_ImplVulkan_NewFrame();
-            // ImGui_ImplGlfw_NewFrame();
-            // ImGui::NewFrame();
+            ImGui_ImplVulkan_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
 
-            // // TODO: ImGui render commands 
+            // TODO: ImGui render commands 
 
-            // // Finalize frame and retrieve render commands from ImGui
-            // ImGui::Render();
-            // ImDrawData* draw_data = ImGui::GetDrawData();
+            // Finalize frame and retrieve render commands from ImGui
+            ImGui::Render();
+            ImDrawData* draw_data = ImGui::GetDrawData();
 
-
-            // rebuild_swapchain |= FrameRender(draw_data);
-            // if (!rebuild_swapchain){
-            //     rebuild_swapchain |= FramePresent();
-            // }
+            rebuild_swapchain |= FrameRender(draw_data);
+            if (!rebuild_swapchain){
+                rebuild_swapchain |= FramePresent();
+            }
         }
 
         return EXIT_SUCCESS;
     }
 
-    void Application::Close()
+    void Application::Shutdown()
     {
         m_running = false;
     }
@@ -216,6 +215,14 @@ namespace yart
         // Extract the graphics queue from the logical device
         vkGetDeviceQueue(m_vkDevice, m_queueFamily, 0, &m_vkQueue);
         ASSERT_HANDLE_INIT(m_vkQueue, "Failed to retrieve graphics queue from Vulkan device");
+
+        // Create a Vulkan descriptor pool used by ImGui 
+        m_vkDescriptorPool = CreateVulkanDescriptorPool(m_vkDevice);
+        ASSERT_HANDLE_INIT(m_vkDescriptorPool, "Failed to create Vulkan Descriptor pool");
+
+        m_ltStack.Push<VkDescriptorPool>(m_vkDescriptorPool, [&](auto var){ 
+            vkDestroyDescriptorPool(m_vkDevice, var, DEFAULT_VK_ALLOC);
+        });
 
         // Create the initial swapchain
         if (!InitializeSwapchain(surface)) {
@@ -368,7 +375,7 @@ namespace yart
         return false;
     }
 
-    VkDevice Application::CreateVulkanLogicalDevice(VkPhysicalDevice physical_device, uint32_t queue_family, std::vector<const char*>& extensions)
+    VkDevice Application::CreateVulkanLogicalDevice(VkPhysicalDevice physical_device, uint32_t queue_family, const std::vector<const char*>& extensions)
     {
         VkDevice device = VK_NULL_HANDLE;
 
@@ -399,6 +406,38 @@ namespace yart
         return device;
     }
 
+    VkDescriptorPool Application::CreateVulkanDescriptorPool(VkDevice device)
+    {
+        VkDescriptorPool pool = VK_NULL_HANDLE;
+
+        VkDescriptorPoolSize pool_sizes[] =
+        {
+            { VK_DESCRIPTOR_TYPE_SAMPLER, 16 },
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 16 },
+            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 16 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 16 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 16 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 16 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 16 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 16 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 16 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 16 },
+            { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 16 }
+        };
+
+        VkDescriptorPoolCreateInfo pool_info = {};
+        pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT; // allow for descriptor sets allocated from the pool to be individually freed back to the pool
+        pool_info.maxSets = static_cast<uint32_t>(16 * YART_ARRAYSIZE(pool_sizes));
+        pool_info.poolSizeCount = static_cast<uint32_t>(YART_ARRAYSIZE(pool_sizes));
+        pool_info.pPoolSizes = pool_sizes;
+
+        VkResult res = vkCreateDescriptorPool(device, &pool_info, DEFAULT_VK_ALLOC, &pool);
+        CHECK_VK_RESULT_RETURN(res, VK_NULL_HANDLE);
+
+        return pool;
+    }
+
     bool Application::InitializeSwapchain(VkSurfaceKHR surface)
     {
         VkResult res;
@@ -427,10 +466,6 @@ namespace yart
         if (surface_capabilities.maxImageCount != 0) // maxImageCount = 0 means there is no maximum
             m_swapchainData.min_image_count = std::min<uint32_t>(m_swapchainData.min_image_count, m_swapchainData.max_image_count);
 
-        // Create initial Vulkan swapchain 
-        m_vkSwapchain = CreateVulkanSwapchain(m_vkDevice, m_swapchainData, surface_capabilities.currentExtent);
-        ASSERT_HANDLE_INIT(m_vkSwapchain, "Failed to create Vulkan swapchain");
-
         // Create a Vulkan render pass with a single subpass
         m_vkRenderPass = CreateVulkanRenderPass(m_vkDevice, m_swapchainData);
         ASSERT_HANDLE_INIT(m_vkRenderPass, "Failed to create Vulkan render pass");
@@ -438,6 +473,10 @@ namespace yart
         m_ltStack.Push<VkRenderPass>(m_vkRenderPass, [&](VkRenderPass var){
             vkDestroyRenderPass(m_vkDevice, var, DEFAULT_VK_ALLOC);
         });
+
+        // Create initial Vulkan swapchain 
+        m_vkSwapchain = CreateVulkanSwapchain(m_vkDevice, m_swapchainData, surface_capabilities.currentExtent);
+        ASSERT_HANDLE_INIT(m_vkSwapchain, "Failed to create Vulkan swapchain");
 
         // Query the swapchain image count and the initial set of images
         res = vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapchain, &m_swapchainData.image_count, nullptr);
@@ -448,22 +487,31 @@ namespace yart
         CHECK_VK_RESULT_RETURN(res, false);
 
         // Create image views for each swapchain image
-        m_swapchainData.vk_image_views = std::make_unique<VkImageView[]>(m_swapchainData.image_count);
+        auto image_views = std::make_unique<VkImageView[]>(m_swapchainData.image_count);
         for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
-            m_swapchainData.vk_image_views[i] = CreateVulkanImageView(m_vkDevice, m_swapchainData.surface_format.format, images[i]);
-            ASSERT_HANDLE_INIT(m_swapchainData.vk_image_views[i], "Failed to create swapchain image view");
+            image_views[i] = CreateVulkanImageView(m_vkDevice, m_swapchainData.surface_format.format, images[i]);
+            ASSERT_HANDLE_INIT(image_views[i], "Failed to create swapchain image view");
 
-            m_swapchainData.ltStack.Push<VkImageView>(m_swapchainData.vk_image_views[i], [&](VkImageView var){
+            m_swapchainData.ltStack.Push<VkImageView>(image_views[i], [&](VkImageView var){
                 vkDestroyImageView(m_vkDevice, var, DEFAULT_VK_ALLOC);
             });
         }
 
-        // Create frame buffers for each image view
+        // Create framebuffers for each image view
+        auto frame_buffers = std::make_unique<VkFramebuffer[]>(m_swapchainData.image_count);
+        for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
+            frame_buffers[i] = CreateVulkanFramebuffer(m_vkDevice, m_vkRenderPass, surface_capabilities.currentExtent, image_views[i]);
+            ASSERT_HANDLE_INIT(frame_buffers[i], "Failed to create swapchain framebuffer");
+
+            m_swapchainData.ltStack.Push<VkFramebuffer>(frame_buffers[i], [&](VkFramebuffer var){
+                vkDestroyFramebuffer(m_vkDevice, var, DEFAULT_VK_ALLOC);
+            });
+        }
 
         return true;
     }
 
-    VkSwapchainKHR Application::CreateVulkanSwapchain(VkDevice device, SwapchainData& data, VkExtent2D current_extent, VkSwapchainKHR old_swapchain)
+    VkSwapchainKHR Application::CreateVulkanSwapchain(VkDevice device, const SwapchainData& data, VkExtent2D& current_extent, VkSwapchainKHR old_swapchain)
     {
         YART_ASSERT(data.surface != VK_NULL_HANDLE);
         VkSwapchainKHR swapchain = VK_NULL_HANDLE;
@@ -490,7 +538,7 @@ namespace yart
         return swapchain; 
     }
 
-    VkRenderPass Application::CreateVulkanRenderPass(VkDevice device, SwapchainData& data)
+    VkRenderPass Application::CreateVulkanRenderPass(VkDevice device, const SwapchainData& data)
     {
         YART_ASSERT(data.surface != VK_NULL_HANDLE);
         VkRenderPass render_pass = VK_NULL_HANDLE;
@@ -562,6 +610,25 @@ namespace yart
         return view;
     }
 
+    VkFramebuffer Application::CreateVulkanFramebuffer(VkDevice device, VkRenderPass render_pass, VkExtent2D& extent, VkImageView image_view)
+    {
+        VkFramebuffer frame_buffer = VK_NULL_HANDLE;
+
+        VkFramebufferCreateInfo frame_buffer_ci = {};
+        frame_buffer_ci.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        frame_buffer_ci.renderPass = render_pass;
+        frame_buffer_ci.width = extent.width;
+        frame_buffer_ci.height = extent.height;
+        frame_buffer_ci.pAttachments = &image_view;
+        frame_buffer_ci.attachmentCount = 1;
+        frame_buffer_ci.layers = 1;
+
+        VkResult res = vkCreateFramebuffer(device, &frame_buffer_ci, DEFAULT_VK_ALLOC, &frame_buffer);
+        CHECK_VK_RESULT_RETURN(res, VK_NULL_HANDLE);
+
+        return frame_buffer;
+    }
+
     int Application::InitImGUI()
     {
         IMGUI_CHECKVERSION();
@@ -582,21 +649,70 @@ namespace yart
         init_info.Device         = m_vkDevice;
         init_info.Queue          = m_vkQueue;
         init_info.QueueFamily    = m_queueFamily;
-        // init_info.DescriptorPool = g_DescriptorPool;
+        init_info.DescriptorPool = m_vkDescriptorPool;
         init_info.MinImageCount  = m_swapchainData.min_image_count;
         init_info.ImageCount     = m_swapchainData.image_count;
         init_info.MSAASamples    = VK_SAMPLE_COUNT_1_BIT;
         // init_info.CheckVkResultFn = check_vk_result;
 
-        // ImGui_ImplVulkan_Init(&init_info, m_vkRenderPass);
+        // Create ImGui render pipeline
+        ImGui_ImplVulkan_Init(&init_info, m_vkRenderPass);
+
+        // Upload fonts
 
         return 1;
     }
 
     void Application::WindowResize(uint32_t width, uint32_t height)
     {
-        // ImGui_ImplVulkan_SetMinImageCount(g_MinImageCount); // needed?
-        // ImGui_ImplVulkanH_CreateOrResizeWindow(g_Instance, g_PhysicalDevice, g_Device, &g_MainWindowData, g_QueueFamily, g_Allocator, width, height, g_MinImageCount);
+        // Wait for the GPU to finish execution 
+        VkResult res = vkDeviceWaitIdle(m_vkDevice);
+        CHECK_VK_RESULT_ABORT(res);
+
+        // Release all swapchain related objects
+        m_swapchainData.ltStack.Release();
+
+        // ImGui_ImplVulkan_SetMinImageCount(m_swapchainData.min_image_count); // NOTE: min_image_count is kept constant through the application life span
+
+        // Recreate Vulkan swapchain
+        VkExtent2D current_extent = { width, height };
+        VkSwapchainKHR old_swapchain = m_vkSwapchain;
+        m_vkSwapchain = CreateVulkanSwapchain(m_vkDevice, m_swapchainData, current_extent, old_swapchain);
+        YART_ASSERT(m_vkSwapchain != VK_NULL_HANDLE);
+
+        // Release previous Vulkan swapchain
+        vkDestroySwapchainKHR(m_vkDevice, old_swapchain, DEFAULT_VK_ALLOC);
+
+        // Query the swapchain image count and the initial set of images
+        res = vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapchain, &m_swapchainData.image_count, nullptr);
+        CHECK_VK_RESULT_ABORT(res);
+
+        auto images = std::make_unique<VkImage[]>(m_swapchainData.image_count);
+        res = vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapchain, &m_swapchainData.image_count, images.get());
+        CHECK_VK_RESULT_ABORT(res);
+
+        // Create image views for each swapchain image
+        auto image_views = std::make_unique<VkImageView[]>(m_swapchainData.image_count);
+        for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
+            image_views[i] = CreateVulkanImageView(m_vkDevice, m_swapchainData.surface_format.format, images[i]);
+            YART_ASSERT(image_views[i] != VK_NULL_HANDLE);
+
+            m_swapchainData.ltStack.Push<VkImageView>(image_views[i], [&](VkImageView var){
+                vkDestroyImageView(m_vkDevice, var, DEFAULT_VK_ALLOC);
+            });
+        }
+
+        // Create framebuffers for each image view
+        auto frame_buffers = std::make_unique<VkFramebuffer[]>(m_swapchainData.image_count);
+        for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
+            frame_buffers[i] = CreateVulkanFramebuffer(m_vkDevice, m_vkRenderPass, current_extent, image_views[i]);
+            YART_ASSERT(frame_buffers[i] != VK_NULL_HANDLE);
+
+            m_swapchainData.ltStack.Push<VkFramebuffer>(frame_buffers[i], [&](VkFramebuffer var){
+                vkDestroyFramebuffer(m_vkDevice, var, DEFAULT_VK_ALLOC);
+            });
+        }
+
         // g_MainWindowData.FrameIndex = 0;
     }
 
@@ -637,12 +753,25 @@ namespace yart
 
     void Application::Cleanup()
     {
+        // Wait for the GPU to finish execution 
+        VkResult res = vkDeviceWaitIdle(m_vkDevice);
+        CHECK_VK_RESULT_ABORT(res);
+
+        // Release all swapchain related objects
         m_swapchainData.ltStack.Release();
         if (m_vkSwapchain != VK_NULL_HANDLE)
             vkDestroySwapchainKHR(m_vkDevice, m_vkSwapchain, DEFAULT_VK_ALLOC);
 
+        // Release ImGui pipeline objects
+        ImGui_ImplVulkan_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
+
         // Unwind all allocations from the LTStack
         m_ltStack.Release();
+
+        // Quit GLFW
+        glfwDestroyWindow(m_window);
         glfwTerminate();
 
         m_initialized = false;

@@ -28,6 +28,10 @@
             return ret;
 #endif
 
+#define CHECK_VK_RESULT_ABORT(res)    \
+        if (res < 0)                            \
+            YART_ABORT("VkResult != VK_SUCCESS");
+
 // Helper macro for loading in extension function pointers from VkInstance into the local scope
 #define LOAD_VK_INSTANCE_FP(instance, name)         \
     auto name = reinterpret_cast<PFN_##name>(       \
@@ -49,14 +53,14 @@ namespace yart
          * @return Negative result if all extensions are available, or the index of the first not 
          *  available extension in `extensions` vector
          */
-        int CheckVulkanInstanceExtensionsAvailable(std::vector<const char*>& extensions);
+        int CheckVulkanInstanceExtensionsAvailable(const std::vector<const char*>& extensions);
 
         /**
          * @brief Check whether required Vulkan extensions are provided by the physical device driver
          * @return Negative result if all extensions are available, or the index of the first not 
          *  available extension in `extensions` vector
          */
-        int CheckVulkanDeviceExtensionsAvailable(VkPhysicalDevice device, std::vector<const char*>& extensions);
+        int CheckVulkanDeviceExtensionsAvailable(VkPhysicalDevice device, const std::vector<const char*>& extensions);
 
         /**
          * @brief  Request a certain Vulkan surface format and confirm that it is supported on physical device

@@ -3,7 +3,7 @@
 #include <memory>
 
 
-int yart::utils::CheckVulkanInstanceExtensionsAvailable(std::vector<const char*>& extensions)
+int yart::utils::CheckVulkanInstanceExtensionsAvailable(const std::vector<const char*>& extensions)
 {
     // Query available extensions from Vulkan
     uint32_t prop_count = 0;
@@ -30,7 +30,7 @@ int yart::utils::CheckVulkanInstanceExtensionsAvailable(std::vector<const char*>
     return -1;
 }
 
-int yart::utils::CheckVulkanDeviceExtensionsAvailable(VkPhysicalDevice device, std::vector<const char *> &extensions)
+int yart::utils::CheckVulkanDeviceExtensionsAvailable(VkPhysicalDevice device, const std::vector<const char *> &extensions)
 {
     // Query available extensions from Vulkan
     uint32_t prop_count = 0;
