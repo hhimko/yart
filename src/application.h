@@ -40,8 +40,14 @@ namespace yart
             VkSurfaceFormatKHR surface_format = {};
             VkPresentModeKHR present_mode;
 
-            // std::unique_ptr<VkImageView[]> vk_image_views;
+            std::unique_ptr<VkCommandPool[]> vk_command_pools;
+            std::unique_ptr<VkCommandBuffer[]> vk_command_buffers;
 
+            std::unique_ptr<VkSemaphore[]> vk_image_acquired_semaphore;
+            std::unique_ptr<VkSemaphore[]> vk_render_complete_semaphore;
+            std::unique_ptr<VkFence[]> vk_fences;
+
+            uint32_t current_frame_in_flight; 
             uint32_t min_image_count; 
             uint32_t max_image_count; 
             uint32_t image_count; 
@@ -64,13 +70,16 @@ namespace yart
         static VkDevice CreateVulkanLogicalDevice(VkPhysicalDevice physical_device, uint32_t queue_family, const std::vector<const char*>& extensions);
         static VkDescriptorPool CreateVulkanDescriptorPool(VkDevice device);
 
+        /* Sets SwapchainData members and creates the initial Swapchain */
         bool InitializeSwapchain(VkSurfaceKHR surface);
         static VkSwapchainKHR CreateVulkanSwapchain(VkDevice device, const SwapchainData& data, VkExtent2D& current_extent, VkSwapchainKHR old_swapchain = VK_NULL_HANDLE);
+
+        bool CreateSwapchainFramesInFlight(VkExtent2D& current_extent);
         static VkRenderPass CreateVulkanRenderPass(VkDevice device, const SwapchainData& data);
         static VkImageView CreateVulkanImageView(VkDevice device, VkFormat format, VkImage image);
         static VkFramebuffer CreateVulkanFramebuffer(VkDevice device, VkRenderPass render_pass, VkExtent2D& extent, VkImageView image_view);
 
-        int InitImGUI();
+        bool InitImGUI();
 
         /* Rebuilds the swapchain */
         void WindowResize(uint32_t width, uint32_t height);

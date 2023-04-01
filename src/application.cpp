@@ -478,36 +478,12 @@ namespace yart
         m_vkSwapchain = CreateVulkanSwapchain(m_vkDevice, m_swapchainData, surface_capabilities.currentExtent);
         ASSERT_HANDLE_INIT(m_vkSwapchain, "Failed to create Vulkan swapchain");
 
-        // Query the swapchain image count and the initial set of images
-        res = vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapchain, &m_swapchainData.image_count, nullptr);
-        CHECK_VK_RESULT_RETURN(res, false);
-
-        auto images = std::make_unique<VkImage[]>(m_swapchainData.image_count);
-        res = vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapchain, &m_swapchainData.image_count, images.get());
-        CHECK_VK_RESULT_RETURN(res, false);
-
-        // Create image views for each swapchain image
-        auto image_views = std::make_unique<VkImageView[]>(m_swapchainData.image_count);
-        for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
-            image_views[i] = CreateVulkanImageView(m_vkDevice, m_swapchainData.surface_format.format, images[i]);
-            ASSERT_HANDLE_INIT(image_views[i], "Failed to create swapchain image view");
-
-            m_swapchainData.ltStack.Push<VkImageView>(image_views[i], [&](VkImageView var){
-                vkDestroyImageView(m_vkDevice, var, DEFAULT_VK_ALLOC);
-            });
+        // Create frame in flight objects 
+        if (!CreateSwapchainFramesInFlight(surface_capabilities.currentExtent)) {
+            std::cerr << "Failed to create swapchain frames in flight" << std::endl;
+            return false;
         }
-
-        // Create framebuffers for each image view
-        auto frame_buffers = std::make_unique<VkFramebuffer[]>(m_swapchainData.image_count);
-        for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
-            frame_buffers[i] = CreateVulkanFramebuffer(m_vkDevice, m_vkRenderPass, surface_capabilities.currentExtent, image_views[i]);
-            ASSERT_HANDLE_INIT(frame_buffers[i], "Failed to create swapchain framebuffer");
-
-            m_swapchainData.ltStack.Push<VkFramebuffer>(frame_buffers[i], [&](VkFramebuffer var){
-                vkDestroyFramebuffer(m_vkDevice, var, DEFAULT_VK_ALLOC);
-            });
-        }
-
+        
         return true;
     }
 
@@ -536,6 +512,117 @@ namespace yart
         CHECK_VK_RESULT_RETURN(res, VK_NULL_HANDLE);
 
         return swapchain; 
+    }
+
+    bool Application::CreateSwapchainFramesInFlight(VkExtent2D& current_extent)
+    {
+        VkResult res;
+
+        // Query the swapchain image count and the initial set of images
+        res = vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapchain, &m_swapchainData.image_count, nullptr);
+        CHECK_VK_RESULT_RETURN(res, false);
+
+        auto images = std::make_unique<VkImage[]>(m_swapchainData.image_count);
+        res = vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapchain, &m_swapchainData.image_count, images.get());
+        CHECK_VK_RESULT_RETURN(res, false);
+
+        // Create image views for each swapchain image
+        auto image_views = std::make_unique<VkImageView[]>(m_swapchainData.image_count);
+        for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
+            image_views[i] = CreateVulkanImageView(m_vkDevice, m_swapchainData.surface_format.format, images[i]);
+            ASSERT_HANDLE_INIT(image_views[i], "Failed to create swapchain image view");
+
+            m_swapchainData.ltStack.Push<VkImageView>(image_views[i], [&](VkImageView var){
+                vkDestroyImageView(m_vkDevice, var, DEFAULT_VK_ALLOC);
+            });
+        }
+
+        // Create framebuffers for each image view
+        auto frame_buffers = std::make_unique<VkFramebuffer[]>(m_swapchainData.image_count);
+        for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
+            frame_buffers[i] = CreateVulkanFramebuffer(m_vkDevice, m_vkRenderPass, current_extent, image_views[i]);
+            ASSERT_HANDLE_INIT(frame_buffers[i], "Failed to create swapchain framebuffer");
+
+            m_swapchainData.ltStack.Push<VkFramebuffer>(frame_buffers[i], [&](VkFramebuffer var){
+                vkDestroyFramebuffer(m_vkDevice, var, DEFAULT_VK_ALLOC);
+            });
+        }
+
+        // Create a Vulkan command pool for each frame
+        m_swapchainData.vk_command_pools = std::make_unique<VkCommandPool[]>(m_swapchainData.image_count);
+
+        VkCommandPoolCreateInfo pool_ci = {};
+        pool_ci.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        pool_ci.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        pool_ci.queueFamilyIndex = m_queueFamily;
+
+        for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
+            res = vkCreateCommandPool(m_vkDevice, &pool_ci, DEFAULT_VK_ALLOC, &m_swapchainData.vk_command_pools[i]);
+            CHECK_VK_RESULT_RETURN(res, false);
+
+            m_swapchainData.ltStack.Push<VkCommandPool>(m_swapchainData.vk_command_pools[i], [&](VkCommandPool var){
+                vkDestroyCommandPool(m_vkDevice, var, DEFAULT_VK_ALLOC);
+            });
+        }
+
+        // Allocate Vulkan command buffers from the pool for each frame
+        m_swapchainData.vk_command_buffers = std::make_unique<VkCommandBuffer[]>(m_swapchainData.image_count);
+
+        VkCommandBufferAllocateInfo buffer_ai = {};
+        buffer_ai.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        buffer_ai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        buffer_ai.commandBufferCount = 1;
+
+        for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
+            buffer_ai.commandPool = m_swapchainData.vk_command_pools[i];
+
+            res = vkAllocateCommandBuffers(m_vkDevice, &buffer_ai, &m_swapchainData.vk_command_buffers[i]);
+            CHECK_VK_RESULT_RETURN(res, false);
+            // Vulkan command buffers get released automatically with the destruction of the pools they were allocated from
+        }
+
+        // Create Vulkan semaphores for each frame 
+        m_swapchainData.vk_image_acquired_semaphore = std::make_unique<VkSemaphore[]>(m_swapchainData.image_count);
+        m_swapchainData.vk_render_complete_semaphore = std::make_unique<VkSemaphore[]>(m_swapchainData.image_count);
+
+        VkSemaphoreCreateInfo semaphore_ci = {};
+        semaphore_ci.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+        for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
+            // Image Acquired Semaphore
+            res = vkCreateSemaphore(m_vkDevice, &semaphore_ci, DEFAULT_VK_ALLOC, &m_swapchainData.vk_image_acquired_semaphore[i]);
+            CHECK_VK_RESULT_RETURN(res, false);
+
+            m_swapchainData.ltStack.Push<VkSemaphore>(m_swapchainData.vk_image_acquired_semaphore[i], [&](VkSemaphore var){
+                vkDestroySemaphore(m_vkDevice, var, DEFAULT_VK_ALLOC);
+            });
+
+            // Render Complete Semaphore
+            res = vkCreateSemaphore(m_vkDevice, &semaphore_ci, DEFAULT_VK_ALLOC, &m_swapchainData.vk_render_complete_semaphore[i]);
+            CHECK_VK_RESULT_RETURN(res, false);
+
+            m_swapchainData.ltStack.Push<VkSemaphore>(m_swapchainData.vk_render_complete_semaphore[i], [&](VkSemaphore var){
+                vkDestroySemaphore(m_vkDevice, var, DEFAULT_VK_ALLOC);
+            });
+        }
+
+        // Create Vulkan fences for each frame 
+        m_swapchainData.vk_fences = std::make_unique<VkFence[]>(m_swapchainData.image_count);
+
+        VkFenceCreateInfo fence_ci = {};
+        fence_ci.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        fence_ci.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+        for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
+            res = vkCreateFence(m_vkDevice, &fence_ci, DEFAULT_VK_ALLOC, &m_swapchainData.vk_fences[i]);
+            CHECK_VK_RESULT_RETURN(res, false);
+
+            m_swapchainData.ltStack.Push<VkFence>(m_swapchainData.vk_fences[i], [&](VkFence var){
+                vkDestroyFence(m_vkDevice, var, DEFAULT_VK_ALLOC);
+            });
+        }
+
+        return true;
     }
 
     VkRenderPass Application::CreateVulkanRenderPass(VkDevice device, const SwapchainData& data)
@@ -629,8 +716,10 @@ namespace yart
         return frame_buffer;
     }
 
-    int Application::InitImGUI()
+    bool Application::InitImGUI()
     {
+        VkResult res;
+
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
 
@@ -659,8 +748,38 @@ namespace yart
         ImGui_ImplVulkan_Init(&init_info, m_vkRenderPass);
 
         // Upload fonts
+        VkCommandPool command_pool = m_swapchainData.vk_command_pools[0];       // |
+        VkCommandBuffer command_buffer = m_swapchainData.vk_command_buffers[0]; // | use whichever command queue
 
-        return 1;
+        res = vkResetCommandPool(m_vkDevice, command_pool, (VkCommandPoolResetFlags)0);
+        CHECK_VK_RESULT_RETURN(res, false); 
+
+        VkCommandBufferBeginInfo cmd_begin_info = {}; 
+        cmd_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        cmd_begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+        res = vkBeginCommandBuffer(command_buffer, &cmd_begin_info);
+        CHECK_VK_RESULT_RETURN(res, false); 
+
+        ImGui_ImplVulkan_CreateFontsTexture(command_buffer);
+
+        VkSubmitInfo submit_info = {};
+        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submit_info.pCommandBuffers = &command_buffer;
+        submit_info.commandBufferCount = 1;
+
+        res = vkEndCommandBuffer(command_buffer);
+        CHECK_VK_RESULT_RETURN(res, false); 
+
+        res = vkQueueSubmit(m_vkQueue, 1, &submit_info, VK_NULL_HANDLE);
+        CHECK_VK_RESULT_RETURN(res, false); 
+
+        res = vkDeviceWaitIdle(m_vkDevice);
+        CHECK_VK_RESULT_RETURN(res, false); 
+
+        ImGui_ImplVulkan_DestroyFontUploadObjects();
+
+        return true;
     }
 
     void Application::WindowResize(uint32_t width, uint32_t height)
@@ -672,7 +791,7 @@ namespace yart
         // Release all swapchain related objects
         m_swapchainData.ltStack.Release();
 
-        // ImGui_ImplVulkan_SetMinImageCount(m_swapchainData.min_image_count); // NOTE: min_image_count is kept constant through the application life span
+        // ImGui_ImplVulkan_SetMinImageCount(m_swapchainData.min_image_count); // NOTE: min_image_count is kept constant throughout the application life span
 
         // Recreate Vulkan swapchain
         VkExtent2D current_extent = { width, height };
@@ -683,34 +802,9 @@ namespace yart
         // Release previous Vulkan swapchain
         vkDestroySwapchainKHR(m_vkDevice, old_swapchain, DEFAULT_VK_ALLOC);
 
-        // Query the swapchain image count and the initial set of images
-        res = vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapchain, &m_swapchainData.image_count, nullptr);
-        CHECK_VK_RESULT_ABORT(res);
-
-        auto images = std::make_unique<VkImage[]>(m_swapchainData.image_count);
-        res = vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapchain, &m_swapchainData.image_count, images.get());
-        CHECK_VK_RESULT_ABORT(res);
-
-        // Create image views for each swapchain image
-        auto image_views = std::make_unique<VkImageView[]>(m_swapchainData.image_count);
-        for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
-            image_views[i] = CreateVulkanImageView(m_vkDevice, m_swapchainData.surface_format.format, images[i]);
-            YART_ASSERT(image_views[i] != VK_NULL_HANDLE);
-
-            m_swapchainData.ltStack.Push<VkImageView>(image_views[i], [&](VkImageView var){
-                vkDestroyImageView(m_vkDevice, var, DEFAULT_VK_ALLOC);
-            });
-        }
-
-        // Create framebuffers for each image view
-        auto frame_buffers = std::make_unique<VkFramebuffer[]>(m_swapchainData.image_count);
-        for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
-            frame_buffers[i] = CreateVulkanFramebuffer(m_vkDevice, m_vkRenderPass, current_extent, image_views[i]);
-            YART_ASSERT(frame_buffers[i] != VK_NULL_HANDLE);
-
-            m_swapchainData.ltStack.Push<VkFramebuffer>(frame_buffers[i], [&](VkFramebuffer var){
-                vkDestroyFramebuffer(m_vkDevice, var, DEFAULT_VK_ALLOC);
-            });
+        // Create frame in flight objects 
+        if (!CreateSwapchainFramesInFlight(current_extent)) {
+            YART_ABORT("Failed to create swapchain frames in flight");
         }
 
         // g_MainWindowData.FrameIndex = 0;
