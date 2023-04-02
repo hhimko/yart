@@ -80,13 +80,13 @@ namespace yart
 
     int Application::Run() 
     {
+        YART_ASSERT(!m_running);
         if (!m_initialized) 
             return EXIT_FAILURE;
 
-        // TODO: assert not m_running
-        m_running = true; // Directly controlled by Application::Close() and on_glfw_window_close
+        m_running = true; // Directly controlled by Application::Shutdown() and on_glfw_window_close
 
-        bool rebuild_swapchain = false;
+        bool rebuild_swapchain = false; // Signalled by Application::FrameRender() and Application::FramePresent()
         while (m_running) {
             // Poll and handle incoming events
             glfwPollEvents();
@@ -109,16 +109,23 @@ namespace yart
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
 
-            // TODO: ImGui render commands 
+            // Issue ImGui render commands 
+            ImGui::Begin("YART Debug");
+
+            ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+            ImGui::Text("Avg. %.3f ms/frame", 1000.0f / ImGui::GetIO().Framerate);
+
+            ImGui::End();
 
             // Finalize frame and retrieve render commands from ImGui
             ImGui::Render();
             ImDrawData* draw_data = ImGui::GetDrawData();
 
             rebuild_swapchain |= FrameRender(draw_data);
-            if (!rebuild_swapchain){
-                rebuild_swapchain |= FramePresent();
-            }
+            if (rebuild_swapchain)
+                continue;
+                
+            rebuild_swapchain |= FramePresent();
         }
 
         return EXIT_SUCCESS;
@@ -255,7 +262,7 @@ namespace yart
         return exts;
     }
 
-    VkInstance Application::CreateVulkanInstance(std::vector<const char*>& extensions)
+    VkInstance Application::CreateVulkanInstance(const std::vector<const char*>& extensions)
     {
         VkInstance instance = VK_NULL_HANDLE;
 
@@ -410,25 +417,26 @@ namespace yart
     {
         VkDescriptorPool pool = VK_NULL_HANDLE;
 
+        const uint32_t size = 16;
         VkDescriptorPoolSize pool_sizes[] =
         {
-            { VK_DESCRIPTOR_TYPE_SAMPLER, 16 },
-            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 16 },
-            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 16 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 16 },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 16 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 16 },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 16 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 16 },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 16 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 16 },
-            { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 16 }
+            { VK_DESCRIPTOR_TYPE_SAMPLER, size },
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, size },
+            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, size },
+            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, size },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, size },
+            { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, size },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, size },
+            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, size },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, size },
+            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, size },
+            { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, size }
         };
 
         VkDescriptorPoolCreateInfo pool_info = {};
         pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT; // allow for descriptor sets allocated from the pool to be individually freed back to the pool
-        pool_info.maxSets = static_cast<uint32_t>(16 * YART_ARRAYSIZE(pool_sizes));
+        pool_info.maxSets = static_cast<uint32_t>(size * YART_ARRAYSIZE(pool_sizes));
         pool_info.poolSizeCount = static_cast<uint32_t>(YART_ARRAYSIZE(pool_sizes));
         pool_info.pPoolSizes = pool_sizes;
 
@@ -456,6 +464,8 @@ namespace yart
         res = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_vkPhysicalDevice, surface, &surface_capabilities);
         CHECK_VK_RESULT_RETURN(res, false);
 
+        m_swapchainData.current_extent = surface_capabilities.currentExtent;
+
         // NOTE: 
         // min and max image count variables are set just once here and reused throughout the application runtime for swapchain rebuilds
         // in case of the capabilities not being constant - these should probably be retrieved and set every rebuild, but I can't find much info of such possibility 
@@ -475,11 +485,11 @@ namespace yart
         });
 
         // Create initial Vulkan swapchain 
-        m_vkSwapchain = CreateVulkanSwapchain(m_vkDevice, m_swapchainData, surface_capabilities.currentExtent);
+        m_vkSwapchain = CreateVulkanSwapchain(m_vkDevice, m_swapchainData);
         ASSERT_HANDLE_INIT(m_vkSwapchain, "Failed to create Vulkan swapchain");
 
         // Create frame in flight objects 
-        if (!CreateSwapchainFramesInFlight(surface_capabilities.currentExtent)) {
+        if (!CreateSwapchainFramesInFlight(m_swapchainData.current_extent)) {
             std::cerr << "Failed to create swapchain frames in flight" << std::endl;
             return false;
         }
@@ -487,7 +497,7 @@ namespace yart
         return true;
     }
 
-    VkSwapchainKHR Application::CreateVulkanSwapchain(VkDevice device, const SwapchainData& data, VkExtent2D& current_extent, VkSwapchainKHR old_swapchain)
+    VkSwapchainKHR Application::CreateVulkanSwapchain(VkDevice device, const SwapchainData& data, VkSwapchainKHR old_swapchain)
     {
         YART_ASSERT(data.surface != VK_NULL_HANDLE);
         VkSwapchainKHR swapchain = VK_NULL_HANDLE;
@@ -498,7 +508,7 @@ namespace yart
         swapchain_ci.imageFormat      = data.surface_format.format;
         swapchain_ci.imageColorSpace  = data.surface_format.colorSpace;
         swapchain_ci.presentMode      = data.present_mode;
-        swapchain_ci.imageExtent      = current_extent;
+        swapchain_ci.imageExtent      = data.current_extent;
         swapchain_ci.minImageCount    = data.min_image_count;
         swapchain_ci.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE; // Only in case when graphics family = present family
@@ -514,7 +524,7 @@ namespace yart
         return swapchain; 
     }
 
-    bool Application::CreateSwapchainFramesInFlight(VkExtent2D& current_extent)
+    bool Application::CreateSwapchainFramesInFlight(const VkExtent2D& current_extent)
     {
         VkResult res;
 
@@ -538,12 +548,12 @@ namespace yart
         }
 
         // Create framebuffers for each image view
-        auto frame_buffers = std::make_unique<VkFramebuffer[]>(m_swapchainData.image_count);
+        m_swapchainData.vk_frame_buffers = std::make_unique<VkFramebuffer[]>(m_swapchainData.image_count);
         for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
-            frame_buffers[i] = CreateVulkanFramebuffer(m_vkDevice, m_vkRenderPass, current_extent, image_views[i]);
-            ASSERT_HANDLE_INIT(frame_buffers[i], "Failed to create swapchain framebuffer");
+            m_swapchainData.vk_frame_buffers[i] = CreateVulkanFramebuffer(m_vkDevice, m_vkRenderPass, current_extent, image_views[i]);
+            ASSERT_HANDLE_INIT(m_swapchainData.vk_frame_buffers[i], "Failed to create swapchain framebuffer");
 
-            m_swapchainData.ltStack.Push<VkFramebuffer>(frame_buffers[i], [&](VkFramebuffer var){
+            m_swapchainData.ltStack.Push<VkFramebuffer>(m_swapchainData.vk_frame_buffers[i], [&](VkFramebuffer var){
                 vkDestroyFramebuffer(m_vkDevice, var, DEFAULT_VK_ALLOC);
             });
         }
@@ -633,7 +643,7 @@ namespace yart
         VkAttachmentDescription attachment = {};
         attachment.format         = data.surface_format.format;
         attachment.samples        = VK_SAMPLE_COUNT_1_BIT;
-        attachment.loadOp         = VK_ATTACHMENT_LOAD_OP_DONT_CARE; // VK_ATTACHMENT_LOAD_OP_CLEAR
+        attachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachment.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
         attachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -697,7 +707,7 @@ namespace yart
         return view;
     }
 
-    VkFramebuffer Application::CreateVulkanFramebuffer(VkDevice device, VkRenderPass render_pass, VkExtent2D& extent, VkImageView image_view)
+    VkFramebuffer Application::CreateVulkanFramebuffer(VkDevice device, VkRenderPass render_pass, const VkExtent2D& extent, VkImageView image_view)
     {
         VkFramebuffer frame_buffer = VK_NULL_HANDLE;
 
@@ -794,54 +804,121 @@ namespace yart
         // ImGui_ImplVulkan_SetMinImageCount(m_swapchainData.min_image_count); // NOTE: min_image_count is kept constant throughout the application life span
 
         // Recreate Vulkan swapchain
-        VkExtent2D current_extent = { width, height };
+        m_swapchainData.current_extent.width = width;
+        m_swapchainData.current_extent.height = height;
+
         VkSwapchainKHR old_swapchain = m_vkSwapchain;
-        m_vkSwapchain = CreateVulkanSwapchain(m_vkDevice, m_swapchainData, current_extent, old_swapchain);
+        m_vkSwapchain = CreateVulkanSwapchain(m_vkDevice, m_swapchainData, old_swapchain);
         YART_ASSERT(m_vkSwapchain != VK_NULL_HANDLE);
 
         // Release previous Vulkan swapchain
         vkDestroySwapchainKHR(m_vkDevice, old_swapchain, DEFAULT_VK_ALLOC);
 
         // Create frame in flight objects 
-        if (!CreateSwapchainFramesInFlight(current_extent)) {
+        if (!CreateSwapchainFramesInFlight(m_swapchainData.current_extent)) {
             YART_ABORT("Failed to create swapchain frames in flight");
         }
 
-        // g_MainWindowData.FrameIndex = 0;
+        m_swapchainData.current_frame_in_flight = 0;
     }
 
     bool Application::FrameRender(ImDrawData* draw_data)
     {
-        // VkSemaphore image_acquired_semaphore = wd->FrameSemaphores[wd->SemaphoreIndex].ImageAcquiredSemaphore;
-        // VkSemaphore render_complete_semaphore = wd->FrameSemaphores[wd->SemaphoreIndex].RenderCompleteSemaphore;
-        // VkResult res = vkAcquireNextImageKHR(g_Device, wd->Swapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &wd->FrameIndex);
-        // if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR) {
-        //     return true;
-        // }
-        // CHECK_VK_RESULT_RETURN(err, ???);
+        VkResult res;
+                
+        // Get the next available frame in flight index
+        VkSemaphore image_acquired_semaphore = m_swapchainData.vk_image_acquired_semaphore[m_swapchainData.current_semaphore_index];
 
-        // Wait for frame fences 
+        res = vkAcquireNextImageKHR(m_vkDevice, m_vkSwapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &m_swapchainData.current_frame_in_flight);
+        if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
+            return true; // Signal that swapchain should be rebuilt 
+        CHECK_VK_RESULT_ABORT(res);
+
+        // Wait for and reset frame fence
+        VkFence fence = m_swapchainData.vk_fences[m_swapchainData.current_frame_in_flight];
+
+        res = vkWaitForFences(m_vkDevice, 1, &fence, VK_TRUE, UINT64_MAX); 
+        CHECK_VK_RESULT_ABORT(res);
+
+        res = vkResetFences(m_vkDevice, 1, &fence);
+        CHECK_VK_RESULT_ABORT(res);
 
         // Reset command pool
+        res = vkResetCommandPool(m_vkDevice, m_swapchainData.vk_command_pools[m_swapchainData.current_frame_in_flight], (VkCommandPoolResetFlags)0);
+        CHECK_VK_RESULT_ABORT(res);
 
-        // Begin command buffer
+        // Begin command buffer for render commands
+        VkCommandBuffer cmd_buffer = m_swapchainData.vk_command_buffers[m_swapchainData.current_frame_in_flight];
+
+        VkCommandBufferBeginInfo cmd_begin_info = {};
+        cmd_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        cmd_begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+        res = vkBeginCommandBuffer(cmd_buffer, &cmd_begin_info);
+        CHECK_VK_RESULT_ABORT(res);
 
         // Begin render pass
+        VkRenderPassBeginInfo render_pass_info = {};
+        render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        render_pass_info.framebuffer = m_swapchainData.vk_frame_buffers[m_swapchainData.current_frame_in_flight];
+        render_pass_info.renderArea.extent = m_swapchainData.current_extent;
+        render_pass_info.renderPass = m_vkRenderPass;
+        static const VkClearValue clear_value = {};
+        render_pass_info.pClearValues = &clear_value;
+        render_pass_info.clearValueCount = 1;
 
-        // Record dear imgui primitives into command buffer
-        // ImGui_ImplVulkan_RenderDrawData(draw_data, command_buffer);
+        vkCmdBeginRenderPass(cmd_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+
+        // Record ImGui primitives into the command buffer
+        ImGui_ImplVulkan_RenderDrawData(draw_data, cmd_buffer);
 
         // Submit command buffer
+        vkCmdEndRenderPass(cmd_buffer);
 
         // End command buffer
+        res = vkEndCommandBuffer(cmd_buffer);
+        CHECK_VK_RESULT_ABORT(res);
 
         // Submit queue 
+        VkSemaphore render_complete_semaphore = m_swapchainData.vk_render_complete_semaphore[m_swapchainData.current_semaphore_index];
+        VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+        VkSubmitInfo submit_info = {};
+        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submit_info.pSignalSemaphores = &render_complete_semaphore;
+        submit_info.pWaitSemaphores = &image_acquired_semaphore;
+        submit_info.waitSemaphoreCount = 1;
+        submit_info.pWaitDstStageMask = &wait_stage;
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &cmd_buffer;
+        submit_info.signalSemaphoreCount = 1;
+
+        res = vkQueueSubmit(m_vkQueue, 1, &submit_info, fence);
+        CHECK_VK_RESULT_ABORT(res);
 
         return false;
     }
 
     bool Application::FramePresent()
     {
+        VkSemaphore render_complete_semaphore = m_swapchainData.vk_render_complete_semaphore[m_swapchainData.current_semaphore_index];
+
+        VkPresentInfoKHR present_info = {};
+        present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        present_info.pImageIndices = &m_swapchainData.current_frame_in_flight;
+        present_info.pWaitSemaphores = &render_complete_semaphore;
+        present_info.waitSemaphoreCount = 1;
+        present_info.pSwapchains = &m_vkSwapchain;
+        present_info.swapchainCount = 1;
+
+        VkResult res = vkQueuePresentKHR(m_vkQueue, &present_info);
+        if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
+            return true; // Signal that swapchain should be rebuilt 
+        CHECK_VK_RESULT_ABORT(res);
+
+        // Use the next set of semaphores
+        m_swapchainData.current_semaphore_index = (m_swapchainData.current_semaphore_index + 1) % m_swapchainData.image_count; 
+
         return false;
     }
 
