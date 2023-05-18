@@ -1,5 +1,20 @@
 # Yet Another Ray Tracer
 
+yart (Yet-Another-Ray-Tracer) is a real-time ray tracing engine on CPU.
+
+
+## Building From Source
+yart comes with most dependencies vendored-in as git submodules 
+
+
+
+[CMake]:
+[Vulkan SDK]: https://vulkan.lunarg.com/
+
+</br></br>
+
+---
+
 ## 1. Key Concepts
   - Interactive, Real-time* Path Tracing
   - CPU based rendering with multithreading (Thread-pool based)
