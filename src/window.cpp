@@ -109,17 +109,17 @@ namespace yart
         Cleanup();
     }
 
-    int Window::InitGLFW(const char* win_title, int win_w, int win_h) 
+    bool Window::InitGLFW(const char* win_title, int win_w, int win_h) 
     {
         glfwSetErrorCallback(on_glfw_error);
         if (!glfwInit()) {
             fprintf(stderr, "GLFW: Failed to call glfwInit()\n");
-            return 0;
+            return false;
         }
 
         if (!glfwVulkanSupported()) {
             fprintf(stderr, "GLFW: Vulkan Not Supported\n");
-            return 0;
+            return false;
         }
 
         // Create window with Vulkan context
@@ -127,16 +127,16 @@ namespace yart
         m_window = glfwCreateWindow(win_w, win_h, win_title, NULL, NULL);
         if (m_window == NULL) {
             fprintf(stderr, "GLFW: Failed to create window\n");
-            return 0;
+            return false;
         }
 
         // Set custom GLFW event callbacks
         glfwSetWindowCloseCallback(m_window, on_glfw_window_close);
 
-        return 1;
+        return true;
     }
 
-    int Window::InitVulkan() 
+    bool Window::InitVulkan() 
     {
         VkResult res;
 
@@ -162,7 +162,7 @@ namespace yart
         // Create a Vulkan surface for the main GLFW window
         VkSurfaceKHR surface;
         res = glfwCreateWindowSurface(m_vkInstance, m_window, DEFAULT_VK_ALLOC, &surface);
-        CHECK_VK_RESULT_RETURN(res, 0);
+        CHECK_VK_RESULT_RETURN(res, false);
 
         m_ltStack.Push<VkSurfaceKHR>(surface, [&](auto var){ 
             vkDestroySurfaceKHR(m_vkInstance, var, DEFAULT_VK_ALLOC);
@@ -177,13 +177,13 @@ namespace yart
         std::vector<const char*> swapchain_ext = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
         if (utils::CheckVulkanDeviceExtensionsAvailable(m_vkPhysicalDevice, swapchain_ext) >= 0) {
             std::cout << "GPU does not support swapchain operations" << std::endl;
-            return 0;
+            return false;
         }
 
         // Select queue family index from the gpu with support for graphics and surface presentation (WSI)
         if (!GetVulkanQueueFamilyIndex(m_vkPhysicalDevice, &m_queueFamily, VK_QUEUE_GRAPHICS_BIT, surface)) {
             std::cerr << "No queue family with graphics and presentation support found on GPU" << std::endl;
-            return 0;
+            return false;
         }
 
         // Create a VkDevice with a single queue and `VK_KHR_swapchain` extension 
@@ -209,10 +209,10 @@ namespace yart
         // Create the initial swapchain
         if (!InitializeSwapchain(surface)) {
             std::cerr << "Failed to initialize swapchain" << std::endl;
-            return 0;
+            return false;
         }
 
-        return 1;
+        return true;
     }
 
     std::vector<const char*> Window::GetRequiredVulkanExtensions()
@@ -296,9 +296,10 @@ namespace yart
         return debug_messenger; 
     }
 
-    /* Returns the first discrete GPU found on client machine, or the very first available one */
+    
     VkPhysicalDevice Window::SelectVulkanPhysicalDevice(VkInstance instance, VkPhysicalDeviceProperties& properties)
     {
+        // Returns the first discrete GPU found on client machine, or the very first available one
         VkPhysicalDevice gpu = VK_NULL_HANDLE; 
 
         uint32_t gpu_count;
@@ -790,9 +791,8 @@ namespace yart
         vkDestroySwapchainKHR(m_vkDevice, old_swapchain, DEFAULT_VK_ALLOC);
 
         // Create frame in flight objects 
-        if (!CreateSwapchainFramesInFlight(m_swapchainData.current_extent)) {
+        if (!CreateSwapchainFramesInFlight(m_swapchainData.current_extent))
             YART_ABORT("Failed to create swapchain frames in flight");
-        }
 
         m_swapchainData.current_frame_in_flight = 0;
     }

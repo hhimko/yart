@@ -32,7 +32,7 @@ namespace yart
         /// @return Boolean value indicating whether the window has been successfully created 
         bool Create(const char* title, int win_w, int win_h);
 
-        /// @brief Render and present the next frame to the window
+        /// @brief Submit frame for render and present the next frame-in-flight to the window
         void Render();
 
         /// @brief Perform window shutdown and cleanup
@@ -41,7 +41,7 @@ namespace yart
     private:
         typedef PFN_vkDebugUtilsMessengerCallbackEXT vk_debug_callback_t;
 
-        /* Container for swapchain related data */
+        /// @brief Container for swapchain related data
         struct SwapchainData {
             VkSurfaceKHR surface = VK_NULL_HANDLE;
             VkSurfaceFormatKHR surface_format = {};
@@ -56,11 +56,11 @@ namespace yart
             std::unique_ptr<VkSemaphore[]> vk_render_complete_semaphore;
             std::unique_ptr<VkFence[]> vk_fences;
 
-            uint32_t current_frame_in_flight = 0; 
-            uint32_t current_semaphore_index = 0; 
-            uint32_t min_image_count; 
-            uint32_t max_image_count; 
-            uint32_t image_count; 
+            uint32_t current_frame_in_flight = 0;
+            uint32_t current_semaphore_index = 0;
+            uint32_t min_image_count = 0;
+            uint32_t max_image_count = 0;
+            uint32_t image_count = 0;
 
             utils::LTStack ltStack;
 
@@ -69,9 +69,16 @@ namespace yart
             ~SwapchainData() { ltStack.Release(); };
         };
 
-        int InitGLFW(const char* win_title, int win_w, int win_h);
+        /// @brief Initialize GLFW and create a new window 
+        /// @param win_title Initial window title
+        /// @param win_w Initial width of the window in pixels
+        /// @param win_h Initial height of the window in pixels
+        /// @return Boolean value indicating whether GLFW has been successfully initialized
+        bool InitGLFW(const char* win_title, int win_w, int win_h);
 
-        int InitVulkan();
+        /// @brief Initialize Vulkan with supported extensions and create required Vk objects
+        /// @return Boolean value indicating whether Vulkan with all required objects have been successfully initialized
+        bool InitVulkan();
         static std::vector<const char*> GetRequiredVulkanExtensions();
         static VkInstance CreateVulkanInstance(const std::vector<const char*>& extensions);
         static VkDebugUtilsMessengerEXT CreateVulkanDebugMessenger(VkInstance instance, vk_debug_callback_t callback);
@@ -80,7 +87,9 @@ namespace yart
         static VkDevice CreateVulkanLogicalDevice(VkPhysicalDevice physical_device, uint32_t queue_family, const std::vector<const char*>& extensions);
         static VkDescriptorPool CreateVulkanDescriptorPool(VkDevice device);
 
-        /* Sets SwapchainData members and creates the initial Swapchain */
+        /// @brief Query present capabilities and create the initial swapchain
+        /// @param surface Platform window Vulkan surface
+        /// @return Boolean value indicating whether the swapchain with all required objects have been successfully initialized
         bool InitializeSwapchain(VkSurfaceKHR surface);
         static VkSwapchainKHR CreateVulkanSwapchain(VkDevice device, const SwapchainData& data, VkSwapchainKHR old_swapchain = VK_NULL_HANDLE);
 
@@ -89,25 +98,35 @@ namespace yart
         static VkImageView CreateVulkanImageView(VkDevice device, VkFormat format, VkImage image);
         static VkFramebuffer CreateVulkanFramebuffer(VkDevice device, VkRenderPass render_pass, const VkExtent2D& extent, VkImageView image_view);
 
+        /// @brief Initialize Dear ImGUI for GLFW/Vulkan
+        /// @return Boolean value indicating whether Dear ImGUI has been successfully initialized
         bool InitImGUI();
 
-        /* Rebuilds the swapchain */
+        /// @brief Recreate the swapchain with extent of given size 
+        /// @param width Swapchain image extent width 
+        /// @param height Swapchain image extent height
         void WindowResize(uint32_t width, uint32_t height);
 
-        /* Returns whether the swapchain should be resized/rebuilt */
+        /// @brief Submit draw commands for render
+        /// @param draw_data Dear ImGui draw data
+        /// @return Whether the swapchain is invalidated and should be rebuild
         bool FrameRender(ImDrawData* draw_data);
-        /* Returns whether the swapchain should be resized/rebuilt */
+
+        /// @brief Present the next available frame-in-flight to the GLFW window
+        /// @return Whether the swapchain is invalidated and should be rebuild
         bool FramePresent();
 
+        /// @brief Wait for the GPU and destroy all allocated members. 
+        /// @note It is safe to call this function even without initializing first
         void Cleanup();
 
     private:
         utils::LTStack m_ltStack;
 
-        // GLFW types
+        // -- GLFW types -- //
         GLFWwindow* m_window = nullptr;
 
-        // Vulkan types
+        // -- Vulkan types -- //
         VkInstance m_vkInstance = VK_NULL_HANDLE;
         VkPhysicalDevice m_vkPhysicalDevice = VK_NULL_HANDLE;
         VkDevice m_vkDevice = VK_NULL_HANDLE;
