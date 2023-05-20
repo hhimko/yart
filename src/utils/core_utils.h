@@ -5,7 +5,7 @@
 #include <vector>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-//  Helper Core Macros & Definitions
+// Helper Core Macros & Definitions
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #define YART_STRINGIFY(x) #x
 
@@ -19,19 +19,20 @@
 #define YART_ARRAYSIZE(arr) (sizeof(arr) / sizeof(*(arr)))
 #define YART_UNUSED(...) (void)sizeof(__VA_ARGS__)
 
-#define YART_ASSERT(expr) assert(expr)
+#define YART_ASSERT(expr) assert(expr) 
 #define YART_ABORT(msg) assert(0 && msg)
 #define YART_UNREACHABLE() YART_ABORT("Reached unreachable section")
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-//  Helper Core Utility Functions 
-////////////////////////////////////////////////////////////////////////////////////////////////////
+
 namespace yart
 {
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// @brief YART helper core utility functions 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
     namespace utils
     {
-        /* Stack-based object lifetime management structure */
+        /// @brief Stack-based object lifetime management structure
         class LTStack {
         public:
             LTStack() = default;
@@ -39,11 +40,19 @@ namespace yart
             LTStack& operator=(LTStack const&) = delete;
             ~LTStack() { Release(); }
 
+            /// @brief Push a new managed object into the stack with a given destructor 
+            /// @tparam T Type of the managed object. Must be a pointer type 
+            /// @param var Object to be managed
+            /// @param dtor Custom destructor for var
             template<typename T>
             void Push(T var, std::function<void(T)>&& dtor) {
+                static_assert(std::is_pointer<T>::value, "Expected a pointer");
                 Push((void*)var, [dtor](void* var){ dtor( (T)var ); }); 
             }
 
+            /// @brief Pop the last pushed object onto the stack, effectively freeing the object. 
+            ///     It's safe to call this function when the stack in empty
+            /// @return Whether the stack was not empty and the item was successfully popped
             bool Pop() {
                 if (m_slots.empty()) 
                     return false;
@@ -55,13 +64,14 @@ namespace yart
                 return true;
             }
 
+            /// @brief Free all objects managed by the stack, effectively emptying the stack
             void Release() {
-                while(Pop()) {};
+                while(Pop());
             }
 
         private:
             void Push(void* var, std::function<void(void*)>&& dtor) {
-                m_slots.emplace_back( var, dtor );
+                m_slots.emplace_back(var, dtor);
             };
 
         private:
@@ -76,6 +86,6 @@ namespace yart
             std::vector<Slot> m_slots;
             
         };
-        
+
     } // namespace utils
 } // namespace yart

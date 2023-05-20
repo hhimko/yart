@@ -12,7 +12,8 @@
 //  Helper Vulkan Macros & Definitions
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef YART_DEBUG
-    #define YART_VULKAN_DEBUG_UTILS // Enable Vulkan validation layers and debug utils
+    // Enable Vulkan validation layers and debug utils
+    #define YART_VULKAN_DEBUG_UTILS 
 #endif
 
 #ifdef YART_DEBUG
@@ -41,37 +42,30 @@
     )
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-//  Helper Vulkan Utility Functions 
-////////////////////////////////////////////////////////////////////////////////////////////////////
+
 namespace yart
 {
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    //  Helper Vulkan Utility Functions 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
     namespace utils
     {
-        /**
-         * @brief Check whether required Vulkan extensions are provided by the Vulkan implementation
-         * @return Negative result if all extensions are available, or the index of the first not 
-         *  available extension in `extensions` vector
-         */
+        /// @brief Check whether required Vulkan extensions are provided by the Vulkan implementation
+        /// @return Negative result if all extensions are available, or the index of the first not 
+        ///     available extension in `extensions` vector
         int CheckVulkanInstanceExtensionsAvailable(const std::vector<const char*>& extensions);
 
-        /**
-         * @brief Check whether required Vulkan extensions are provided by the physical device driver
-         * @return Negative result if all extensions are available, or the index of the first not 
-         *  available extension in `extensions` vector
-         */
+        /// @brief Check whether required Vulkan extensions are provided by the physical device driver
+        /// @return Negative result if all extensions are available, or the index of the first not 
+        ///     available extension in `extensions` vector
         int CheckVulkanDeviceExtensionsAvailable(VkPhysicalDevice device, const std::vector<const char*>& extensions);
 
-        /**
-         * @brief  Request a certain Vulkan surface format and confirm that it is supported on physical device
-         * @return Requested format or the first available one
-         */
+        /// @brief  Request a certain Vulkan surface format and confirm that it is supported on physical device
+        /// @return Requested format or the first available one
         VkSurfaceFormatKHR RequestVulkanSurfaceFormat(VkPhysicalDevice device, VkSurfaceKHR surface, VkFormat request_format, VkColorSpaceKHR request_color_space);
 
-        /**
-         * @brief Request a certain Vulkan present mode and confirm that it is supported on physical device
-         * @return Requested present mode if available or VK_PRESENT_MODE_FIFO_KHR (always guaranteed)
-         */
+        /// @brief Request a certain Vulkan present mode and confirm that it is supported on physical device
+        /// @return Requested present mode if available or VK_PRESENT_MODE_FIFO_KHR (always guaranteed)
         VkPresentModeKHR RequestVulkanSurfacePresentMode(VkPhysicalDevice device, VkSurfaceKHR surface, VkPresentModeKHR request_present_mode);
 
         uint32_t GetMinImageCountFromPresentMode(VkPresentModeKHR mode);

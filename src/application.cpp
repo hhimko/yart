@@ -26,11 +26,16 @@ namespace yart
         // m_running is indirectly controlled by Application::Shutdown()
         m_running = true; 
 
-        // -- Application MainLoop -- // 
+        auto image_buffer = std::make_unique<double[]>(100*100*3);
+
+        // -- APPLICATION MAINLOOP -- // 
         while (m_running) {
             // Poll and handle incoming events
             glfwPollEvents();
 
+            // Ray trace the scene on CPU onto a image buffer
+            m_renderer.Render(image_buffer.get(), 100, 100);
+            // Render and present a frame to a platform window on GPU
             m_window->Render();
         }
 

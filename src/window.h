@@ -16,7 +16,7 @@
 namespace yart
 {
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-    //  Wrapper class for windowing backends
+    /// @brief Wrapper class for windowing backends
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     class Window {
     public:
@@ -123,10 +123,10 @@ namespace yart
     private:
         utils::LTStack m_ltStack;
 
-        // -- GLFW types -- //
+        // -- GLFW TYPES -- //
         GLFWwindow* m_window = nullptr;
 
-        // -- Vulkan types -- //
+        // -- VULKAN TYPES -- //
         VkInstance m_vkInstance = VK_NULL_HANDLE;
         VkPhysicalDevice m_vkPhysicalDevice = VK_NULL_HANDLE;
         VkDevice m_vkDevice = VK_NULL_HANDLE;
