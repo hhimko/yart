@@ -33,6 +33,12 @@
         if (res < 0)                            \
             YART_ABORT("VkResult != VK_SUCCESS");
 
+#define ASSERT_VK_HANDLE_INIT(handle, err)     \
+    if (handle == VK_NULL_HANDLE) {         \
+        std::cerr << err << std::endl;      \
+        return 0;                           \
+    }
+
 // Helper macro for loading in extension function pointers from VkInstance into the local scope
 #define LOAD_VK_INSTANCE_FP(instance, name)         \
     auto name = reinterpret_cast<PFN_##name>(       \
@@ -40,7 +46,6 @@
             vkGetInstanceProcAddr(instance, #name)  \
         )                                           \
     )
-
 
 
 namespace yart
@@ -69,6 +74,15 @@ namespace yart
         VkPresentModeKHR RequestVulkanSurfacePresentMode(VkPhysicalDevice device, VkSurfaceKHR surface, VkPresentModeKHR request_present_mode);
 
         uint32_t GetMinImageCountFromPresentMode(VkPresentModeKHR mode);
+
+        /// @brief Query available GPU memory types and return the index to a memory type with given properties
+        /// @param device Physical device on which to query available memory types
+        /// @param property_flags Required memory type properties 
+        /// @param type_bits Bit field of suitable memory types 
+        /// @return Index to the most suitable memory type or UINT32_MAX if requested memory type was not found
+        /// @note For more valuable information on Vulkan memory types check out the great 
+        ///     <a href="https://asawicki.info/news_1740_vulkan_memory_types_on_pc_and_how_to_use_them">blog entry</a> by Adam Sawicki
+        uint32_t FindVulkanMemoryType(VkPhysicalDevice device, VkMemoryPropertyFlags property_flags, uint32_t type_bits);
 
     } // namespace utils
 } // namespace yart

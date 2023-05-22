@@ -107,3 +107,16 @@ uint32_t yart::utils::GetMinImageCountFromPresentMode(VkPresentModeKHR mode)
     YART_UNREACHABLE();
     return 0;
 }
+
+uint32_t yart::utils::FindVulkanMemoryType(VkPhysicalDevice device, VkMemoryPropertyFlags property_flags, uint32_t type_bits)
+{
+    VkPhysicalDeviceMemoryProperties prop;
+    vkGetPhysicalDeviceMemoryProperties(device, &prop);
+
+    for (uint32_t i = 0; i < prop.memoryTypeCount; ++i) {
+        if ((prop.memoryTypes[i].propertyFlags & property_flags) == property_flags && type_bits & (1 << i))
+            return i;
+    }
+    
+    return UINT32_MAX;
+}
