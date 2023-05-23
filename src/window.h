@@ -37,6 +37,11 @@ namespace yart
         /// @param data Pointer to the image pixel array
         void SetViewportImageData(const void* data);
 
+        /// @brief Get the current size of platform window in pixels
+        /// @param width Pointer to a variable to be set with the width of the window or NULL
+        /// @param height Pointer to a variable to be set with the height of the window or NULL
+        void GetWindowSize(uint32_t* width, uint32_t* height);
+
         /// @brief Submit frame for render and present the next frame-in-flight to the window
         void Render();
 
@@ -115,6 +120,8 @@ namespace yart
         /// @return Boolean value indicating whether Dear ImGUI has been successfully initialized
         bool InitImGUI();
 
+        bool CreateViewport();
+
         /// @brief Recreate the swapchain with extent of given size 
         /// @param width Swapchain image extent width 
         /// @param height Swapchain image extent height
@@ -136,6 +143,9 @@ namespace yart
     private:
         utils::LTStack m_ltStack;
 
+        VkSampler m_viewportImageSampler = VK_NULL_HANDLE;
+        std::unique_ptr<yart::Image> m_viewportImage;
+
         // -- GLFW TYPES -- //
         GLFWwindow* m_window = nullptr;
 
@@ -151,4 +161,5 @@ namespace yart
         VkRenderPass m_vkRenderPass = VK_NULL_HANDLE;
         
     };
+
 } // namespace yart

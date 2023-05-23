@@ -26,7 +26,7 @@ namespace yart
         /// @param queue Vulkan queue used internally to submit transfer command buffers on 
         /// @param width Initial image width in texels
         /// @param height Initial image height in texels
-        /// @param data Pointer to pixel array to upload and bind. The size of the array must be equal to (width*height*3), where 3 is the number of channels in the image (RGB)
+        /// @param data Pointer to pixel array to upload and bind. The size of the array must be equal to (width*height*4), where 4 is the number of channels in the image (RGBA)
         Image(VkDevice device, VkPhysicalDevice physical_device, VkSampler sampler, VkCommandPool command_pool, VkQueue queue, uint32_t width, uint32_t height, const void* data);
 
         ~Image();
@@ -35,7 +35,7 @@ namespace yart
         /// @param device Vulkan device handle on which the image was allocated 
         /// @param command_pool Vulkan command pool from which to allocate internal transfer command buffers
         /// @param queue Vulkan queue used internally to submit transfer command buffers on 
-        /// @param data Pointer to pixel array to upload and bind. The size of the array must be equal to (width*height*3), where 3 is the number of channels in the image (RGB)
+        /// @param data Pointer to pixel array to upload and bind. The size of the array must be equal to (width*height*4), where 4 is the number of channels in the image (RGBA)
         void BindData(VkDevice device, VkCommandPool command_pool, VkQueue queue, const void* data);
 
         /// @brief Rebuild the image, without uploading and binding pixel data. This method calls Release, which ultimately will block the CPU until the Vulkan device is idle 
@@ -67,8 +67,8 @@ namespace yart
     private:
         VkDeviceSize GetMemorySize() const 
         { 
-            static_assert(m_vkFormat == VK_FORMAT_R32G32B32_SFLOAT, "m_memorySize evaluation depends on the image format used");
-            return m_imageExtent.width * m_imageExtent.height * 3;
+            static_assert(m_vkFormat == VK_FORMAT_R32G32B32A32_SFLOAT, "m_memorySize evaluation depends on the image format used");
+            return m_imageExtent.width * m_imageExtent.height * 16;
         }
 
         // -- DESCRIPTOR SET CREATION -- //
@@ -84,7 +84,7 @@ namespace yart
         static bool CopyStagingBufferToImage(VkDevice device, VkCommandPool command_pool, VkQueue queue, VkBuffer staging_buffer, VkImage image, VkExtent3D image_extent);
 
     private:
-        static const VkFormat m_vkFormat = VK_FORMAT_R32G32B32_SFLOAT;
+        static const VkFormat m_vkFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
 
         VkExtent3D m_imageExtent = {};
         VkDescriptorSet m_vkDescriptorSet = VK_NULL_HANDLE;
@@ -96,5 +96,5 @@ namespace yart
         VkDeviceMemory m_vkStagingBufferMemory = VK_NULL_HANDLE;
         
     };
-    
+
 } // namespace yart

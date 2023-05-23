@@ -92,20 +92,19 @@ namespace yart
 
     void Image::CreateDescriptorSet(VkDevice device, VkPhysicalDevice physical_device, VkSampler sampler)
     {
-        static_assert(m_vkFormat == VK_FORMAT_R32G32B32_SFLOAT, "m_memorySize evaluation depends on the image format used");
         VkDeviceSize memory_size = GetMemorySize();
 
         m_vkImage = CreateVulkanImage(device, m_imageExtent);
         if (m_vkImage == VK_NULL_HANDLE)
             YART_ABORT("Failed to create Vulkan image");
 
-        m_vkImageView = CreateVulkanImageView(device, m_vkImage);
-        if (m_vkImageView == VK_NULL_HANDLE)
-            YART_ABORT("Failed to create Vulkan image view");
-
         m_vkMemory = BindVulkanImageDeviceMemory(device, physical_device, m_vkImage, memory_size);
         if (m_vkMemory == VK_NULL_HANDLE)
             YART_ABORT("Failed to create Vulkan device memory");
+
+        m_vkImageView = CreateVulkanImageView(device, m_vkImage);
+        if (m_vkImageView == VK_NULL_HANDLE)
+            YART_ABORT("Failed to create Vulkan image view");
 
         m_vkStagingBuffer = CreateVulkanStagingBuffer(device, memory_size);
         if (m_vkStagingBuffer == VK_NULL_HANDLE)
@@ -173,8 +172,6 @@ namespace yart
         VkMemoryRequirements mem_req;
         vkGetImageMemoryRequirements(device, image, &mem_req);
 
-        YART_ASSERT(memory_size == mem_req.size);
-
         // Allocate image required memory on physical device 
         VkMemoryAllocateInfo alloc_info = {};
         alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -239,6 +236,7 @@ namespace yart
         res = vkMapMemory(device, staging_buffer_memory, 0, data_size, 0, &mapped_data);
         CHECK_VK_RESULT_ABORT(res);
 
+        /// ERROR: FAULTY
         memcpy(mapped_data, data, data_size);
 
         // Flush mapped memory - guarantee the data is uploaded to device memory 

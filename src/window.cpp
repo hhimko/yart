@@ -54,12 +54,26 @@ namespace yart
         if (!InitImGUI())
             return false;
 
+        if (!CreateViewport())
+            return false;
+        
+
         return true;
     }
 
     void Window::SetViewportImageData(const void* data) 
     {
+        VkCommandPool command_pool = m_swapchainData.framesInFlight[m_swapchainData.current_frame_in_flight].vkCommandPool;
+        m_viewportImage->BindData(m_vkDevice, command_pool, m_vkQueue, data);
+    }
 
+    void Window::GetWindowSize(uint32_t* width, uint32_t* height)
+    {
+        if (width != nullptr)
+            *width = m_swapchainData.current_extent.width;
+
+        if (height != nullptr)
+            *height = m_swapchainData.current_extent.height;
     }
 
     void Window::Render()
@@ -91,6 +105,15 @@ namespace yart
         ImGui::Text("Avg. %.3f ms/frame", 1000.0f / ImGui::GetIO().Framerate);
 
         ImGui::End();
+
+        // Render viewport image using ImGui
+        ImTextureID viewport_image = (ImTextureID)m_viewportImage->GetDescriptorSet();
+
+        static ImVec2 p_min = { 0, 0 };
+        ImVec2 p_max = { static_cast<float>(m_swapchainData.current_extent.width), static_cast<float>(m_swapchainData.current_extent.height) };
+
+        ImDrawList* bg_draw_list = ImGui::GetBackgroundDrawList();
+        bg_draw_list->AddImage(viewport_image, p_min, p_max);
 
         // Finalize frame and retrieve render commands from ImGui
         ImGui::Render();
@@ -780,6 +803,34 @@ namespace yart
         return true;
     }
 
+    bool Window::CreateViewport()
+    {
+        // Create Vulkan sampler for viewport images
+        VkSamplerCreateInfo sampler_ci = {};
+        sampler_ci.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        sampler_ci.magFilter = VK_FILTER_NEAREST;
+        sampler_ci.minFilter = VK_FILTER_NEAREST;
+        sampler_ci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+        sampler_ci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        sampler_ci.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        sampler_ci.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        sampler_ci.minLod = -1000;
+        sampler_ci.maxLod = 1000;
+        sampler_ci.maxAnisotropy = 1.0f;
+
+        VkResult res = vkCreateSampler(m_vkDevice, &sampler_ci, DEFAULT_VK_ALLOC, &m_viewportImageSampler);
+        CHECK_VK_RESULT_RETURN(res, false);
+
+        m_ltStack.Push<VkSampler>(m_viewportImageSampler, [&](VkSampler var){
+            vkDestroySampler(m_vkDevice, var, DEFAULT_VK_ALLOC);
+        });
+
+        VkExtent2D viewport_extent = m_swapchainData.current_extent;
+        m_viewportImage = std::make_unique<yart::Image>(m_vkDevice, m_vkPhysicalDevice, m_viewportImageSampler, viewport_extent.width, viewport_extent.height);
+
+        return true;
+    }
+
     void Window::WindowResize(uint32_t width, uint32_t height)
     {
         // Wait for the GPU to finish execution 
@@ -801,6 +852,9 @@ namespace yart
 
         // Release previous Vulkan swapchain
         vkDestroySwapchainKHR(m_vkDevice, old_swapchain, DEFAULT_VK_ALLOC);
+
+        // Resize viewport image
+        m_viewportImage->Resize(m_vkDevice, m_vkPhysicalDevice, m_viewportImageSampler, width, height); 
 
         // Create frame in flight objects 
         if (!CreateSwapchainFramesInFlight(m_swapchainData.current_extent))
@@ -919,6 +973,9 @@ namespace yart
         m_swapchainData.ltStack.Release();
         if (m_vkSwapchain != VK_NULL_HANDLE)
             vkDestroySwapchainKHR(m_vkDevice, m_vkSwapchain, DEFAULT_VK_ALLOC);
+
+        // Release viewport image
+        m_viewportImage->Release(m_vkDevice);
 
         // Release ImGui pipeline objects
         ImGui_ImplVulkan_Shutdown();

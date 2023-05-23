@@ -26,7 +26,9 @@ namespace yart
         // m_running is indirectly controlled by Application::Shutdown()
         m_running = true; 
 
-        auto image_buffer = std::make_unique<double[]>(100*100*3);
+        uint32_t width, height;
+        m_window->GetWindowSize(&width, &height);
+        auto image_buffer = std::make_unique<float[]>(width*height*4);
 
         // -- APPLICATION MAINLOOP -- // 
         while (m_running) {
@@ -34,7 +36,11 @@ namespace yart
             glfwPollEvents();
 
             // Ray trace the scene on CPU onto a image buffer
-            m_renderer.Render(image_buffer.get(), 100, 100);
+            m_renderer.Render(image_buffer.get(), width, height);
+
+            // Upload ray traced image into window viewport
+            m_window->SetViewportImageData(static_cast<void*>(image_buffer.get()));
+
             // Render and present a frame to a platform window on GPU
             m_window->Render();
         }
