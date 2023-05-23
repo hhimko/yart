@@ -15,15 +15,19 @@
 
 namespace yart
 {
-    Image::Image(VkDevice device, VkPhysicalDevice physical_device, VkSampler sampler, uint32_t width, uint32_t height, const void *data)
+    Image::Image(VkDevice device, VkPhysicalDevice physical_device, VkSampler sampler, uint32_t width, uint32_t height)
     {
         m_imageExtent.width = width;
         m_imageExtent.height = height;
         m_imageExtent.depth = 1;
 
-        CreateDescriptorSet(device, physical_device, sampler, m_imageExtent);
-        if (data != nullptr)
-            BindData(device, physical_device, data);
+        CreateDescriptorSet(device, physical_device, sampler);
+    }
+
+    Image::Image(VkDevice device, VkPhysicalDevice physical_device, VkSampler sampler, VkCommandPool command_pool, VkQueue queue, uint32_t width, uint32_t height, const void *data)
+        : Image(device, physical_device, sampler, width, height)
+    {
+        BindData(device, command_pool, queue, data);
     }
 
     Image::~Image()
@@ -32,24 +36,36 @@ namespace yart
             std::cerr << "[Image]: object destructor was called without freeing members with Image::Release" << std::endl;
     }
 
-    void Image::BindData(VkDevice device, VkPhysicalDevice physical_device, const void *data)
+    void Image::BindData(VkDevice device, VkCommandPool command_pool, VkQueue queue, const void *data)
     {
         VkDeviceSize memory_size = GetMemorySize();
 
         if (!UploadDataToStagingBuffer(device, m_vkStagingBufferMemory, data, memory_size))
             YART_ABORT("Failed to bind image pixel data");
+
+        if (!CopyStagingBufferToImage(device, command_pool, queue, m_vkStagingBuffer, m_vkImage, m_imageExtent))
+            YART_ABORT("Failed to bind image pixel data");
     }
 
-    void Image::Resize(VkDevice device, VkPhysicalDevice physical_device, VkSampler sampler, uint32_t width, uint32_t height, const void *data)
+    void Image::Resize(VkDevice device, VkPhysicalDevice physical_device, VkSampler sampler, uint32_t width, uint32_t height)
     {
         Release(device);
 
         m_imageExtent.width = width;
         m_imageExtent.height = height;
 
-        CreateDescriptorSet(device, physical_device, sampler, m_imageExtent);
-        if (data != nullptr)
-            BindData(device, physical_device, data);
+        CreateDescriptorSet(device, physical_device, sampler);
+    }
+
+    void Image::Resize(VkDevice device, VkPhysicalDevice physical_device, VkSampler sampler, VkCommandPool command_pool, VkQueue queue, uint32_t width, uint32_t height, const void *data)
+    {
+        Release(device);
+
+        m_imageExtent.width = width;
+        m_imageExtent.height = height;
+
+        CreateDescriptorSet(device, physical_device, sampler);
+        BindData(device, command_pool, queue, data);
     }
 
     void Image::Release(VkDevice device)
@@ -66,9 +82,15 @@ namespace yart
 
         vkFreeMemory(device, m_vkMemory, DEFAULT_VK_ALLOC);
         m_vkMemory = VK_NULL_HANDLE;
+
+        vkDestroyBuffer(device, m_vkStagingBuffer, DEFAULT_VK_ALLOC);
+        m_vkStagingBuffer = VK_NULL_HANDLE;
+
+        vkFreeMemory(device, m_vkStagingBufferMemory, DEFAULT_VK_ALLOC);
+        m_vkStagingBufferMemory = VK_NULL_HANDLE;
     }
 
-    void Image::CreateDescriptorSet(VkDevice device, VkPhysicalDevice physical_device, VkSampler sampler, VkExtent3D image_extent)
+    void Image::CreateDescriptorSet(VkDevice device, VkPhysicalDevice physical_device, VkSampler sampler)
     {
         static_assert(m_vkFormat == VK_FORMAT_R32G32B32_SFLOAT, "m_memorySize evaluation depends on the image format used");
         VkDeviceSize memory_size = GetMemorySize();
@@ -229,6 +251,53 @@ namespace yart
         CHECK_VK_RESULT_RETURN(res, false);
 
         vkUnmapMemory(device, staging_buffer_memory);
+
+        return true;
+    }
+
+    bool Image::CopyStagingBufferToImage(VkDevice device, VkCommandPool command_pool, VkQueue queue, VkBuffer staging_buffer, VkImage image, VkExtent3D image_extent)
+    {
+        VkCommandBuffer command_buffer = yart::utils::BeginSingleTimeVulkanCommandBuffer(device, command_pool);
+
+        VkImageMemoryBarrier copy_barrier = {};
+        copy_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        copy_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        copy_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        copy_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        copy_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        copy_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        copy_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        copy_barrier.subresourceRange.levelCount = 1;
+        copy_barrier.subresourceRange.layerCount = 1;
+        copy_barrier.image = image;
+
+        vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, NULL, 0, NULL, 1, &copy_barrier);
+
+        VkBufferImageCopy region = {};
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.layerCount = 1;
+        region.imageExtent = image_extent;
+
+        vkCmdCopyBufferToImage(command_buffer, staging_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+        VkImageMemoryBarrier use_barrier = {};
+        use_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        use_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        use_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        use_barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        use_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        use_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        use_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        use_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        use_barrier.subresourceRange.levelCount = 1;
+        use_barrier.subresourceRange.layerCount = 1;
+        use_barrier.image = image;
+        
+        vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, NULL, 0, NULL, 1, &use_barrier);
+
+        // Submit and free command buffer
+        if (!yart::utils::EndSingleTimeVulkanCommandBuffer(device, command_pool, queue, command_buffer))
+            return false;
 
         return true;
     }

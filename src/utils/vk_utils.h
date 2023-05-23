@@ -84,5 +84,10 @@ namespace yart
         ///     <a href="https://asawicki.info/news_1740_vulkan_memory_types_on_pc_and_how_to_use_them">blog entry</a> by Adam Sawicki
         uint32_t FindVulkanMemoryType(VkPhysicalDevice device, VkMemoryPropertyFlags property_flags, uint32_t type_bits);
 
+        VkCommandBuffer BeginSingleTimeVulkanCommandBuffer(VkDevice device, VkCommandPool command_pool);
+
+        bool EndSingleTimeVulkanCommandBuffer(VkDevice device, VkCommandPool command_pool, VkQueue queue, VkCommandBuffer command_buffer);
+
     } // namespace utils
+    
 } // namespace yart

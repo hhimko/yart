@@ -120,3 +120,54 @@ uint32_t yart::utils::FindVulkanMemoryType(VkPhysicalDevice device, VkMemoryProp
     
     return UINT32_MAX;
 }
+
+VkCommandBuffer yart::utils::BeginSingleTimeVulkanCommandBuffer(VkDevice device, VkCommandPool command_pool)
+{
+    VkCommandBuffer command_buffer = VK_NULL_HANDLE;
+    VkResult res;
+
+    VkCommandBufferAllocateInfo cmd_ai = {};
+    cmd_ai.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    cmd_ai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    cmd_ai.commandPool = command_pool;
+    cmd_ai.commandBufferCount = 1;
+
+    res = vkAllocateCommandBuffers(device, &cmd_ai, &command_buffer);
+    CHECK_VK_RESULT_RETURN(res, VK_NULL_HANDLE);
+
+    VkCommandBufferBeginInfo begin_info = {};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    res = vkBeginCommandBuffer(command_buffer, &begin_info);
+    if (res != VK_SUCCESS) {
+        vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
+        return VK_NULL_HANDLE;
+    }
+
+    return command_buffer;
+}
+
+bool yart::utils::EndSingleTimeVulkanCommandBuffer(VkDevice device, VkCommandPool command_pool, VkQueue queue, VkCommandBuffer command_buffer)
+{
+    VkResult res;
+
+    res = vkEndCommandBuffer(command_buffer);
+    CHECK_VK_RESULT_RETURN(res, false);
+
+    VkSubmitInfo submit_info{};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &command_buffer;
+
+    res = vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE); // vkQueueWaitIdle is used instead of a fence
+    CHECK_VK_RESULT_RETURN(res, false);
+
+    // Ensure command buffer has finished executing
+    res = vkQueueWaitIdle(queue);
+    CHECK_VK_RESULT_RETURN(res, false);
+
+    vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
+
+    return true;
+}
