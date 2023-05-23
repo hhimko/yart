@@ -7,12 +7,6 @@
 #include "application.h"
 
 
-#define ASSERT_VK_HANDLE_INIT(handle, err)     \
-    if (handle == VK_NULL_HANDLE) {         \
-        std::cerr << err << std::endl;      \
-        return 0;                           \
-    }
-
 // Helper macro to help locate all VkAllocationCallbacks dependencies
 #define DEFAULT_VK_ALLOC VK_NULL_HANDLE
 #define MIN_IMAGE_COUNT 2
@@ -61,6 +55,11 @@ namespace yart
             return false;
 
         return true;
+    }
+
+    void Window::SetViewportImageData(const void* data) 
+    {
+
     }
 
     void Window::Render()
@@ -243,7 +242,7 @@ namespace yart
 
         int err = utils::CheckVulkanInstanceExtensionsAvailable(extensions);
         if (err >= 0) {
-            std::cout << extensions[(size_t)err] << " extension is not available" << std::endl;
+            std::cout << extensions[static_cast<size_t>(err)] << " extension is not available" << std::endl;
             return VK_NULL_HANDLE;
         }
 
@@ -524,18 +523,18 @@ namespace yart
         }
 
         // Create framebuffers for each image view
-        m_swapchainData.vk_frame_buffers = std::make_unique<VkFramebuffer[]>(m_swapchainData.image_count);
+        auto frame_buffers = std::make_unique<VkFramebuffer[]>(m_swapchainData.image_count);
         for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
-            m_swapchainData.vk_frame_buffers[i] = CreateVulkanFramebuffer(m_vkDevice, m_vkRenderPass, current_extent, image_views[i]);
-            ASSERT_VK_HANDLE_INIT(m_swapchainData.vk_frame_buffers[i], "Failed to create swapchain framebuffer");
+            frame_buffers[i] = CreateVulkanFramebuffer(m_vkDevice, m_vkRenderPass, current_extent, image_views[i]);
+            ASSERT_VK_HANDLE_INIT(frame_buffers[i], "Failed to create swapchain framebuffer");
 
-            m_swapchainData.ltStack.Push<VkFramebuffer>(m_swapchainData.vk_frame_buffers[i], [&](VkFramebuffer var){
+            m_swapchainData.ltStack.Push<VkFramebuffer>(frame_buffers[i], [&](VkFramebuffer var){
                 vkDestroyFramebuffer(m_vkDevice, var, DEFAULT_VK_ALLOC);
             });
         }
 
         // Create a Vulkan command pool for each frame
-        m_swapchainData.vk_command_pools = std::make_unique<VkCommandPool[]>(m_swapchainData.image_count);
+        auto command_pools = std::make_unique<VkCommandPool[]>(m_swapchainData.image_count);
 
         VkCommandPoolCreateInfo pool_ci = {};
         pool_ci.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -543,16 +542,16 @@ namespace yart
         pool_ci.queueFamilyIndex = m_queueFamily;
 
         for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
-            res = vkCreateCommandPool(m_vkDevice, &pool_ci, DEFAULT_VK_ALLOC, &m_swapchainData.vk_command_pools[i]);
+            res = vkCreateCommandPool(m_vkDevice, &pool_ci, DEFAULT_VK_ALLOC, &command_pools[i]);
             CHECK_VK_RESULT_RETURN(res, false);
 
-            m_swapchainData.ltStack.Push<VkCommandPool>(m_swapchainData.vk_command_pools[i], [&](VkCommandPool var){
+            m_swapchainData.ltStack.Push<VkCommandPool>(command_pools[i], [&](VkCommandPool var){
                 vkDestroyCommandPool(m_vkDevice, var, DEFAULT_VK_ALLOC);
             });
         }
 
         // Allocate Vulkan command buffers from the pool for each frame
-        m_swapchainData.vk_command_buffers = std::make_unique<VkCommandBuffer[]>(m_swapchainData.image_count);
+        auto command_buffers = std::make_unique<VkCommandBuffer[]>(m_swapchainData.image_count);
 
         VkCommandBufferAllocateInfo buffer_ai = {};
         buffer_ai.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -560,52 +559,65 @@ namespace yart
         buffer_ai.commandBufferCount = 1;
 
         for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
-            buffer_ai.commandPool = m_swapchainData.vk_command_pools[i];
+            buffer_ai.commandPool = command_pools[i];
 
-            res = vkAllocateCommandBuffers(m_vkDevice, &buffer_ai, &m_swapchainData.vk_command_buffers[i]);
+            res = vkAllocateCommandBuffers(m_vkDevice, &buffer_ai, &command_buffers[i]);
             CHECK_VK_RESULT_RETURN(res, false);
             // Vulkan command buffers get released automatically with the destruction of the pools they were allocated from
         }
 
         // Create Vulkan semaphores for each frame 
-        m_swapchainData.vk_image_acquired_semaphore = std::make_unique<VkSemaphore[]>(m_swapchainData.image_count);
-        m_swapchainData.vk_render_complete_semaphore = std::make_unique<VkSemaphore[]>(m_swapchainData.image_count);
+        auto image_acquired_semaphores = std::make_unique<VkSemaphore[]>(m_swapchainData.image_count);
+        auto render_complete_semaphores = std::make_unique<VkSemaphore[]>(m_swapchainData.image_count);
 
         VkSemaphoreCreateInfo semaphore_ci = {};
         semaphore_ci.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
         for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
             // Image Acquired Semaphore
-            res = vkCreateSemaphore(m_vkDevice, &semaphore_ci, DEFAULT_VK_ALLOC, &m_swapchainData.vk_image_acquired_semaphore[i]);
+            res = vkCreateSemaphore(m_vkDevice, &semaphore_ci, DEFAULT_VK_ALLOC, &image_acquired_semaphores[i]);
             CHECK_VK_RESULT_RETURN(res, false);
 
-            m_swapchainData.ltStack.Push<VkSemaphore>(m_swapchainData.vk_image_acquired_semaphore[i], [&](VkSemaphore var){
+            m_swapchainData.ltStack.Push<VkSemaphore>(image_acquired_semaphores[i], [&](VkSemaphore var){
                 vkDestroySemaphore(m_vkDevice, var, DEFAULT_VK_ALLOC);
             });
 
             // Render Complete Semaphore
-            res = vkCreateSemaphore(m_vkDevice, &semaphore_ci, DEFAULT_VK_ALLOC, &m_swapchainData.vk_render_complete_semaphore[i]);
+            res = vkCreateSemaphore(m_vkDevice, &semaphore_ci, DEFAULT_VK_ALLOC, &render_complete_semaphores[i]);
             CHECK_VK_RESULT_RETURN(res, false);
 
-            m_swapchainData.ltStack.Push<VkSemaphore>(m_swapchainData.vk_render_complete_semaphore[i], [&](VkSemaphore var){
+            m_swapchainData.ltStack.Push<VkSemaphore>(render_complete_semaphores[i], [&](VkSemaphore var){
                 vkDestroySemaphore(m_vkDevice, var, DEFAULT_VK_ALLOC);
             });
         }
 
         // Create Vulkan fences for each frame 
-        m_swapchainData.vk_fences = std::make_unique<VkFence[]>(m_swapchainData.image_count);
+        auto fences = std::make_unique<VkFence[]>(m_swapchainData.image_count);
 
         VkFenceCreateInfo fence_ci = {};
         fence_ci.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fence_ci.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
         for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
-            res = vkCreateFence(m_vkDevice, &fence_ci, DEFAULT_VK_ALLOC, &m_swapchainData.vk_fences[i]);
+            res = vkCreateFence(m_vkDevice, &fence_ci, DEFAULT_VK_ALLOC, &fences[i]);
             CHECK_VK_RESULT_RETURN(res, false);
 
-            m_swapchainData.ltStack.Push<VkFence>(m_swapchainData.vk_fences[i], [&](VkFence var){
+            m_swapchainData.ltStack.Push<VkFence>(fences[i], [&](VkFence var){
                 vkDestroyFence(m_vkDevice, var, DEFAULT_VK_ALLOC);
             });
+        }
+
+        // Create frames in flight
+        m_swapchainData.framesInFlight = std::vector<SwapchainData::FrameInFlight>(m_swapchainData.image_count);
+        for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
+            m_swapchainData.framesInFlight.emplace_back();
+
+            m_swapchainData.framesInFlight[i].vkFrameBuffer = frame_buffers[i];
+            m_swapchainData.framesInFlight[i].vkCommandPool = command_pools[i];
+            m_swapchainData.framesInFlight[i].vkCommandBuffer = command_buffers[i];
+            m_swapchainData.framesInFlight[i].vkImageAcquiredSemaphore = image_acquired_semaphores[i];
+            m_swapchainData.framesInFlight[i].vkRenderCompleteSemaphore = render_complete_semaphores[i];
+            m_swapchainData.framesInFlight[i].vkFence = fences[i];
         }
 
         return true;
@@ -734,8 +746,8 @@ namespace yart
         ImGui_ImplVulkan_Init(&init_info, m_vkRenderPass);
 
         // Upload fonts
-        VkCommandPool command_pool = m_swapchainData.vk_command_pools[0];       // |
-        VkCommandBuffer command_buffer = m_swapchainData.vk_command_buffers[0]; // | use whichever command queue
+        VkCommandPool command_pool = m_swapchainData.framesInFlight[0].vkCommandPool;       // |
+        VkCommandBuffer command_buffer = m_swapchainData.framesInFlight[0].vkCommandBuffer; // | use whichever command queue
 
         res = vkResetCommandPool(m_vkDevice, command_pool, (VkCommandPoolResetFlags)0);
         CHECK_VK_RESULT_RETURN(res, false); 
@@ -802,7 +814,7 @@ namespace yart
         VkResult res;
                 
         // Get the next available frame in flight index
-        VkSemaphore image_acquired_semaphore = m_swapchainData.vk_image_acquired_semaphore[m_swapchainData.current_semaphore_index];
+        VkSemaphore image_acquired_semaphore = m_swapchainData.framesInFlight[m_swapchainData.current_semaphore_index].vkImageAcquiredSemaphore;
 
         res = vkAcquireNextImageKHR(m_vkDevice, m_vkSwapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &m_swapchainData.current_frame_in_flight);
         if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
@@ -810,7 +822,7 @@ namespace yart
         CHECK_VK_RESULT_ABORT(res);
 
         // Wait for and reset frame fence
-        VkFence fence = m_swapchainData.vk_fences[m_swapchainData.current_frame_in_flight];
+        VkFence fence = m_swapchainData.framesInFlight[m_swapchainData.current_frame_in_flight].vkFence;
 
         res = vkWaitForFences(m_vkDevice, 1, &fence, VK_TRUE, UINT64_MAX); 
         CHECK_VK_RESULT_ABORT(res);
@@ -819,11 +831,11 @@ namespace yart
         CHECK_VK_RESULT_ABORT(res);
 
         // Reset command pool
-        res = vkResetCommandPool(m_vkDevice, m_swapchainData.vk_command_pools[m_swapchainData.current_frame_in_flight], (VkCommandPoolResetFlags)0);
+        res = vkResetCommandPool(m_vkDevice, m_swapchainData.framesInFlight[m_swapchainData.current_frame_in_flight].vkCommandPool, (VkCommandPoolResetFlags)0);
         CHECK_VK_RESULT_ABORT(res);
 
         // Begin command buffer for render commands
-        VkCommandBuffer cmd_buffer = m_swapchainData.vk_command_buffers[m_swapchainData.current_frame_in_flight];
+        VkCommandBuffer cmd_buffer = m_swapchainData.framesInFlight[m_swapchainData.current_frame_in_flight].vkCommandBuffer;
 
         VkCommandBufferBeginInfo cmd_begin_info = {};
         cmd_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -835,7 +847,7 @@ namespace yart
         // Begin render pass
         VkRenderPassBeginInfo render_pass_info = {};
         render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        render_pass_info.framebuffer = m_swapchainData.vk_frame_buffers[m_swapchainData.current_frame_in_flight];
+        render_pass_info.framebuffer = m_swapchainData.framesInFlight[m_swapchainData.current_frame_in_flight].vkFrameBuffer;
         render_pass_info.renderArea.extent = m_swapchainData.current_extent;
         render_pass_info.renderPass = m_vkRenderPass;
         static const VkClearValue clear_value = {};
@@ -855,7 +867,7 @@ namespace yart
         CHECK_VK_RESULT_ABORT(res);
 
         // Submit queue 
-        VkSemaphore render_complete_semaphore = m_swapchainData.vk_render_complete_semaphore[m_swapchainData.current_semaphore_index];
+        VkSemaphore render_complete_semaphore = m_swapchainData.framesInFlight[m_swapchainData.current_semaphore_index].vkRenderCompleteSemaphore;
         VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
         VkSubmitInfo submit_info = {};
@@ -876,7 +888,7 @@ namespace yart
 
     bool Window::FramePresent()
     {
-        VkSemaphore render_complete_semaphore = m_swapchainData.vk_render_complete_semaphore[m_swapchainData.current_semaphore_index];
+        VkSemaphore render_complete_semaphore = m_swapchainData.framesInFlight[m_swapchainData.current_semaphore_index].vkRenderCompleteSemaphore;
 
         VkPresentInfoKHR present_info = {};
         present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;

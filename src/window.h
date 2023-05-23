@@ -10,6 +10,7 @@
 #include <memory>
 #include <vector>
 
+#include "image.h"
 #include "utils/core_utils.h"
 
 
@@ -32,6 +33,10 @@ namespace yart
         /// @return Boolean value indicating whether the window has been successfully created 
         bool Create(const char* title, int win_w, int win_h);
 
+        /// @brief Set viewport image pixel data for upload to the GPU
+        /// @param data Pointer to the image pixel array
+        void SetViewportImageData(const void* data);
+
         /// @brief Submit frame for render and present the next frame-in-flight to the window
         void Render();
 
@@ -43,18 +48,26 @@ namespace yart
 
         /// @brief Container for swapchain related data
         struct SwapchainData {
+
+            /// @brief Container for per frame-in-flight related data
+            /// @note FrameInFlight members are all set in Window::CreateSwapchainFramesInFlight
+            struct FrameInFlight {
+                VkFramebuffer vkFrameBuffer;
+                VkCommandPool vkCommandPool;
+                VkCommandBuffer vkCommandBuffer;
+
+                VkSemaphore vkImageAcquiredSemaphore;
+                VkSemaphore vkRenderCompleteSemaphore;
+                VkFence vkFence;
+            };
+            
+
+            utils::LTStack ltStack;
+
             VkSurfaceKHR surface = VK_NULL_HANDLE;
             VkSurfaceFormatKHR surface_format = {};
             VkPresentModeKHR present_mode;
             VkExtent2D current_extent = {};
-
-            std::unique_ptr<VkFramebuffer[]> vk_frame_buffers;
-            std::unique_ptr<VkCommandPool[]> vk_command_pools;
-            std::unique_ptr<VkCommandBuffer[]> vk_command_buffers;
-
-            std::unique_ptr<VkSemaphore[]> vk_image_acquired_semaphore;
-            std::unique_ptr<VkSemaphore[]> vk_render_complete_semaphore;
-            std::unique_ptr<VkFence[]> vk_fences;
 
             uint32_t current_frame_in_flight = 0;
             uint32_t current_semaphore_index = 0;
@@ -62,7 +75,7 @@ namespace yart
             uint32_t max_image_count = 0;
             uint32_t image_count = 0;
 
-            utils::LTStack ltStack;
+            std::vector<FrameInFlight> framesInFlight;
 
             SwapchainData(const SwapchainData&) = delete;
             SwapchainData& operator=(SwapchainData const&) = delete;
