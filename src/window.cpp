@@ -11,6 +11,8 @@
 #define DEFAULT_VK_ALLOC VK_NULL_HANDLE
 #define MIN_IMAGE_COUNT 2
 
+#define CURRENT_FRAME_IN_FLIGHT m_swapchainData.framesInFlight[m_swapchainData.current_frame_in_flight]
+
 
 // TODO: error logging
 static void on_glfw_error(int error_code, const char *description) 
@@ -54,17 +56,16 @@ namespace yart
         if (!InitImGUI())
             return false;
 
-        if (!CreateViewport())
+        if (!CreateFrameInFlightViewports())
             return false;
-        
 
         return true;
     }
 
     void Window::SetViewportImageData(const void* data) 
     {
-        VkCommandPool command_pool = m_swapchainData.framesInFlight[m_swapchainData.current_frame_in_flight].vkCommandPool;
-        m_viewportImage->BindData(m_vkDevice, command_pool, m_vkQueue, data);
+        VkCommandPool command_pool = CURRENT_FRAME_IN_FLIGHT.vkCommandPool;
+        CURRENT_FRAME_IN_FLIGHT.viewportImage->BindData(m_vkDevice, command_pool, m_vkQueue, data);
     }
 
     void Window::GetWindowSize(uint32_t* width, uint32_t* height)
@@ -107,7 +108,7 @@ namespace yart
         ImGui::End();
 
         // Render viewport image using ImGui
-        ImTextureID viewport_image = (ImTextureID)m_viewportImage->GetDescriptorSet();
+        ImTextureID viewport_image = (ImTextureID)CURRENT_FRAME_IN_FLIGHT.viewportImage->GetDescriptorSet();
 
         static ImVec2 p_min = { 0, 0 };
         ImVec2 p_max = { static_cast<float>(m_swapchainData.current_extent.width), static_cast<float>(m_swapchainData.current_extent.height) };
@@ -769,8 +770,8 @@ namespace yart
         ImGui_ImplVulkan_Init(&init_info, m_vkRenderPass);
 
         // Upload fonts
-        VkCommandPool command_pool = m_swapchainData.framesInFlight[0].vkCommandPool;       // |
-        VkCommandBuffer command_buffer = m_swapchainData.framesInFlight[0].vkCommandBuffer; // | use whichever command queue
+        VkCommandPool command_pool = CURRENT_FRAME_IN_FLIGHT.vkCommandPool;       // |
+        VkCommandBuffer command_buffer = CURRENT_FRAME_IN_FLIGHT.vkCommandBuffer; // | Use whichever command queue
 
         res = vkResetCommandPool(m_vkDevice, command_pool, (VkCommandPoolResetFlags)0);
         CHECK_VK_RESULT_RETURN(res, false); 
@@ -803,7 +804,7 @@ namespace yart
         return true;
     }
 
-    bool Window::CreateViewport()
+    bool Window::CreateFrameInFlightViewports()
     {
         // Create Vulkan sampler for viewport images
         VkSamplerCreateInfo sampler_ci = {};
@@ -826,7 +827,9 @@ namespace yart
         });
 
         VkExtent2D viewport_extent = m_swapchainData.current_extent;
-        m_viewportImage = std::make_unique<yart::Image>(m_vkDevice, m_vkPhysicalDevice, m_viewportImageSampler, viewport_extent.width, viewport_extent.height);
+        for (size_t i = 0; i < m_swapchainData.image_count; ++i) {
+            m_swapchainData.framesInFlight[i].viewportImage = std::make_unique<yart::Image>(m_vkDevice, m_vkPhysicalDevice, m_viewportImageSampler, viewport_extent.width, viewport_extent.height);
+        }
 
         return true;
     }
@@ -853,8 +856,10 @@ namespace yart
         // Release previous Vulkan swapchain
         vkDestroySwapchainKHR(m_vkDevice, old_swapchain, DEFAULT_VK_ALLOC);
 
-        // Resize viewport image
-        m_viewportImage->Resize(m_vkDevice, m_vkPhysicalDevice, m_viewportImageSampler, width, height); 
+        // Resize viewport images
+        for (size_t i = 0; i < m_swapchainData.image_count; ++i) {
+            m_swapchainData.framesInFlight[i].viewportImage->Resize(m_vkDevice, m_vkPhysicalDevice, m_viewportImageSampler, width, height); 
+        }
 
         // Create frame in flight objects 
         if (!CreateSwapchainFramesInFlight(m_swapchainData.current_extent))
@@ -876,7 +881,7 @@ namespace yart
         CHECK_VK_RESULT_ABORT(res);
 
         // Wait for and reset frame fence
-        VkFence fence = m_swapchainData.framesInFlight[m_swapchainData.current_frame_in_flight].vkFence;
+        VkFence fence = CURRENT_FRAME_IN_FLIGHT.vkFence;
 
         res = vkWaitForFences(m_vkDevice, 1, &fence, VK_TRUE, UINT64_MAX); 
         CHECK_VK_RESULT_ABORT(res);
@@ -885,11 +890,11 @@ namespace yart
         CHECK_VK_RESULT_ABORT(res);
 
         // Reset command pool
-        res = vkResetCommandPool(m_vkDevice, m_swapchainData.framesInFlight[m_swapchainData.current_frame_in_flight].vkCommandPool, (VkCommandPoolResetFlags)0);
+        res = vkResetCommandPool(m_vkDevice, CURRENT_FRAME_IN_FLIGHT.vkCommandPool, (VkCommandPoolResetFlags)0);
         CHECK_VK_RESULT_ABORT(res);
 
         // Begin command buffer for render commands
-        VkCommandBuffer cmd_buffer = m_swapchainData.framesInFlight[m_swapchainData.current_frame_in_flight].vkCommandBuffer;
+        VkCommandBuffer cmd_buffer = CURRENT_FRAME_IN_FLIGHT.vkCommandBuffer;
 
         VkCommandBufferBeginInfo cmd_begin_info = {};
         cmd_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -901,7 +906,7 @@ namespace yart
         // Begin render pass
         VkRenderPassBeginInfo render_pass_info = {};
         render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        render_pass_info.framebuffer = m_swapchainData.framesInFlight[m_swapchainData.current_frame_in_flight].vkFrameBuffer;
+        render_pass_info.framebuffer = CURRENT_FRAME_IN_FLIGHT.vkFrameBuffer;
         render_pass_info.renderArea.extent = m_swapchainData.current_extent;
         render_pass_info.renderPass = m_vkRenderPass;
         static const VkClearValue clear_value = {};
@@ -974,8 +979,10 @@ namespace yart
         if (m_vkSwapchain != VK_NULL_HANDLE)
             vkDestroySwapchainKHR(m_vkDevice, m_vkSwapchain, DEFAULT_VK_ALLOC);
 
-        // Release viewport image
-        m_viewportImage->Release(m_vkDevice);
+        // Release viewport images
+        for (size_t i = 0; i < m_swapchainData.image_count; ++i) {
+            m_swapchainData.framesInFlight[i].viewportImage->Release(m_vkDevice);
+        }
 
         // Release ImGui pipeline objects
         ImGui_ImplVulkan_Shutdown();

@@ -30,7 +30,7 @@ namespace yart
         /// @param title Initial window title
         /// @param win_w Initial width of the window in pixels
         /// @param win_h Initial height of the window in pixels
-        /// @return Boolean value indicating whether the window has been successfully created 
+        /// @return Whether the window has been successfully created 
         bool Create(const char* title, int win_w, int win_h);
 
         /// @brief Set viewport image pixel data for upload to the GPU
@@ -64,6 +64,8 @@ namespace yart
                 VkSemaphore vkImageAcquiredSemaphore;
                 VkSemaphore vkRenderCompleteSemaphore;
                 VkFence vkFence;
+
+                std::unique_ptr<yart::Image> viewportImage;
             };
             
 
@@ -91,11 +93,11 @@ namespace yart
         /// @param win_title Initial window title
         /// @param win_w Initial width of the window in pixels
         /// @param win_h Initial height of the window in pixels
-        /// @return Boolean value indicating whether GLFW has been successfully initialized
+        /// @return Whether GLFW has been successfully initialized
         bool InitGLFW(const char* win_title, int win_w, int win_h);
 
         /// @brief Initialize Vulkan with supported extensions and create required Vk objects
-        /// @return Boolean value indicating whether Vulkan with all required objects have been successfully initialized
+        /// @return Whether Vulkan with all required objects have been successfully initialized
         bool InitVulkan();
         static std::vector<const char*> GetRequiredVulkanExtensions();
         static VkInstance CreateVulkanInstance(const std::vector<const char*>& extensions);
@@ -107,7 +109,7 @@ namespace yart
 
         /// @brief Query present capabilities and create the initial swapchain
         /// @param surface Platform window Vulkan surface
-        /// @return Boolean value indicating whether the swapchain with all required objects have been successfully initialized
+        /// @return Whether the swapchain with all required objects have been successfully initialized
         bool InitializeSwapchain(VkSurfaceKHR surface);
         static VkSwapchainKHR CreateVulkanSwapchain(VkDevice device, const SwapchainData& data, VkSwapchainKHR old_swapchain = VK_NULL_HANDLE);
 
@@ -117,10 +119,12 @@ namespace yart
         static VkFramebuffer CreateVulkanFramebuffer(VkDevice device, VkRenderPass render_pass, const VkExtent2D& extent, VkImageView image_view);
 
         /// @brief Initialize Dear ImGUI for GLFW/Vulkan
-        /// @return Boolean value indicating whether Dear ImGUI has been successfully initialized
+        /// @return Whether Dear ImGUI has been successfully initialized
         bool InitImGUI();
 
-        bool CreateViewport();
+        /// @brief Create viewport images for each frame in flight along with a shared sampler
+        /// @return Whether viewport images have been successfully created
+        bool CreateFrameInFlightViewports();
 
         /// @brief Recreate the swapchain with extent of given size 
         /// @param width Swapchain image extent width 
@@ -137,14 +141,11 @@ namespace yart
         bool FramePresent();
 
         /// @brief Wait for the GPU and destroy all allocated members. 
-        /// @note It is safe to call this function even without initializing first
+        /// @note It is safe to call this function without prior initialization
         void Cleanup();
 
     private:
         utils::LTStack m_ltStack;
-
-        VkSampler m_viewportImageSampler = VK_NULL_HANDLE;
-        std::unique_ptr<yart::Image> m_viewportImage;
 
         // -- GLFW TYPES -- //
         GLFWwindow* m_window = nullptr;
@@ -159,6 +160,7 @@ namespace yart
         VkSwapchainKHR m_vkSwapchain = VK_NULL_HANDLE;
         SwapchainData m_swapchainData = {};
         VkRenderPass m_vkRenderPass = VK_NULL_HANDLE;
+        VkSampler m_viewportImageSampler = VK_NULL_HANDLE;
         
     };
 

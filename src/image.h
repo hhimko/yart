@@ -6,7 +6,7 @@
 namespace yart
 {
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-    /// @brief Convenience class for managing 2D Vulkan images. The image is in RGB format
+    /// @brief Convenience class for managing 2D Vulkan images. The image is in R32G32B32A32 float format
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     class Image {
     public:
@@ -54,7 +54,7 @@ namespace yart
         /// @param queue Vulkan queue used internally to submit transfer command buffers on 
         /// @param width New image width in texels
         /// @param height New image height in texels
-        /// @param data Pointer to pixel array to upload and bind. The size of the array must be equal to (width*height*3), where 3 is the number of channels in the image (RGB)
+        /// @param data Pointer to pixel array to upload and bind. The size of the array must be equal to (width*height*4), where 4 is the number of channels in the image (RGBA)
         void Resize(VkDevice device, VkPhysicalDevice physical_device, VkSampler sampler, VkCommandPool command_pool, VkQueue queue, uint32_t width, uint32_t height, const void* data);
 
         /// @brief Free all allocations managed by this object. This method will block the CPU until the Vulkan device is idle 
