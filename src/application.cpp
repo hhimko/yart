@@ -30,6 +30,13 @@ namespace yart
         m_window->GetWindowSize(&width, &height);
         auto image_buffer = std::make_unique<float[]>(width*height*4);
 
+        // Reallocate viewport buffer on window resize
+        m_window->SetOnResizeCallback([&](uint32_t new_width, uint32_t new_height) { 
+            width = new_width;
+            height = new_height;
+            image_buffer = std::make_unique<float[]>(width*height*4);
+        });
+
         // -- APPLICATION MAINLOOP -- // 
         while (m_running) {
             // Poll and handle incoming events

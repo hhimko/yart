@@ -65,7 +65,7 @@ namespace yart
     void Window::SetViewportImageData(const void* data) 
     {
         VkCommandPool command_pool = CURRENT_FRAME_IN_FLIGHT.vkCommandPool;
-        CURRENT_FRAME_IN_FLIGHT.viewportImage->BindData(m_vkDevice, command_pool, m_vkQueue, data);
+        m_viewportImage->BindData(m_vkDevice, command_pool, m_vkQueue, data);
     }
 
     void Window::GetWindowSize(uint32_t* width, uint32_t* height)
@@ -79,21 +79,6 @@ namespace yart
 
     void Window::Render()
     {
-        static bool rebuild_swapchain; // Whether the swapchain should be rebuild. Signalled by FrameRender() and FramePresent()
-
-        // Resize the swapchain if previously invalidated  
-        if (rebuild_swapchain) {
-            int win_w, win_h;
-            glfwGetFramebufferSize(m_window, &win_w, &win_h);
-
-            // Don't render/rebuild if window is minimized
-            if (!(win_w && win_h))
-                return; 
-
-            WindowResize(static_cast<uint32_t>(win_w), static_cast<uint32_t>(win_h));
-            rebuild_swapchain = false;
-        }
-
         // Begin an ImGui frame
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -108,28 +93,45 @@ namespace yart
         ImGui::End();
 
         // Render viewport image using ImGui
-        ImTextureID viewport_image = (ImTextureID)CURRENT_FRAME_IN_FLIGHT.viewportImage->GetDescriptorSet();
+        ImTextureID viewport_image = (ImTextureID)m_viewportImage->GetDescriptorSet();
 
-        static ImVec2 p_min = { 0, 0 };
+        static const ImVec2 p_min = { 0, 0 };
         ImVec2 p_max = { static_cast<float>(m_swapchainData.current_extent.width), static_cast<float>(m_swapchainData.current_extent.height) };
 
         ImDrawList* bg_draw_list = ImGui::GetBackgroundDrawList();
         bg_draw_list->AddImage(viewport_image, p_min, p_max);
 
-        // Finalize frame and retrieve render commands from ImGui
+        // Finalize ImGui frame and retrieve the render commands
         ImGui::Render();
         ImDrawData* draw_data = ImGui::GetDrawData();
 
-        rebuild_swapchain |= FrameRender(draw_data);
-        if (rebuild_swapchain)
-            return;
-            
-        rebuild_swapchain |= FramePresent();
+        // Render and present the frame to a platform window
+        bool rebuild_swapchain = FrameRender(draw_data);
+        if (!rebuild_swapchain)
+            rebuild_swapchain = FramePresent();
+
+        // Resize the swapchain if invalidated  
+        if (rebuild_swapchain) {
+            int win_w, win_h;
+            glfwGetFramebufferSize(m_window, &win_w, &win_h);
+
+            // Don't render/rebuild if window is minimized
+            if (!(win_w && win_h))
+                return; 
+
+            WindowResize(static_cast<uint32_t>(win_w), static_cast<uint32_t>(win_h));
+            rebuild_swapchain = false;
+        }
     }
 
     void Window::Close()
     {
         Cleanup();
+    }
+
+    void Window::SetOnResizeCallback(event_callback_t callback)
+    {
+        m_onResizeCallback = callback;
     }
 
     bool Window::InitGLFW(const char* win_title, int win_w, int win_h) 
@@ -488,7 +490,7 @@ namespace yart
         ASSERT_VK_HANDLE_INIT(m_vkSwapchain, "Failed to create Vulkan swapchain");
 
         // Create frame in flight objects 
-        if (!CreateSwapchainFramesInFlight(m_swapchainData.current_extent)) {
+        if (!CreateSwapchainFramesInFlight(m_swapchainData.current_extent, false)) {
             std::cerr << "Failed to create swapchain frames in flight" << std::endl;
             return false;
         }
@@ -523,7 +525,7 @@ namespace yart
         return swapchain; 
     }
 
-    bool Window::CreateSwapchainFramesInFlight(const VkExtent2D& current_extent)
+    bool Window::CreateSwapchainFramesInFlight(const VkExtent2D& current_extent, bool recreate)
     {
         VkResult res;
 
@@ -632,10 +634,10 @@ namespace yart
         }
 
         // Create frames in flight
-        m_swapchainData.framesInFlight = std::vector<SwapchainData::FrameInFlight>(m_swapchainData.image_count);
-        for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
-            m_swapchainData.framesInFlight.emplace_back();
+        if (!recreate)
+            m_swapchainData.framesInFlight = std::vector<SwapchainData::FrameInFlight>(m_swapchainData.image_count);
 
+        for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
             m_swapchainData.framesInFlight[i].vkFrameBuffer = frame_buffers[i];
             m_swapchainData.framesInFlight[i].vkCommandPool = command_pools[i];
             m_swapchainData.framesInFlight[i].vkCommandBuffer = command_buffers[i];
@@ -827,9 +829,10 @@ namespace yart
         });
 
         VkExtent2D viewport_extent = m_swapchainData.current_extent;
-        for (size_t i = 0; i < m_swapchainData.image_count; ++i) {
-            m_swapchainData.framesInFlight[i].viewportImage = std::make_unique<yart::Image>(m_vkDevice, m_vkPhysicalDevice, m_viewportImageSampler, viewport_extent.width, viewport_extent.height);
-        }
+        // for (size_t i = 0; i < m_swapchainData.image_count; ++i) {
+        //     m_swapchainData.framesInFlight[i].viewportImage = std::make_unique<yart::Image>(m_vkDevice, m_vkPhysicalDevice, m_viewportImageSampler, viewport_extent.width, viewport_extent.height);
+        // }
+        m_viewportImage = std::make_unique<yart::Image>(m_vkDevice, m_vkPhysicalDevice, m_viewportImageSampler, viewport_extent.width, viewport_extent.height);
 
         return true;
     }
@@ -856,16 +859,21 @@ namespace yart
         // Release previous Vulkan swapchain
         vkDestroySwapchainKHR(m_vkDevice, old_swapchain, DEFAULT_VK_ALLOC);
 
-        // Resize viewport images
-        for (size_t i = 0; i < m_swapchainData.image_count; ++i) {
-            m_swapchainData.framesInFlight[i].viewportImage->Resize(m_vkDevice, m_vkPhysicalDevice, m_viewportImageSampler, width, height); 
-        }
-
         // Create frame in flight objects 
-        if (!CreateSwapchainFramesInFlight(m_swapchainData.current_extent))
+        if (!CreateSwapchainFramesInFlight(m_swapchainData.current_extent, true))
             YART_ABORT("Failed to create swapchain frames in flight");
 
         m_swapchainData.current_frame_in_flight = 0;
+        
+        // Resize viewport images
+        // for (size_t i = 0; i < m_swapchainData.image_count; ++i) {
+        //     m_swapchainData.framesInFlight[i].viewportImage->Resize(m_vkDevice, m_vkPhysicalDevice, m_viewportImageSampler, width, height); 
+        // }
+        m_viewportImage->Resize(m_vkDevice, m_vkPhysicalDevice, m_viewportImageSampler, width, height);
+
+        // Fire user-set callback
+        if (m_onResizeCallback)
+            m_onResizeCallback(width, height);
     }
 
     bool Window::FrameRender(ImDrawData* draw_data)
@@ -980,9 +988,10 @@ namespace yart
             vkDestroySwapchainKHR(m_vkDevice, m_vkSwapchain, DEFAULT_VK_ALLOC);
 
         // Release viewport images
-        for (size_t i = 0; i < m_swapchainData.image_count; ++i) {
-            m_swapchainData.framesInFlight[i].viewportImage->Release(m_vkDevice);
-        }
+        // for (size_t i = 0; i < m_swapchainData.image_count; ++i) {
+        //     m_swapchainData.framesInFlight[i].viewportImage->Release(m_vkDevice);
+        // }
+        m_viewportImage->Release(m_vkDevice);
 
         // Release ImGui pipeline objects
         ImGui_ImplVulkan_Shutdown();

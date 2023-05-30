@@ -236,7 +236,6 @@ namespace yart
         res = vkMapMemory(device, staging_buffer_memory, 0, data_size, 0, &mapped_data);
         CHECK_VK_RESULT_ABORT(res);
 
-        /// ERROR: FAULTY
         memcpy(mapped_data, data, data_size);
 
         // Flush mapped memory - guarantee the data is uploaded to device memory 

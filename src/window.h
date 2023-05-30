@@ -48,6 +48,11 @@ namespace yart
         /// @brief Perform window shutdown and cleanup
         void Close();
 
+        // -- EVENT CALLBACKS SETTERS -- //
+        typedef std::function<void(uint32_t, uint32_t)> event_callback_t;
+
+        void SetOnResizeCallback(event_callback_t callback);
+
     private:
         typedef PFN_vkDebugUtilsMessengerCallbackEXT vk_debug_callback_t;
 
@@ -65,7 +70,10 @@ namespace yart
                 VkSemaphore vkRenderCompleteSemaphore;
                 VkFence vkFence;
 
-                std::unique_ptr<yart::Image> viewportImage;
+                // std::unique_ptr<yart::Image> viewportImage;
+                FrameInFlight() = default;
+                FrameInFlight(const FrameInFlight&) = delete;
+                FrameInFlight& operator=(FrameInFlight const&) = delete;
             };
             
 
@@ -84,6 +92,7 @@ namespace yart
 
             std::vector<FrameInFlight> framesInFlight;
 
+            SwapchainData() = default;
             SwapchainData(const SwapchainData&) = delete;
             SwapchainData& operator=(SwapchainData const&) = delete;
             ~SwapchainData() { ltStack.Release(); };
@@ -113,7 +122,7 @@ namespace yart
         bool InitializeSwapchain(VkSurfaceKHR surface);
         static VkSwapchainKHR CreateVulkanSwapchain(VkDevice device, const SwapchainData& data, VkSwapchainKHR old_swapchain = VK_NULL_HANDLE);
 
-        bool CreateSwapchainFramesInFlight(const VkExtent2D& current_extent);
+        bool CreateSwapchainFramesInFlight(const VkExtent2D& current_extent, bool recreate);
         static VkRenderPass CreateVulkanRenderPass(VkDevice device, const SwapchainData& data);
         static VkImageView CreateVulkanImageView(VkDevice device, VkFormat format, VkImage image);
         static VkFramebuffer CreateVulkanFramebuffer(VkDevice device, VkRenderPass render_pass, const VkExtent2D& extent, VkImageView image_view);
@@ -146,6 +155,7 @@ namespace yart
 
     private:
         utils::LTStack m_ltStack;
+        std::unique_ptr<yart::Image> m_viewportImage;
 
         // -- GLFW TYPES -- //
         GLFWwindow* m_window = nullptr;
@@ -162,6 +172,8 @@ namespace yart
         VkRenderPass m_vkRenderPass = VK_NULL_HANDLE;
         VkSampler m_viewportImageSampler = VK_NULL_HANDLE;
         
+        // -- EVENT CALLBACKS -- //
+        event_callback_t m_onResizeCallback = nullptr;
     };
 
 } // namespace yart
