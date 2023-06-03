@@ -1,8 +1,8 @@
 # ------------------------------------------------------------------------------------------------- #
 #   Helper module for finding the Vulkan SDK
 # ------------------------------------------------------------------------------------------------- #
-set(VULKAN_SDK "C:/VulkanSDK")
-set(VULKAN_VERSION "")
+set(VULKAN_SDK "C:/VulkanSDK" CACHE PATH "Where to look for the Vulkan SDK")
+set(VULKAN_VERSION "" CACHE STRING "Specific SDK version or empty string for the latest version found")
 
 
 macro(_list_subdirs result dir)

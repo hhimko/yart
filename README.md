@@ -1,16 +1,62 @@
 # Yet Another Ray Tracer
 
-yart (Yet-Another-Ray-Tracer) is a real-time ray tracing engine on CPU.
+YART *(Yet Another Ray Tracer)* is a real-time ray tracing engine on CPU. 
+Created for a bachelors degree applied CS thesis titled "Implementation of a ray tracing engine using a CPU based renderer". 
 
+
+## Dependencies
+YART comes with most dependencies vendored-in as git submodules for convenience. 
+These include [GLFW], [GLM] and [Dear ImGui]. 
+The only exception is the [Vulkan SDK], which has to be downloaded manually for your target OS.
+
+
+### Getting the Vulkan SDK
+The latest version of the Vulkan development kit can be downloaded from the [official download page](https://vulkan.lunarg.com/sdk/home#windows). 
+
+YART by default will look for the SDK in `C:/VulkanSDK` and will link against the most recent version installed there.
+If you wish to specify a custom search path or a specific SDK version, you can use the `VULKAN_SDK` and `VULKAN_VERSION` flags when compiling with cmake:
+
+```shell
+> cmake -S . -B build -DVULKAN_SDK=C:/Path/To/SDK -DVULKAN_VERSION=x.y.z.w
+```
 
 ## Building From Source
-yart comes with most dependencies vendored-in as git submodules 
+YART uses [CMake] (version 3.13+) as its build system. 
+
+  1. Clone the repo. Make sure to clone with flag `--recurse-submodules` to initialize submodules, or run ` git submodule update --init --recursive` after cloning:
+  ```shell
+  > git clone https://github.com/hhimko/yart.git --recurse-submodules
+  > cd yart
+  ``` 
+
+  2. Install all required [dependencies],
+
+  3. Build YART with CMake:
+  ```shell
+  > mkdir build
+  > cmake -S . -B ./build 
+  > cmake --build ./build --config Release --target yart
+  ```
+
+
+## License
+YART is licensed under the #TODO license.
+
+Author: Dawid Cyganek [@hhimko]
 
 
 
-[CMake]:
+
+[GLFW]: https://github.com/glfw/glfw
+[GLM]: https://github.com/g-truc/glm
+[Dear ImGui]: https://github.com/ocornut/imgui.git
 [Vulkan SDK]: https://vulkan.lunarg.com/
+[CMake]: https://cmake.org/
+[dependencies]: #dependencies
+[@hhimko]: https://github.com/hhimko
 
+
+<!-- Project Roadmap Section -->
 </br></br>
 
 ---
