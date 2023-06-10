@@ -62,6 +62,8 @@ namespace yart
         /// @warning All Image instances must be released before VKDevice is destroyed
         void Release(VkDevice device);
 
+        /// @brief Getter to the Vulkan descriptor set handle for the image
+        /// @return Vulkan descriptor set handle
         VkDescriptorSet GetDescriptorSet() const { return m_vkDescriptorSet; }
 
     private:
@@ -96,5 +98,4 @@ namespace yart
         VkDeviceMemory m_vkStagingBufferMemory = VK_NULL_HANDLE;
         
     };
-
 } // namespace yart

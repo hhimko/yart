@@ -49,9 +49,12 @@ namespace yart
         void Close();
 
         // -- EVENT CALLBACKS SETTERS -- //
-        typedef std::function<void(uint32_t, uint32_t)> event_callback_t;
+        typedef std::function<void(uint32_t, uint32_t)> resize_event_callback_t;
 
-        void SetOnResizeCallback(event_callback_t callback);
+        /// @brief Set a function to be called when the window resizes
+        /// @param callback Function pointer to a function with signature (uint32_t, uint32_t) -> void
+        /// @note The new window dimensions (width, height) are passed in as the callback arguments in the same order 
+        void SetOnWindowResizeCallback(resize_event_callback_t callback);
 
     private:
         typedef PFN_vkDebugUtilsMessengerCallbackEXT vk_debug_callback_t;
@@ -131,6 +134,9 @@ namespace yart
         /// @return Whether Dear ImGUI has been successfully initialized
         bool InitImGUI();
 
+        /// @brief Record Dear ImGUI render commands for this class
+        void OnImGUI();
+
         /// @brief Create viewport images for each frame in flight along with a shared sampler
         /// @return Whether viewport images have been successfully created
         bool CreateFrameInFlightViewports();
@@ -155,7 +161,9 @@ namespace yart
 
     private:
         utils::LTStack m_ltStack;
+
         std::unique_ptr<yart::Image> m_viewportImage;
+        int m_viewportScale = 1;
 
         // -- GLFW TYPES -- //
         GLFWwindow* m_window = nullptr;
@@ -173,7 +181,7 @@ namespace yart
         VkSampler m_viewportImageSampler = VK_NULL_HANDLE;
         
         // -- EVENT CALLBACKS -- //
-        event_callback_t m_onResizeCallback = nullptr;
+        resize_event_callback_t m_onResizeCallback = nullptr;
     };
 
 } // namespace yart

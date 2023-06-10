@@ -12,11 +12,10 @@ namespace yart
         for (size_t y = 0; y < height; ++y) {
             for (size_t x = 0; x < width; ++x) {
                 size_t idx = ((y * width) + x) * 4;
-                float val = static_cast<float>(x) / (width - 1) - static_cast<float>(y) / (height - 1);
 
-                buffer[idx + 0] = val;
-                buffer[idx + 1] = val;
-                buffer[idx + 2] = val;
+                buffer[idx + 0] = static_cast<float>(x) / (width - 1);
+                buffer[idx + 1] = static_cast<float>(y) / (height - 1);
+                buffer[idx + 2] = 0.f;
                 buffer[idx + 3] = 1.f;
             }
         }
