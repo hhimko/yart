@@ -73,7 +73,6 @@ namespace yart
                 VkSemaphore vkRenderCompleteSemaphore;
                 VkFence vkFence;
 
-                // std::unique_ptr<yart::Image> viewportImage;
                 FrameInFlight() = default;
                 FrameInFlight(const FrameInFlight&) = delete;
                 FrameInFlight& operator=(FrameInFlight const&) = delete;
@@ -161,9 +160,10 @@ namespace yart
 
     private:
         utils::LTStack m_ltStack;
+        bool m_shouldRebuildSwapchain = false; // Signals whether the swapchain should be rebuild/resized 
 
-        std::unique_ptr<yart::Image> m_viewportImage;
-        int m_viewportScale = 1;
+        std::unique_ptr<yart::Image> m_viewportImage = nullptr;
+        int m_viewportScale = 2; // Should only ever be in the [1, +inf) range
 
         // -- GLFW TYPES -- //
         GLFWwindow* m_window = nullptr;

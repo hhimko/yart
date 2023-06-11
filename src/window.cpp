@@ -101,12 +101,15 @@ namespace yart
         ImDrawData* draw_data = ImGui::GetDrawData();
 
         // Render and present the frame to a platform window
-        bool rebuild_swapchain = FrameRender(draw_data);
-        if (!rebuild_swapchain)
-            rebuild_swapchain = FramePresent();
+        if (!m_shouldRebuildSwapchain) {
+            m_shouldRebuildSwapchain = FrameRender(draw_data);
 
+            if (!m_shouldRebuildSwapchain)
+                m_shouldRebuildSwapchain = FramePresent();
+        }
+        
         // Resize the swapchain if invalidated  
-        if (rebuild_swapchain) {
+        if (m_shouldRebuildSwapchain) {
             int win_w, win_h;
             glfwGetFramebufferSize(m_window, &win_w, &win_h);
 
@@ -115,7 +118,7 @@ namespace yart
                 return; 
 
             WindowResize(static_cast<uint32_t>(win_w), static_cast<uint32_t>(win_h));
-            rebuild_swapchain = false;
+            m_shouldRebuildSwapchain = false;
         }
     }
 
@@ -315,7 +318,6 @@ namespace yart
 
         return debug_messenger; 
     }
-
     
     VkPhysicalDevice Window::SelectVulkanPhysicalDevice(VkInstance instance, VkPhysicalDeviceProperties& properties)
     {
@@ -326,8 +328,8 @@ namespace yart
         VkResult res = vkEnumeratePhysicalDevices(instance, &gpu_count, NULL);
         CHECK_VK_RESULT_RETURN(res, VK_NULL_HANDLE);
 
-        VkPhysicalDevice* gpus = new VkPhysicalDevice[gpu_count];
-        res = vkEnumeratePhysicalDevices(instance, &gpu_count, gpus);
+        std::unique_ptr<VkPhysicalDevice[]> gpus = std::make_unique<VkPhysicalDevice[]>(gpu_count);
+        res = vkEnumeratePhysicalDevices(instance, &gpu_count, gpus.get());
         CHECK_VK_RESULT_RETURN(res, VK_NULL_HANDLE);
 
         VkPhysicalDeviceProperties props = {};
@@ -335,18 +337,16 @@ namespace yart
             vkGetPhysicalDeviceProperties(gpus[i], &props);
             if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
                 properties = props;
-                gpu = gpus[i];
 
-                delete[] gpus;
+                gpu = gpus[i];
                 return gpu;
             }
         }
 
         vkGetPhysicalDeviceProperties(gpus[0], &props);
         properties = props;
-        gpu = gpus[0];
 
-        delete[] gpus;
+        gpu = gpus[0];
         return gpu;
     }
 
@@ -413,7 +413,7 @@ namespace yart
     {
         VkDescriptorPool pool = VK_NULL_HANDLE;
 
-        const uint32_t size = 16;
+        const uint32_t size = 128;
         VkDescriptorPoolSize pool_sizes[] =
         {
             { VK_DESCRIPTOR_TYPE_SAMPLER, size },
@@ -809,7 +809,9 @@ namespace yart
         ImGui::Text("Avg. %.3f ms/frame", 1000.0f / ImGui::GetIO().Framerate);
 
         // Range slider for controlling the viewport scale 
-        ImGui::SliderInt("Viewport scale", &m_viewportScale, 1, 10);
+        bool scale_changed = ImGui::SliderInt("Viewport scale", &m_viewportScale, 1, 10);
+        if (scale_changed)
+            m_shouldRebuildSwapchain = true;
 
         ImGui::End();
     }
@@ -837,7 +839,7 @@ namespace yart
         });
 
         VkExtent2D viewport_extent = m_swapchainData.current_extent;
-        m_viewportImage = std::make_unique<yart::Image>(m_vkDevice, m_vkPhysicalDevice, m_viewportImageSampler, viewport_extent.width, viewport_extent.height);
+        m_viewportImage = std::make_unique<yart::Image>(m_vkDevice, m_vkPhysicalDevice, m_viewportImageSampler, viewport_extent.width / m_viewportScale, viewport_extent.height / m_viewportScale);
 
         return true;
     }
