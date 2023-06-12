@@ -19,6 +19,7 @@ namespace yart
     public:
         Application(const Application&) = delete;
         Application& operator=(Application const&) = delete;
+        ~Application();
 
         /// @brief Get the static singleton instance, lazily initialized on first call
         /// @return Static Application instance
@@ -35,16 +36,13 @@ namespace yart
         Application();
 
         /// @brief Initialize members and hook up event handlers
-        /// @return  Boolean value indicating whether the application has been successfully initialized 
+        /// @return Boolean value indicating whether the application has been successfully initialized 
         bool Setup();
-
-        /// @brief Cleanup application resources
-        void Cleanup();
 
     private:
         bool m_running = false;
 
-        std::unique_ptr<yart::Window> m_window;
+        yart::Window* m_window;
         yart::Renderer m_renderer;
 
     };

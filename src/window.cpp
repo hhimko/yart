@@ -56,25 +56,10 @@ namespace yart
         if (!InitImGUI())
             return false;
 
-        if (!CreateFrameInFlightViewports())
+        if (!CreateViewports())
             return false;
 
         return true;
-    }
-
-    void Window::SetViewportImageData(const void* data) 
-    {
-        VkCommandPool command_pool = CURRENT_FRAME_IN_FLIGHT.vkCommandPool;
-        m_viewportImage->BindData(m_vkDevice, command_pool, m_vkQueue, data);
-    }
-
-    void Window::GetWindowSize(uint32_t* width, uint32_t* height)
-    {
-        if (width != nullptr)
-            *width = m_swapchainData.current_extent.width;
-
-        if (height != nullptr)
-            *height = m_swapchainData.current_extent.height;
     }
 
     void Window::Render()
@@ -88,7 +73,7 @@ namespace yart
         OnImGUI();
 
         // Render viewport image using ImGui
-        ImTextureID viewport_image = (ImTextureID)m_viewportImage->GetDescriptorSet();
+        ImTextureID viewport_image = (ImTextureID)m_viewport->m_image.GetDescriptorSet();
 
         static const ImVec2 p_min = { 0, 0 };
         ImVec2 p_max = { static_cast<float>(m_swapchainData.current_extent.width), static_cast<float>(m_swapchainData.current_extent.height) };
@@ -125,11 +110,6 @@ namespace yart
     void Window::Close()
     {
         Cleanup();
-    }
-
-    void Window::SetOnWindowResizeCallback(resize_event_callback_t callback)
-    {
-        m_onResizeCallback = callback;
     }
 
     bool Window::InitGLFW(const char* win_title, int win_w, int win_h) 
@@ -816,7 +796,7 @@ namespace yart
         ImGui::End();
     }
 
-    bool Window::CreateFrameInFlightViewports()
+    bool Window::CreateViewports()
     {
         // Create Vulkan sampler for viewport images
         VkSamplerCreateInfo sampler_ci = {};
@@ -839,7 +819,7 @@ namespace yart
         });
 
         VkExtent2D viewport_extent = m_swapchainData.current_extent;
-        m_viewportImage = std::make_unique<yart::Image>(m_vkDevice, m_vkPhysicalDevice, m_viewportImageSampler, viewport_extent.width / m_viewportScale, viewport_extent.height / m_viewportScale);
+        m_viewport = std::make_unique<yart::Viewport>(this, viewport_extent.width, viewport_extent.height);
 
         return true;
     }
@@ -873,11 +853,7 @@ namespace yart
         m_swapchainData.current_frame_in_flight = 0;
         
         // Resize viewport image
-        m_viewportImage->Resize(m_vkDevice, m_vkPhysicalDevice, m_viewportImageSampler, width / m_viewportScale, height / m_viewportScale);
-
-        // Fire user-set callback
-        if (m_onResizeCallback)
-            m_onResizeCallback(width / m_viewportScale, height / m_viewportScale);
+        m_viewport->Resize(this, width, height);
     }
 
     bool Window::FrameRender(ImDrawData* draw_data)
@@ -992,7 +968,7 @@ namespace yart
             vkDestroySwapchainKHR(m_vkDevice, m_vkSwapchain, DEFAULT_VK_ALLOC);
 
         // Release viewport image
-        m_viewportImage->Release(m_vkDevice);
+        m_viewport->m_image.Release(m_vkDevice);
 
         // Release ImGui pipeline objects
         ImGui_ImplVulkan_Shutdown();

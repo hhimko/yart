@@ -10,7 +10,7 @@
 #include <memory>
 #include <vector>
 
-#include "image.h"
+#include "viewport.h"
 #include "utils/core_utils.h"
 
 
@@ -33,28 +33,16 @@ namespace yart
         /// @return Whether the window has been successfully created 
         bool Create(const char* title, int win_w, int win_h);
 
-        /// @brief Set viewport image pixel data for upload to the GPU
-        /// @param data Pointer to the image pixel array
-        void SetViewportImageData(const void* data);
-
-        /// @brief Get the current size of platform window in pixels
-        /// @param width Pointer to a variable to be set with the width of the window or NULL
-        /// @param height Pointer to a variable to be set with the height of the window or NULL
-        void GetWindowSize(uint32_t* width, uint32_t* height);
-
         /// @brief Submit frame for render and present the next frame-in-flight to the window
         void Render();
 
         /// @brief Perform window shutdown and cleanup
         void Close();
 
-        // -- EVENT CALLBACKS SETTERS -- //
-        typedef std::function<void(uint32_t, uint32_t)> resize_event_callback_t;
-
-        /// @brief Set a function to be called when the window resizes
-        /// @param callback Function pointer to a function with signature (uint32_t, uint32_t) -> void
-        /// @note The new window dimensions (width, height) are passed in as the callback arguments in the same order 
-        void SetOnWindowResizeCallback(resize_event_callback_t callback);
+        yart::Viewport* GetViewport() const 
+        {
+            return m_viewport.get();
+        }
 
     private:
         typedef PFN_vkDebugUtilsMessengerCallbackEXT vk_debug_callback_t;
@@ -100,6 +88,7 @@ namespace yart
             ~SwapchainData() { ltStack.Release(); };
         };
 
+
         /// @brief Initialize GLFW and create a new window 
         /// @param win_title Initial window title
         /// @param win_w Initial width of the window in pixels
@@ -136,9 +125,9 @@ namespace yart
         /// @brief Record Dear ImGUI render commands for this class
         void OnImGUI();
 
-        /// @brief Create viewport images for each frame in flight along with a shared sampler
-        /// @return Whether viewport images have been successfully created
-        bool CreateFrameInFlightViewports();
+        /// @brief Create viewport images along with a shared sampler
+        /// @return Whether viewports have been successfully created
+        bool CreateViewports();
 
         /// @brief Recreate the swapchain with extent of given size 
         /// @param width Swapchain image extent width 
@@ -162,8 +151,8 @@ namespace yart
         utils::LTStack m_ltStack;
         bool m_shouldRebuildSwapchain = false; // Signals whether the swapchain should be rebuild/resized 
 
-        std::unique_ptr<yart::Image> m_viewportImage = nullptr;
-        int m_viewportScale = 2; // Should only ever be in the [1, +inf) range
+        std::unique_ptr<yart::Viewport> m_viewport = nullptr;
+        int m_viewportScale = 1; // Should only ever be in the [1, +inf) range
 
         // -- GLFW TYPES -- //
         GLFWwindow* m_window = nullptr;
@@ -180,8 +169,11 @@ namespace yart
         VkRenderPass m_vkRenderPass = VK_NULL_HANDLE;
         VkSampler m_viewportImageSampler = VK_NULL_HANDLE;
         
-        // -- EVENT CALLBACKS -- //
-        resize_event_callback_t m_onResizeCallback = nullptr;
-    };
 
+        // -- FRIEND FUNCTION DECLARATIONS -- //
+        friend yart::Viewport::Viewport(yart::Window* window, uint32_t width, uint32_t height);
+        friend void yart::Viewport::Refresh(Window* window);
+        friend void yart::Viewport::Resize(Window* window, uint32_t width, uint32_t height);
+
+    };
 } // namespace yart

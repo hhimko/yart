@@ -7,10 +7,16 @@ namespace yart
 {
     Application::Application()
     {
-        m_window = std::make_unique<yart::Window>();
+        m_window = new yart::Window();
     }
 
-    Application& Application::Get()
+    Application::~Application()
+    {
+        m_window->Close();
+        delete m_window;
+    }
+
+    Application &Application::Get()
     {
         static Application instance; // Instantiated on first call and guaranteed to be destroyed on exit 
         return instance;
@@ -19,41 +25,28 @@ namespace yart
     int Application::Run()
     {
         YART_ASSERT(!m_running);
-
         if (!Setup())
             return EXIT_FAILURE;
 
-        // m_running is indirectly controlled by Application::Shutdown()
-        m_running = true; 
-
-        uint32_t width, height;
-        m_window->GetWindowSize(&width, &height);
-        auto image_buffer = std::make_unique<float[]>(width*height*4);
-
-        // Reallocate viewport buffer on window resize
-        m_window->SetOnWindowResizeCallback([&](uint32_t new_width, uint32_t new_height) { 
-            width = new_width;
-            height = new_height;
-            image_buffer = std::make_unique<float[]>(width*height*4);
-        });
+        m_running = true; // m_running is indirectly controlled by Application::Shutdown()                 
 
         // -- APPLICATION MAINLOOP -- // 
         while (m_running) {
             // Poll and handle incoming events
             glfwPollEvents();
 
-            // Ray trace the scene on CPU onto a image buffer
-            m_renderer.Render(image_buffer.get(), width, height);
+            // Ray trace the scene on CPU onto the viewport image buffer
+            auto viewport = m_window->GetViewport();
 
-            // Upload ray traced image into window viewport
-            m_window->SetViewportImageData(static_cast<void*>(image_buffer.get()));
+            uint32_t viewport_width, viewport_height;
+            viewport->GetImageSize(&viewport_width, &viewport_height);
+            
+            m_renderer.Render(viewport->GetImageData(), viewport_width, viewport_height);
+            viewport->Refresh(m_window);
 
             // Render and present a frame to a platform window on GPU
             m_window->Render();
         }
-
-        // Cleanup resources after shutting down the mainloop 
-        Cleanup();
 
         return EXIT_SUCCESS;
     }
@@ -69,10 +62,5 @@ namespace yart
             return false;
 
         return true;
-    }
-
-    void Application::Cleanup()
-    {
-        m_window->Close();
     }
 } // namespace yart
