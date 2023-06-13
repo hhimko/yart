@@ -98,7 +98,7 @@ namespace yart
         if (m_vkImage == VK_NULL_HANDLE)
             YART_ABORT("Failed to create Vulkan image");
 
-        m_vkMemory = BindVulkanImageDeviceMemory(device, physical_device, m_vkImage, memory_size);
+        m_vkMemory = BindVulkanImageDeviceMemory(device, physical_device, m_vkImage);
         if (m_vkMemory == VK_NULL_HANDLE)
             YART_ABORT("Failed to create Vulkan device memory");
 
@@ -161,22 +161,28 @@ namespace yart
         return image_view;
     }
 
-    VkDeviceMemory Image::BindVulkanImageDeviceMemory(VkDevice device, VkPhysicalDevice physical_device, VkImage image, VkDeviceSize memory_size)
+    VkDeviceMemory Image::BindVulkanImageDeviceMemory(VkDevice device, VkPhysicalDevice physical_device, VkImage image)
     {
         VkDeviceMemory memory = VK_NULL_HANDLE;
         VkResult res;
-
-        static VkMemoryPropertyFlags memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT; // Read more on memory types: https://asawicki.info/news_1740_vulkan_memory_types_on_pc_and_how_to_use_them
 
         // Query image memory requirements
         VkMemoryRequirements mem_req;
         vkGetImageMemoryRequirements(device, image, &mem_req);
 
+        /// @todo: try implementing VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+        static VkMemoryPropertyFlags memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT; // Read more on memory types: https://asawicki.info/news_1740_vulkan_memory_types_on_pc_and_how_to_use_them
+        uint32_t memory_type_index = utils::FindVulkanMemoryType(physical_device, memory_properties, mem_req.memoryTypeBits);
+        if (memory_type_index == UINT32_MAX) {
+            std::cerr << "[Image]: Failed to locate device memory of requested type" << std::endl;
+            return VK_NULL_HANDLE;
+        }
+
         // Allocate image required memory on physical device 
         VkMemoryAllocateInfo alloc_info = {};
         alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         alloc_info.allocationSize = mem_req.size;
-        alloc_info.memoryTypeIndex = utils::FindVulkanMemoryType(physical_device, memory_properties, mem_req.memoryTypeBits);
+        alloc_info.memoryTypeIndex = memory_type_index;
 
         res = vkAllocateMemory(device, &alloc_info, DEFAULT_VK_ALLOC, &memory);
         CHECK_VK_RESULT_RETURN(res, VK_NULL_HANDLE);
@@ -236,6 +242,7 @@ namespace yart
         res = vkMapMemory(device, staging_buffer_memory, 0, data_size, 0, &mapped_data);
         CHECK_VK_RESULT_ABORT(res);
 
+        /// @todo no need for memcpy without resizing. this should probably return mapped_data to the caller
         memcpy(mapped_data, data, data_size);
 
         // Flush mapped memory - guarantee the data is uploaded to device memory 

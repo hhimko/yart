@@ -37,12 +37,15 @@ namespace yart
     private:
         void Resize(yart::Window* window, uint32_t width, uint32_t height);
 
+        void OnImGUI(yart::Window* window);
+
     private:
         yart::Image m_image;
         float* m_imageData = nullptr;
 
-        uint32_t m_imageWidth; 
-        uint32_t m_imageHeight;
+        uint32_t m_imageWidth;  // Original width of the image (does not take image scale into account)
+        uint32_t m_imageHeight; // Original height of the image (does not take image scale into account)
+        int m_imageScale = 1; // Should only ever be in the [1, +inf) range
 
 
         // -- FRIEND DECLARATIONS -- //

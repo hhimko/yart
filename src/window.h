@@ -152,7 +152,6 @@ namespace yart
         bool m_shouldRebuildSwapchain = false; // Signals whether the swapchain should be rebuild/resized 
 
         std::unique_ptr<yart::Viewport> m_viewport = nullptr;
-        int m_viewportScale = 1; // Should only ever be in the [1, +inf) range
 
         // -- GLFW TYPES -- //
         GLFWwindow* m_window = nullptr;

@@ -77,7 +77,7 @@ namespace yart
         void CreateDescriptorSet(VkDevice device, VkPhysicalDevice physical_device, VkSampler sampler);
         static VkImage CreateVulkanImage(VkDevice device, VkExtent3D image_extent);
         static VkImageView CreateVulkanImageView(VkDevice device, VkImage image);
-        static VkDeviceMemory BindVulkanImageDeviceMemory(VkDevice device, VkPhysicalDevice physical_device, VkImage image, VkDeviceSize memory_size);
+        static VkDeviceMemory BindVulkanImageDeviceMemory(VkDevice device, VkPhysicalDevice physical_device, VkImage image);
         static VkBuffer CreateVulkanStagingBuffer(VkDevice device, VkDeviceSize buffer_size);
         static VkDeviceMemory BindVulkanStagingBufferMemory(VkDevice device, VkPhysicalDevice physical_device, VkBuffer staging_buffer, VkDeviceSize memory_size);
 

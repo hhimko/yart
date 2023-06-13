@@ -788,10 +788,7 @@ namespace yart
         ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
         ImGui::Text("Avg. %.3f ms/frame", 1000.0f / ImGui::GetIO().Framerate);
 
-        // Range slider for controlling the viewport scale 
-        bool scale_changed = ImGui::SliderInt("Viewport scale", &m_viewportScale, 1, 10);
-        if (scale_changed)
-            m_shouldRebuildSwapchain = true;
+        m_viewport->OnImGUI(this);
 
         ImGui::End();
     }
