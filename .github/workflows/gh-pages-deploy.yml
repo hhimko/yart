@@ -19,7 +19,7 @@ jobs:
         permissions:
             contents: write
             pages: write  
-            
+
         runs-on: ubuntu-latest
         steps:
           - name: Checkout
@@ -35,10 +35,9 @@ jobs:
 
           - name: Create .nojekyll
             shell: bash
-            run: cd yart && touch ./docs/html/.nojekyll
+            run: touch docs/html/.nojekyll
 
           - name: Deploy to GitHub Pages
             uses: JamesIves/github-pages-deploy-action@v4
             with:
                 folder: docs/html
-                
