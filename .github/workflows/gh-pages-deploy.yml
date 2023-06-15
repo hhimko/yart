@@ -13,12 +13,13 @@ on:
 concurrency:
     group: '${{ github.workflow }} @ ${{ github.ref }}'
     cancel-in-progress: true
-
-permissions:
-    contents: write
   
 jobs:
-    doxygen-build:
+    doxygen-build-deploy:
+        permissions:
+            contents: write
+            pages: write  
+            
         runs-on: ubuntu-latest
         steps:
           - name: Checkout
@@ -32,12 +33,6 @@ jobs:
             shell: bash
             run: doxygen
 
-    gh-pages-deploy:
-        needs: doxygen-build
-        permissions:
-            pages: write  
-        runs-on: ubuntu-latest
-        steps:
           - name: Create .nojekyll
             shell: bash
             run: cd yart && touch ./docs/html/.nojekyll
