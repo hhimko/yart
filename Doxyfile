@@ -124,7 +124,7 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # Configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = C:/Users/zrywa/OneDrive/Pulpit/HIMKO/Projects/Coding/2023/q1/yart/src
+INPUT                  = ./src
 INPUT_ENCODING         = UTF-8
 INPUT_FILE_ENCODING    =
 FILE_PATTERNS          = *.c \
