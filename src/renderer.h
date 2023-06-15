@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <vector>
 
 
 namespace yart
@@ -21,7 +22,14 @@ namespace yart
         void Render(float buffer[], uint32_t width, uint32_t height);
 
     private:
+        void Resize(uint32_t width, uint32_t height);
+
     private:
+        uint32_t m_width = 0;
+        uint32_t m_height = 0; 
+
+        std::vector<uint32_t> m_verticalPixelIterator;
+        std::vector<uint32_t> m_horizontalPixelIterator;
 
     };
 } // namespace yart

@@ -48,7 +48,7 @@ namespace yart
             template<typename T>
             void Push(T var, std::function<void(T)>&& dtor) {
                 static_assert(std::is_pointer<T>::value, "Expected a pointer");
-                Push((void*)var, [dtor](void* var){ dtor( (T)var ); }); 
+                PushImpl((void*)var, [dtor](void* var){ dtor( (T)var ); }); 
             }
 
             /// @brief Pop the last pushed object onto the stack, effectively freeing the object. 
@@ -71,9 +71,9 @@ namespace yart
             }
 
         private:
-            void Push(void* var, std::function<void(void*)>&& dtor) {
+            void PushImpl(void* var, std::function<void(void*)>&& dtor) {
                 m_slots.emplace_back(var, dtor);
-            };
+            }
 
         private:
             struct Slot {

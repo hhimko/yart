@@ -11,7 +11,7 @@ namespace yart
         m_imageWidth = width; 
         m_imageHeight = height;
 
-        m_imageData = new float[width / m_imageScale * height / m_imageScale * 4];
+        m_imageData = new float[width * height * 4];
         Refresh(window);
     }
 
@@ -47,6 +47,7 @@ namespace yart
         m_imageData = new float[scaled_width * scaled_height * 4];
 
         m_image.Resize(window->m_vkDevice, window->m_vkPhysicalDevice, window->m_viewportImageSampler, scaled_width, scaled_height);
+        Refresh(window);
     }
 
     void Viewport::OnImGUI(yart::Window* window)
@@ -54,11 +55,9 @@ namespace yart
         ImGui::SeparatorText("Viewport");
 
         // Range slider for controlling the viewport scale 
-        bool scale_changed = ImGui::SliderInt("Viewport scale", &m_imageScale, 1, 10);
-        if (scale_changed) {
+        bool scale_changed = ImGui::SliderInt("Scale", &m_imageScale, 1, 10);
+        if (scale_changed)
             Resize(window, m_imageWidth, m_imageHeight);
-            Refresh(window);
-        }
 
         ImGui::Text("Width: %d", m_imageWidth / m_imageScale);
         ImGui::Text("Height: %d", m_imageHeight / m_imageScale);
