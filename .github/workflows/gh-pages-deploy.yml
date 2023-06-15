@@ -13,9 +13,12 @@ on:
 concurrency:
     group: '${{ github.workflow }} @ ${{ github.ref }}'
     cancel-in-progress: true
+
+permissions:
+    contents: write
   
 jobs:
-    doxygen:
+    doxygen-build:
         runs-on: ubuntu-latest
         steps:
           - name: Checkout
@@ -29,12 +32,18 @@ jobs:
             shell: bash
             run: doxygen
 
+    gh-pages-deploy:
+        needs: doxygen-build
+        permissions:
+            pages: write  
+        runs-on: ubuntu-latest
+        steps:
           - name: Create .nojekyll
             shell: bash
-            run: touch ./docs/html/.nojekyll
+            run: touch docs/html/.nojekyll
 
           - name: Deploy to GitHub Pages
             uses: JamesIves/github-pages-deploy-action@v4
             with:
-                folder: ./docs/html
+                folder: docs/html
                 
