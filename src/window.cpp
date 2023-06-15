@@ -14,7 +14,6 @@
 #define CURRENT_FRAME_IN_FLIGHT m_swapchainData.framesInFlight[m_swapchainData.current_frame_in_flight]
 
 
-// TODO: error logging
 static void on_glfw_error(int error_code, const char *description) 
 {
     std::cerr << "GLFW Error " << error_code << ": " << description << std::endl;
@@ -26,7 +25,7 @@ static void on_glfw_window_close(GLFWwindow* window)
     yart::Application::Get().Shutdown();    
 }
 
-// TODO: Proper vk debug logging
+// TODO: Proper Vulkan debug logging
 #ifdef YART_VULKAN_DEBUG_UTILS
 static VkBool32 VKAPI_PTR on_vulkan_debug_message(VkDebugUtilsMessageSeverityFlagBitsEXT msg_severity, VkDebugUtilsMessageTypeFlagsEXT msg_type, const VkDebugUtilsMessengerCallbackDataEXT* data, void* user_data) 
 {

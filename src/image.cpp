@@ -170,7 +170,7 @@ namespace yart
         VkMemoryRequirements mem_req;
         vkGetImageMemoryRequirements(device, image, &mem_req);
 
-        /// @todo: try implementing VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+        // TODO: try implementing VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
         static VkMemoryPropertyFlags memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT; // Read more on memory types: https://asawicki.info/news_1740_vulkan_memory_types_on_pc_and_how_to_use_them
         uint32_t memory_type_index = utils::FindVulkanMemoryType(physical_device, memory_properties, mem_req.memoryTypeBits);
         if (memory_type_index == UINT32_MAX) {
@@ -242,7 +242,8 @@ namespace yart
         res = vkMapMemory(device, staging_buffer_memory, 0, data_size, 0, &mapped_data);
         CHECK_VK_RESULT_ABORT(res);
 
-        /// @todo no need for memcpy without resizing. this should probably return mapped_data to the caller
+        // TODO: no need for memcpy without resizing. 
+        //  This should probably return mapped_data to the caller
         memcpy(mapped_data, data, data_size);
 
         // Flush mapped memory - guarantee the data is uploaded to device memory 

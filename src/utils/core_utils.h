@@ -23,6 +23,7 @@
 #define YART_ABORT(msg) assert(0 && msg)
 #define YART_UNREACHABLE() YART_ABORT("Reached unreachable section")
 
+// TODO: Create YART logging macros
 
 
 namespace yart
