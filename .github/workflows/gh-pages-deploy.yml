@@ -1,0 +1,40 @@
+name: Doxygen GitHub Pages Deploy
+
+# Action for building doxygen docs and deploying to GitHub Pages
+
+on:
+    workflow_dispatch:
+    pull_request:
+    push:
+        branches:
+          - main
+
+# This allows a subsequently queued workflow run to interrupt previous runs
+concurrency:
+    group: '${{ github.workflow }} @ ${{ github.ref }}'
+    cancel-in-progress: true
+  
+jobs:
+    doxygen:
+        runs-on: ubuntu-latest
+        steps:
+          - name: Checkout
+            uses: actions/checkout@v3
+
+          - name: Install Doxygen
+            shell: bash
+            run: sudo apt-get install doxygen graphviz -y
+
+          - name: Generate Documentation
+            shell: bash
+            run: doxygen
+
+          - name: Create .nojekyll
+            shell: bash
+            run: touch ./docs/html/.nojekyll
+
+          - name: Deploy to GitHub Pages
+            uses: JamesIves/github-pages-deploy-action@v4
+            with:
+                folder: ./docs/html
+                
