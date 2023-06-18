@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['image_29',['Image',['../classyart_1_1Image.html',1,'yart']]]
+  ['ltstack_28',['LTStack',['../classyart_1_1utils_1_1LTStack.html',1,'yart::utils']]]
 ];
