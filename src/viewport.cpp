@@ -31,7 +31,7 @@ namespace yart
 
     void Viewport::Refresh(yart::Window* window)
     {
-        VkCommandPool command_pool = window->m_swapchainData.framesInFlight[window->m_swapchainData.current_frame_in_flight].vkCommandPool;
+        VkCommandPool command_pool = window->m_framesInFlight[window->m_currentFrameInFlight].vkCommandPool;
         m_image.BindData(window->m_vkDevice, command_pool, window->m_vkQueue, m_imageData);
     }
 

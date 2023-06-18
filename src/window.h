@@ -47,45 +47,20 @@ namespace yart
     private:
         typedef PFN_vkDebugUtilsMessengerCallbackEXT vk_debug_callback_t;
 
-        /// @brief Container for swapchain related data
-        struct SwapchainData {
+        /// @brief Container for per frame-in-flight related data
+        /// @note FrameInFlight members are all set in Window::CreateSwapchainFramesInFlight
+        struct FrameInFlight {
+            VkFramebuffer vkFrameBuffer;
+            VkCommandPool vkCommandPool;
+            VkCommandBuffer vkCommandBuffer;
 
-            /// @brief Container for per frame-in-flight related data
-            /// @note FrameInFlight members are all set in Window::CreateSwapchainFramesInFlight
-            struct FrameInFlight {
-                VkFramebuffer vkFrameBuffer;
-                VkCommandPool vkCommandPool;
-                VkCommandBuffer vkCommandBuffer;
+            VkSemaphore vkImageAcquiredSemaphore;
+            VkSemaphore vkRenderCompleteSemaphore;
+            VkFence vkFence;
 
-                VkSemaphore vkImageAcquiredSemaphore;
-                VkSemaphore vkRenderCompleteSemaphore;
-                VkFence vkFence;
-
-                FrameInFlight() = default;
-                FrameInFlight(const FrameInFlight&) = delete;
-                FrameInFlight& operator=(FrameInFlight const&) = delete;
-            };
-            
-
-            utils::LTStack ltStack;
-
-            VkSurfaceKHR surface = VK_NULL_HANDLE;
-            VkSurfaceFormatKHR surface_format = {};
-            VkPresentModeKHR present_mode;
-            VkExtent2D current_extent = {};
-
-            uint32_t current_frame_in_flight = 0;
-            uint32_t current_semaphore_index = 0;
-            uint32_t min_image_count = 0;
-            uint32_t max_image_count = 0;
-            uint32_t image_count = 0;
-
-            std::vector<FrameInFlight> framesInFlight;
-
-            SwapchainData() = default;
-            SwapchainData(const SwapchainData&) = delete;
-            SwapchainData& operator=(SwapchainData const&) = delete;
-            ~SwapchainData() { ltStack.Release(); };
+            FrameInFlight() = default;
+            FrameInFlight(const FrameInFlight&) = delete;
+            FrameInFlight& operator=(FrameInFlight const&) = delete;
         };
 
 
@@ -108,13 +83,12 @@ namespace yart
         static VkDescriptorPool CreateVulkanDescriptorPool(VkDevice device);
 
         /// @brief Query present capabilities and create the initial swapchain
-        /// @param surface Platform window Vulkan surface
         /// @return Whether the swapchain with all required objects have been successfully initialized
-        bool InitializeSwapchain(VkSurfaceKHR surface);
-        static VkSwapchainKHR CreateVulkanSwapchain(VkDevice device, const SwapchainData& data, VkSwapchainKHR old_swapchain = VK_NULL_HANDLE);
+        bool InitializeSwapchain();
+        static VkSwapchainKHR CreateVulkanSwapchain(VkDevice device, VkSurfaceKHR surface, VkSurfaceFormatKHR surface_format, VkPresentModeKHR present_mode, VkExtent2D extent, uint32_t min_image_count, VkSwapchainKHR old_swapchain);
 
         bool CreateSwapchainFramesInFlight(const VkExtent2D& current_extent, bool recreate);
-        static VkRenderPass CreateVulkanRenderPass(VkDevice device, const SwapchainData& data);
+        static VkRenderPass CreateVulkanRenderPass(VkDevice device, VkSurfaceFormatKHR surface_format);
         static VkImageView CreateVulkanImageView(VkDevice device, VkFormat format, VkImage image);
         static VkFramebuffer CreateVulkanFramebuffer(VkDevice device, VkRenderPass render_pass, const VkExtent2D& extent, VkImageView image_view);
 
@@ -148,10 +122,24 @@ namespace yart
         void Cleanup();
 
     private:
-        utils::LTStack m_ltStack;
-        bool m_shouldRebuildSwapchain = false; // Signals whether the swapchain should be rebuild/resized 
+        utils::LTStack m_LTStack;
+        std::unique_ptr<yart::Viewport> m_viewport = nullptr; // Main window viewport
+        
+        // -- SWAPCHAIN DATA -- // 
+        utils::LTStack m_swapchainLTStack;
+        bool m_shouldRebuildSwapchain = false; // Signals whether the swapchain should be rebuild/resized next frame 
+        std::vector<FrameInFlight> m_framesInFlight;
 
-        std::unique_ptr<yart::Viewport> m_viewport = nullptr;
+        VkSurfaceKHR m_vkSurface = VK_NULL_HANDLE;
+        VkSurfaceFormatKHR m_surfaceFormat = {};
+        VkPresentModeKHR m_surfacePresentMode;
+        VkExtent2D m_surfaceExtent = {};
+
+        uint32_t m_currentFrameInFlight = 0;
+        uint32_t m_currentSemaphoreIndex = 0;
+        uint32_t m_minImageCount = 0;
+        uint32_t m_maxImageCount = 0;
+        uint32_t m_imageCount = 0;
 
         // -- GLFW TYPES -- //
         GLFWwindow* m_window = nullptr;
@@ -164,7 +152,6 @@ namespace yart
         uint32_t m_queueFamily = 0;
         VkDescriptorPool m_vkDescriptorPool = VK_NULL_HANDLE;
         VkSwapchainKHR m_vkSwapchain = VK_NULL_HANDLE;
-        SwapchainData m_swapchainData = {};
         VkRenderPass m_vkRenderPass = VK_NULL_HANDLE;
         VkSampler m_viewportImageSampler = VK_NULL_HANDLE;
         
