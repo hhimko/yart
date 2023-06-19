@@ -11,7 +11,7 @@
 #define DEFAULT_VK_ALLOC VK_NULL_HANDLE
 #define MIN_IMAGE_COUNT 2
 
-#define CURRENT_FRAME_IN_FLIGHT m_swapchainData.framesInFlight[m_swapchainData.current_frame_in_flight]
+#define CURRENT_FRAME_IN_FLIGHT m_framesInFlight[m_currentFrameInFlight]
 
 
 static void on_glfw_error(int error_code, const char *description) 
@@ -75,7 +75,7 @@ namespace yart
         ImTextureID viewport_image = (ImTextureID)m_viewport->m_image.GetDescriptorSet();
 
         static const ImVec2 p_min = { 0, 0 };
-        ImVec2 p_max = { static_cast<float>(m_swapchainData.current_extent.width), static_cast<float>(m_swapchainData.current_extent.height) };
+        ImVec2 p_max = { static_cast<float>(m_surfaceExtent.width), static_cast<float>(m_surfaceExtent.height) };
 
         ImDrawList* bg_draw_list = ImGui::GetBackgroundDrawList();
         bg_draw_list->AddImage(viewport_image, p_min, p_max);
@@ -147,7 +147,7 @@ namespace yart
         m_vkInstance = CreateVulkanInstance(exts);
         ASSERT_VK_HANDLE_INIT(m_vkInstance, "Failed to create Vulkan instance");
 
-        m_ltStack.Push<VkInstance>(m_vkInstance, [](auto var){ 
+        m_LTStack.Push<VkInstance>(m_vkInstance, [](auto var){ 
             vkDestroyInstance(var, DEFAULT_VK_ALLOC);
         });
 
@@ -155,18 +155,17 @@ namespace yart
         auto debug_messenger = CreateVulkanDebugMessenger(m_vkInstance, on_vulkan_debug_message);
         ASSERT_VK_HANDLE_INIT(debug_messenger, "Failed to create Vulkan debug messenger");
 
-        m_ltStack.Push<VkDebugUtilsMessengerEXT>(debug_messenger, [&](auto var){ 
+        m_LTStack.Push<VkDebugUtilsMessengerEXT>(debug_messenger, [&](auto var){ 
             LOAD_VK_INSTANCE_FP(m_vkInstance, vkDestroyDebugUtilsMessengerEXT);
             vkDestroyDebugUtilsMessengerEXT(m_vkInstance, var, DEFAULT_VK_ALLOC);
         });
     #endif
 
         // Create a Vulkan surface for the main GLFW window
-        VkSurfaceKHR surface;
-        res = glfwCreateWindowSurface(m_vkInstance, m_window, DEFAULT_VK_ALLOC, &surface);
+        res = glfwCreateWindowSurface(m_vkInstance, m_window, DEFAULT_VK_ALLOC, &m_vkSurface);
         CHECK_VK_RESULT_RETURN(res, false);
 
-        m_ltStack.Push<VkSurfaceKHR>(surface, [&](auto var){ 
+        m_LTStack.Push<VkSurfaceKHR>(m_vkSurface, [&](auto var){ 
             vkDestroySurfaceKHR(m_vkInstance, var, DEFAULT_VK_ALLOC);
         });
 
@@ -183,7 +182,7 @@ namespace yart
         }
 
         // Select queue family index from the gpu with support for graphics and surface presentation (WSI)
-        if (!GetVulkanQueueFamilyIndex(m_vkPhysicalDevice, &m_queueFamily, VK_QUEUE_GRAPHICS_BIT, surface)) {
+        if (!GetVulkanQueueFamilyIndex(m_vkPhysicalDevice, &m_queueFamily, VK_QUEUE_GRAPHICS_BIT, m_vkSurface)) {
             std::cerr << "No queue family with graphics and presentation support found on GPU" << std::endl;
             return false;
         }
@@ -192,7 +191,7 @@ namespace yart
         m_vkDevice = CreateVulkanLogicalDevice(m_vkPhysicalDevice, m_queueFamily, swapchain_ext);
         ASSERT_VK_HANDLE_INIT(m_vkDevice, "Failed to create Vulkan device");
 
-        m_ltStack.Push<VkDevice>(m_vkDevice, [](auto var){ 
+        m_LTStack.Push<VkDevice>(m_vkDevice, [](auto var){ 
             vkDestroyDevice(var, DEFAULT_VK_ALLOC);
         });
 
@@ -204,12 +203,12 @@ namespace yart
         m_vkDescriptorPool = CreateVulkanDescriptorPool(m_vkDevice);
         ASSERT_VK_HANDLE_INIT(m_vkDescriptorPool, "Failed to create Vulkan Descriptor pool");
 
-        m_ltStack.Push<VkDescriptorPool>(m_vkDescriptorPool, [&](auto var){ 
+        m_LTStack.Push<VkDescriptorPool>(m_vkDescriptorPool, [&](auto var){ 
             vkDestroyDescriptorPool(m_vkDevice, var, DEFAULT_VK_ALLOC);
         });
 
         // Create the initial swapchain
-        if (!InitializeSwapchain(surface)) {
+        if (!InitializeSwapchain()) {
             std::cerr << "Failed to initialize swapchain" << std::endl;
             return false;
         }
@@ -421,50 +420,47 @@ namespace yart
         return pool;
     }
 
-    bool Window::InitializeSwapchain(VkSurfaceKHR surface)
+    bool Window::InitializeSwapchain()
     {
         VkResult res;
 
-        // Initialize m_swapchainData members
-        m_swapchainData.surface = surface;
-
         // Select an available surface format (preferably (VK_FORMAT_B8G8R8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR))
-        m_swapchainData.surface_format = utils::RequestVulkanSurfaceFormat(m_vkPhysicalDevice, surface, VK_FORMAT_B8G8R8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR);
+        m_surfaceFormat = utils::RequestVulkanSurfaceFormat(m_vkPhysicalDevice, m_vkSurface, VK_FORMAT_B8G8R8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR);
  
         // Select surface presentation mode
         VkPresentModeKHR preferred_present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
-        m_swapchainData.present_mode = utils::RequestVulkanSurfacePresentMode(m_vkPhysicalDevice, surface, preferred_present_mode);
+        m_surfacePresentMode = utils::RequestVulkanSurfacePresentMode(m_vkPhysicalDevice, m_vkSurface, preferred_present_mode);
 
         VkSurfaceCapabilitiesKHR surface_capabilities = {};
-        res = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_vkPhysicalDevice, surface, &surface_capabilities);
+        res = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_vkPhysicalDevice, m_vkSurface, &surface_capabilities);
         CHECK_VK_RESULT_RETURN(res, false);
 
-        m_swapchainData.current_extent = surface_capabilities.currentExtent;
+        m_surfaceExtent = surface_capabilities.currentExtent;
 
         // NOTE: 
         // min and max image count variables are set just once here and reused throughout the application runtime for swapchain rebuilds
         // in case of the capabilities not being constant - these should probably be retrieved and set every rebuild, but I can't find much info of such possibility 
-        uint32_t min_img_count = utils::GetMinImageCountFromPresentMode(m_swapchainData.present_mode);
-        m_swapchainData.min_image_count = std::max<uint32_t>(min_img_count, surface_capabilities.minImageCount);
+        uint32_t min_img_count = utils::GetMinImageCountFromPresentMode(m_surfacePresentMode);
+        m_minImageCount = std::max<uint32_t>(min_img_count, surface_capabilities.minImageCount);
 
-        m_swapchainData.max_image_count = surface_capabilities.maxImageCount;
+        m_maxImageCount = surface_capabilities.maxImageCount;
         if (surface_capabilities.maxImageCount != 0) // maxImageCount = 0 means there is no maximum
-            m_swapchainData.min_image_count = std::min<uint32_t>(m_swapchainData.min_image_count, m_swapchainData.max_image_count);
+            m_minImageCount = std::min<uint32_t>(m_minImageCount, m_maxImageCount);
 
         // Create a Vulkan render pass with a single subpass
-        m_vkRenderPass = CreateVulkanRenderPass(m_vkDevice, m_swapchainData);
+        m_vkRenderPass = CreateVulkanRenderPass(m_vkDevice, m_surfaceFormat);
         ASSERT_VK_HANDLE_INIT(m_vkRenderPass, "Failed to create Vulkan render pass");
 
-        m_ltStack.Push<VkRenderPass>(m_vkRenderPass, [&](VkRenderPass var){
+        m_LTStack.Push<VkRenderPass>(m_vkRenderPass, [&](VkRenderPass var){
             vkDestroyRenderPass(m_vkDevice, var, DEFAULT_VK_ALLOC);
         });
 
         // Create initial Vulkan swapchain 
-        m_vkSwapchain = CreateVulkanSwapchain(m_vkDevice, m_swapchainData);
+        m_vkSwapchain = CreateVulkanSwapchain(m_vkDevice, m_vkSurface, m_surfaceFormat, m_surfacePresentMode, m_surfaceExtent, m_minImageCount, VK_NULL_HANDLE);
         ASSERT_VK_HANDLE_INIT(m_vkSwapchain, "Failed to create Vulkan swapchain");
 
         // Create frame in flight objects 
-        if (!CreateSwapchainFramesInFlight(m_swapchainData.current_extent, false)) {
+        if (!CreateSwapchainFramesInFlight(m_surfaceExtent, false)) {
             std::cerr << "Failed to create swapchain frames in flight" << std::endl;
             return false;
         }
@@ -472,19 +468,18 @@ namespace yart
         return true;
     }
 
-    VkSwapchainKHR Window::CreateVulkanSwapchain(VkDevice device, const SwapchainData& data, VkSwapchainKHR old_swapchain)
+    VkSwapchainKHR Window::CreateVulkanSwapchain(VkDevice device, VkSurfaceKHR surface, VkSurfaceFormatKHR surface_format, VkPresentModeKHR present_mode, VkExtent2D extent, uint32_t min_image_count, VkSwapchainKHR old_swapchain)
     {
-        YART_ASSERT(data.surface != VK_NULL_HANDLE);
         VkSwapchainKHR swapchain = VK_NULL_HANDLE;
 
         VkSwapchainCreateInfoKHR swapchain_ci = {};
         swapchain_ci.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-        swapchain_ci.surface          = data.surface;
-        swapchain_ci.imageFormat      = data.surface_format.format;
-        swapchain_ci.imageColorSpace  = data.surface_format.colorSpace;
-        swapchain_ci.presentMode      = data.present_mode;
-        swapchain_ci.imageExtent      = data.current_extent;
-        swapchain_ci.minImageCount    = data.min_image_count;
+        swapchain_ci.surface          = surface;
+        swapchain_ci.imageFormat      = surface_format.format;
+        swapchain_ci.imageColorSpace  = surface_format.colorSpace;
+        swapchain_ci.presentMode      = present_mode;
+        swapchain_ci.imageExtent      = extent;
+        swapchain_ci.minImageCount    = min_image_count;
         swapchain_ci.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE; // Only in case when graphics family = present family
         swapchain_ci.imageArrayLayers = 1;
@@ -504,61 +499,61 @@ namespace yart
         VkResult res;
 
         // Query the swapchain image count and the initial set of images
-        res = vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapchain, &m_swapchainData.image_count, nullptr);
+        res = vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapchain, &m_imageCount, nullptr);
         CHECK_VK_RESULT_RETURN(res, false);
 
-        auto images = std::make_unique<VkImage[]>(m_swapchainData.image_count);
-        res = vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapchain, &m_swapchainData.image_count, images.get());
+        auto images = std::make_unique<VkImage[]>(m_imageCount);
+        res = vkGetSwapchainImagesKHR(m_vkDevice, m_vkSwapchain, &m_imageCount, images.get());
         CHECK_VK_RESULT_RETURN(res, false);
 
         // Create image views for each swapchain image
-        auto image_views = std::make_unique<VkImageView[]>(m_swapchainData.image_count);
-        for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
-            image_views[i] = CreateVulkanImageView(m_vkDevice, m_swapchainData.surface_format.format, images[i]);
+        auto image_views = std::make_unique<VkImageView[]>(m_imageCount);
+        for (uint32_t i = 0; i < m_imageCount; ++i) {
+            image_views[i] = CreateVulkanImageView(m_vkDevice, m_surfaceFormat.format, images[i]);
             ASSERT_VK_HANDLE_INIT(image_views[i], "Failed to create swapchain image view");
 
-            m_swapchainData.ltStack.Push<VkImageView>(image_views[i], [&](VkImageView var){
+            m_swapchainLTStack.Push<VkImageView>(image_views[i], [&](VkImageView var){
                 vkDestroyImageView(m_vkDevice, var, DEFAULT_VK_ALLOC);
             });
         }
 
         // Create framebuffers for each image view
-        auto frame_buffers = std::make_unique<VkFramebuffer[]>(m_swapchainData.image_count);
-        for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
+        auto frame_buffers = std::make_unique<VkFramebuffer[]>(m_imageCount);
+        for (uint32_t i = 0; i < m_imageCount; ++i) {
             frame_buffers[i] = CreateVulkanFramebuffer(m_vkDevice, m_vkRenderPass, current_extent, image_views[i]);
             ASSERT_VK_HANDLE_INIT(frame_buffers[i], "Failed to create swapchain framebuffer");
 
-            m_swapchainData.ltStack.Push<VkFramebuffer>(frame_buffers[i], [&](VkFramebuffer var){
+            m_swapchainLTStack.Push<VkFramebuffer>(frame_buffers[i], [&](VkFramebuffer var){
                 vkDestroyFramebuffer(m_vkDevice, var, DEFAULT_VK_ALLOC);
             });
         }
 
         // Create a Vulkan command pool for each frame
-        auto command_pools = std::make_unique<VkCommandPool[]>(m_swapchainData.image_count);
+        auto command_pools = std::make_unique<VkCommandPool[]>(m_imageCount);
 
         VkCommandPoolCreateInfo pool_ci = {};
         pool_ci.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         pool_ci.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
         pool_ci.queueFamilyIndex = m_queueFamily;
 
-        for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
+        for (uint32_t i = 0; i < m_imageCount; ++i) {
             res = vkCreateCommandPool(m_vkDevice, &pool_ci, DEFAULT_VK_ALLOC, &command_pools[i]);
             CHECK_VK_RESULT_RETURN(res, false);
 
-            m_swapchainData.ltStack.Push<VkCommandPool>(command_pools[i], [&](VkCommandPool var){
+            m_swapchainLTStack.Push<VkCommandPool>(command_pools[i], [&](VkCommandPool var){
                 vkDestroyCommandPool(m_vkDevice, var, DEFAULT_VK_ALLOC);
             });
         }
 
         // Allocate Vulkan command buffers from the pool for each frame
-        auto command_buffers = std::make_unique<VkCommandBuffer[]>(m_swapchainData.image_count);
+        auto command_buffers = std::make_unique<VkCommandBuffer[]>(m_imageCount);
 
         VkCommandBufferAllocateInfo buffer_ai = {};
         buffer_ai.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         buffer_ai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         buffer_ai.commandBufferCount = 1;
 
-        for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
+        for (uint32_t i = 0; i < m_imageCount; ++i) {
             buffer_ai.commandPool = command_pools[i];
 
             res = vkAllocateCommandBuffers(m_vkDevice, &buffer_ai, &command_buffers[i]);
@@ -567,18 +562,18 @@ namespace yart
         }
 
         // Create Vulkan semaphores for each frame 
-        auto image_acquired_semaphores = std::make_unique<VkSemaphore[]>(m_swapchainData.image_count);
-        auto render_complete_semaphores = std::make_unique<VkSemaphore[]>(m_swapchainData.image_count);
+        auto image_acquired_semaphores = std::make_unique<VkSemaphore[]>(m_imageCount);
+        auto render_complete_semaphores = std::make_unique<VkSemaphore[]>(m_imageCount);
 
         VkSemaphoreCreateInfo semaphore_ci = {};
         semaphore_ci.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-        for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
+        for (uint32_t i = 0; i < m_imageCount; ++i) {
             // Image Acquired Semaphore
             res = vkCreateSemaphore(m_vkDevice, &semaphore_ci, DEFAULT_VK_ALLOC, &image_acquired_semaphores[i]);
             CHECK_VK_RESULT_RETURN(res, false);
 
-            m_swapchainData.ltStack.Push<VkSemaphore>(image_acquired_semaphores[i], [&](VkSemaphore var){
+            m_swapchainLTStack.Push<VkSemaphore>(image_acquired_semaphores[i], [&](VkSemaphore var){
                 vkDestroySemaphore(m_vkDevice, var, DEFAULT_VK_ALLOC);
             });
 
@@ -586,50 +581,49 @@ namespace yart
             res = vkCreateSemaphore(m_vkDevice, &semaphore_ci, DEFAULT_VK_ALLOC, &render_complete_semaphores[i]);
             CHECK_VK_RESULT_RETURN(res, false);
 
-            m_swapchainData.ltStack.Push<VkSemaphore>(render_complete_semaphores[i], [&](VkSemaphore var){
+            m_swapchainLTStack.Push<VkSemaphore>(render_complete_semaphores[i], [&](VkSemaphore var){
                 vkDestroySemaphore(m_vkDevice, var, DEFAULT_VK_ALLOC);
             });
         }
 
         // Create Vulkan fences for each frame 
-        auto fences = std::make_unique<VkFence[]>(m_swapchainData.image_count);
+        auto fences = std::make_unique<VkFence[]>(m_imageCount);
 
         VkFenceCreateInfo fence_ci = {};
         fence_ci.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fence_ci.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-        for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
+        for (uint32_t i = 0; i < m_imageCount; ++i) {
             res = vkCreateFence(m_vkDevice, &fence_ci, DEFAULT_VK_ALLOC, &fences[i]);
             CHECK_VK_RESULT_RETURN(res, false);
 
-            m_swapchainData.ltStack.Push<VkFence>(fences[i], [&](VkFence var){
+            m_swapchainLTStack.Push<VkFence>(fences[i], [&](VkFence var){
                 vkDestroyFence(m_vkDevice, var, DEFAULT_VK_ALLOC);
             });
         }
 
         // Create frames in flight
         if (!recreate)
-            m_swapchainData.framesInFlight = std::vector<SwapchainData::FrameInFlight>(m_swapchainData.image_count);
+            m_framesInFlight = std::vector<FrameInFlight>(m_imageCount);
 
-        for (uint32_t i = 0; i < m_swapchainData.image_count; ++i) {
-            m_swapchainData.framesInFlight[i].vkFrameBuffer = frame_buffers[i];
-            m_swapchainData.framesInFlight[i].vkCommandPool = command_pools[i];
-            m_swapchainData.framesInFlight[i].vkCommandBuffer = command_buffers[i];
-            m_swapchainData.framesInFlight[i].vkImageAcquiredSemaphore = image_acquired_semaphores[i];
-            m_swapchainData.framesInFlight[i].vkRenderCompleteSemaphore = render_complete_semaphores[i];
-            m_swapchainData.framesInFlight[i].vkFence = fences[i];
+        for (uint32_t i = 0; i < m_imageCount; ++i) {
+            m_framesInFlight[i].vkFrameBuffer = frame_buffers[i];
+            m_framesInFlight[i].vkCommandPool = command_pools[i];
+            m_framesInFlight[i].vkCommandBuffer = command_buffers[i];
+            m_framesInFlight[i].vkImageAcquiredSemaphore = image_acquired_semaphores[i];
+            m_framesInFlight[i].vkRenderCompleteSemaphore = render_complete_semaphores[i];
+            m_framesInFlight[i].vkFence = fences[i];
         }
 
         return true;
     }
 
-    VkRenderPass Window::CreateVulkanRenderPass(VkDevice device, const SwapchainData& data)
+    VkRenderPass Window::CreateVulkanRenderPass(VkDevice device, VkSurfaceFormatKHR surface_format)
     {
-        YART_ASSERT(data.surface != VK_NULL_HANDLE);
         VkRenderPass render_pass = VK_NULL_HANDLE;
 
         VkAttachmentDescription attachment = {};
-        attachment.format         = data.surface_format.format;
+        attachment.format         = surface_format.format;
         attachment.samples        = VK_SAMPLE_COUNT_1_BIT;
         attachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachment.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
@@ -737,8 +731,8 @@ namespace yart
         init_info.Queue          = m_vkQueue;
         init_info.QueueFamily    = m_queueFamily;
         init_info.DescriptorPool = m_vkDescriptorPool;
-        init_info.MinImageCount  = m_swapchainData.min_image_count;
-        init_info.ImageCount     = m_swapchainData.image_count;
+        init_info.MinImageCount  = m_minImageCount;
+        init_info.ImageCount     = m_imageCount;
         init_info.MSAASamples    = VK_SAMPLE_COUNT_1_BIT;
         // init_info.CheckVkResultFn = check_vk_result;
 
@@ -810,11 +804,11 @@ namespace yart
         VkResult res = vkCreateSampler(m_vkDevice, &sampler_ci, DEFAULT_VK_ALLOC, &m_viewportImageSampler);
         CHECK_VK_RESULT_RETURN(res, false);
 
-        m_ltStack.Push<VkSampler>(m_viewportImageSampler, [&](VkSampler var){
+        m_LTStack.Push<VkSampler>(m_viewportImageSampler, [&](VkSampler var){
             vkDestroySampler(m_vkDevice, var, DEFAULT_VK_ALLOC);
         });
 
-        VkExtent2D viewport_extent = m_swapchainData.current_extent;
+        VkExtent2D viewport_extent = m_surfaceExtent;
         m_viewport = std::make_unique<yart::Viewport>(this, viewport_extent.width, viewport_extent.height);
 
         return true;
@@ -827,26 +821,26 @@ namespace yart
         CHECK_VK_RESULT_ABORT(res);
 
         // Release all swapchain related objects
-        m_swapchainData.ltStack.Release();
+        m_swapchainLTStack.Release();
 
-        // ImGui_ImplVulkan_SetMinImageCount(m_swapchainData.min_image_count); // NOTE: min_image_count is kept constant throughout the application life span
+        // ImGui_ImplVulkan_SetMinImageCount(m_minImageCount); // NOTE: m_minImageCount is kept constant throughout the application life span
 
         // Recreate Vulkan swapchain
-        m_swapchainData.current_extent.width = width;
-        m_swapchainData.current_extent.height = height;
+        m_surfaceExtent.width = width;
+        m_surfaceExtent.height = height;
 
         VkSwapchainKHR old_swapchain = m_vkSwapchain;
-        m_vkSwapchain = CreateVulkanSwapchain(m_vkDevice, m_swapchainData, old_swapchain);
+        m_vkSwapchain = CreateVulkanSwapchain(m_vkDevice, m_vkSurface, m_surfaceFormat, m_surfacePresentMode, m_surfaceExtent, m_minImageCount, old_swapchain);
         YART_ASSERT(m_vkSwapchain != VK_NULL_HANDLE);
 
         // Release previous Vulkan swapchain
         vkDestroySwapchainKHR(m_vkDevice, old_swapchain, DEFAULT_VK_ALLOC);
 
         // Create frame in flight objects 
-        if (!CreateSwapchainFramesInFlight(m_swapchainData.current_extent, true))
+        if (!CreateSwapchainFramesInFlight(m_surfaceExtent, true))
             YART_ABORT("Failed to create swapchain frames in flight");
 
-        m_swapchainData.current_frame_in_flight = 0;
+        m_currentFrameInFlight = 0;
         
         // Resize viewport image
         m_viewport->Resize(this, width, height);
@@ -857,9 +851,9 @@ namespace yart
         VkResult res;
                 
         // Get the next available frame in flight index
-        VkSemaphore image_acquired_semaphore = m_swapchainData.framesInFlight[m_swapchainData.current_semaphore_index].vkImageAcquiredSemaphore;
+        VkSemaphore image_acquired_semaphore = m_framesInFlight[m_currentSemaphoreIndex].vkImageAcquiredSemaphore;
 
-        res = vkAcquireNextImageKHR(m_vkDevice, m_vkSwapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &m_swapchainData.current_frame_in_flight);
+        res = vkAcquireNextImageKHR(m_vkDevice, m_vkSwapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &m_currentFrameInFlight);
         if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
             return true; // Signal that swapchain should be rebuilt 
         CHECK_VK_RESULT_ABORT(res);
@@ -891,7 +885,7 @@ namespace yart
         VkRenderPassBeginInfo render_pass_info = {};
         render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         render_pass_info.framebuffer = CURRENT_FRAME_IN_FLIGHT.vkFrameBuffer;
-        render_pass_info.renderArea.extent = m_swapchainData.current_extent;
+        render_pass_info.renderArea.extent = m_surfaceExtent;
         render_pass_info.renderPass = m_vkRenderPass;
         static const VkClearValue clear_value = {};
         render_pass_info.pClearValues = &clear_value;
@@ -910,7 +904,7 @@ namespace yart
         CHECK_VK_RESULT_ABORT(res);
 
         // Submit queue 
-        VkSemaphore render_complete_semaphore = m_swapchainData.framesInFlight[m_swapchainData.current_semaphore_index].vkRenderCompleteSemaphore;
+        VkSemaphore render_complete_semaphore = m_framesInFlight[m_currentSemaphoreIndex].vkRenderCompleteSemaphore;
         VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
         VkSubmitInfo submit_info = {};
@@ -931,11 +925,11 @@ namespace yart
 
     bool Window::FramePresent()
     {
-        VkSemaphore render_complete_semaphore = m_swapchainData.framesInFlight[m_swapchainData.current_semaphore_index].vkRenderCompleteSemaphore;
+        VkSemaphore render_complete_semaphore = m_framesInFlight[m_currentSemaphoreIndex].vkRenderCompleteSemaphore;
 
         VkPresentInfoKHR present_info = {};
         present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-        present_info.pImageIndices = &m_swapchainData.current_frame_in_flight;
+        present_info.pImageIndices = &m_currentFrameInFlight;
         present_info.pWaitSemaphores = &render_complete_semaphore;
         present_info.waitSemaphoreCount = 1;
         present_info.pSwapchains = &m_vkSwapchain;
@@ -947,7 +941,7 @@ namespace yart
         CHECK_VK_RESULT_ABORT(res);
 
         // Use the next set of semaphores
-        m_swapchainData.current_semaphore_index = (m_swapchainData.current_semaphore_index + 1) % m_swapchainData.image_count; 
+        m_currentSemaphoreIndex = (m_currentSemaphoreIndex + 1) % m_imageCount; 
 
         return false;
     }
@@ -959,7 +953,7 @@ namespace yart
         CHECK_VK_RESULT_ABORT(res);
 
         // Release all swapchain related objects
-        m_swapchainData.ltStack.Release();
+        m_swapchainLTStack.Release();
         if (m_vkSwapchain != VK_NULL_HANDLE)
             vkDestroySwapchainKHR(m_vkDevice, m_vkSwapchain, DEFAULT_VK_ALLOC);
 
@@ -972,7 +966,7 @@ namespace yart
         ImGui::DestroyContext();
 
         // Unwind all allocations from the LTStack
-        m_ltStack.Release();
+        m_LTStack.Release();
 
         // Quit GLFW
         glfwDestroyWindow(m_window);

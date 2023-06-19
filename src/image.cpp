@@ -208,7 +208,7 @@ namespace yart
         return buffer;
     }
 
-    VkDeviceMemory Image::BindVulkanStagingBufferMemory(VkDevice device, VkPhysicalDevice physical_device, VkBuffer staging_buffer, VkDeviceSize memory_size)
+    VkDeviceMemory Image::BindVulkanStagingBufferMemory(VkDevice device, VkPhysicalDevice physical_device, VkBuffer staging_buffer, [[maybe_unused]] VkDeviceSize memory_size)
     {
         VkDeviceMemory memory = VK_NULL_HANDLE;
         VkResult res;

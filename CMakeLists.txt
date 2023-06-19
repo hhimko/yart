@@ -33,14 +33,10 @@ endif()
 # Sets common compile options for a target 
 function(yart_set_compile_options target)
     # --- Common --- #
-    target_compile_options(${target} PRIVATE -Wall)
     if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-        # Suppress MSVC compiler warning C4464 (relative include path contains '..')
-        target_compile_options(${target} PRIVATE /wd4464)
-        # Suppress MSVC compiler warning C5045 (spectre mitigation)       
-        target_compile_options(${target} PRIVATE /wd5045)
-        # Suppress MSVC compiler warning C4710 (function not inlined) 
-        target_compile_options(${target} PRIVATE /wd4710)
+        target_compile_options(${target} PRIVATE /W4)
+    else()
+        target_compile_options(${target} PRIVATE -Wall)
     endif()
 
     # --- Debug --- #
@@ -112,13 +108,6 @@ if(WIN32)
     add_compile_options(-DVK_USE_PLATFORM_WIN32_KHR)
 endif()
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    # Suppress MSVC compiler warnings for Vulkan
-    target_compile_options(Vulkan::Vulkan INTERFACE /wd4820)
-    target_compile_options(Vulkan::Vulkan INTERFACE /wd4668)
-    target_compile_options(Vulkan::Vulkan INTERFACE /wd5039)
-endif()
-
 # Build GLFW from source
 check_submodule_exists(glfw)
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "Build GLFW without docs" FORCE)
@@ -126,11 +115,6 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "Build GLFW without tests" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "Build GLFW without examples" FORCE)
 set(GLFW_INSTALL OFF CACHE BOOL "Don't generate GLFW installation target" FORCE)
 add_subdirectory(lib/glfw EXCLUDE_FROM_ALL)
-
-if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    # Suppress MSVC compiler warning C4820 for glfw (bytes padding added after construct) 
-    target_compile_options(glfw PRIVATE /wd4820)
-endif()
 
 # Add GLM header-only library
 check_submodule_exists(glm)
