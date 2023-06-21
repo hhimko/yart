@@ -11,7 +11,7 @@ on:
 
 
 jobs:
-    doxygen-build-deploy:
+    generate-check-deploy:
         permissions:
             contents: write
             pages: write  
@@ -21,15 +21,24 @@ jobs:
           - name: Checkout
             uses: actions/checkout@v3
 
+          - name: Setup ACT For Running Locally
+            if: ${{ env.ACT }} 
+            run: sudo apt-get update 
+
           - name: Install Doxygen
             shell: bash
-            run: |
-              sudo apt update 
-              sudo apt-get install doxygen graphviz -y
+            run: sudo apt-get install doxygen graphviz -y
 
           - name: Generate Documentation
             shell: bash
-            run: doxygen
+            run: doxygen >doxygen_output.txt 2>&1
+
+          - name: Check Doxygen Output
+            shell: bash
+            run: | 
+              cat doxygen_output.txt | grep --color -F -w "warning" | while read warning; do
+                echo ::warning::${warning#$(pwd)}  # remove the leading absolute path
+              done 
 
           - name: Create .nojekyll
             shell: bash
@@ -40,3 +49,4 @@ jobs:
             uses: JamesIves/github-pages-deploy-action@v4
             with:
                 folder: docs/html
+                
