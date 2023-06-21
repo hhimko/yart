@@ -1,4 +1,4 @@
-name: Doxygen GitHub Pages Deploy
+name: Doxygen Deploy
 
 # Action for building doxygen docs and deploying to GitHub Pages
 
@@ -11,10 +11,9 @@ on:
 
 
 jobs:
-    generate-deploy:
+    generate:
         permissions:
             contents: write
-            pages: write  
         outputs:
             doxygen_warnings: ${{ steps.doxygen_output.outputs.warnings }}
         runs-on: ubuntu-latest
@@ -42,6 +41,24 @@ jobs:
                 cat doxygen_output.txt >> "$GITHUB_OUTPUT"
                 echo "EOF" >> "$GITHUB_OUTPUT"
 
+          - name: Upload Artifact
+            uses: actions/upload-artifact@v3
+            with:
+                name: docs-html
+                path: docs/html
+
+    deploy:
+        needs: [generate]
+        permissions:
+            pages: write  
+        runs-on: ubuntu-latest
+        steps:
+          - name: Download Artifact
+            uses: actions/download-artifact@v3
+            with:
+                name: docs-html
+                path: docs/html
+
           - name: Create .nojekyll
             shell: bash
             run: touch docs/html/.nojekyll
@@ -52,32 +69,42 @@ jobs:
             with:
                 folder: docs/html
                 
-    check:
-      needs: [generate-deploy]
-      permissions:
-        contents: write
-      runs-on: ubuntu-latest
-      steps:
-        - name: Retrieve Doxygen Output
-          shell: bash
-          run: |
-              echo "${{ needs.generate-deploy.outputs.doxygen_warnings }}" > doxygen_output.txt
+    check-warnings:
+        needs: [generate]
+        permissions:
+            contents: write
+        runs-on: ubuntu-latest
+        steps:
+          - name: Retrieve Doxygen Output
+            shell: bash
+            run: |
+                echo "${{ needs.generate.outputs.doxygen_warnings }}" > doxygen_output.txt
 
-        - name: Check Doxygen Output
-          shell: bash
-          run: | 
-              set +e  # Remove the -e flag to avoid aborting the script when grep doesn't find any warnings 
+          - name: Check Doxygen Output
+            shell: bash
+            run: | 
+                set +e  # Remove the -e flag to avoid aborting the script when grep doesn't find any warnings 
 
-              warnings=$(cat doxygen_output.txt | grep -F -w "warning")
-              if [ $? -eq  0 ]; then
-                  cat doxygen_output.txt | grep -F -w "warning" | while read warning; do
-                      echo ::error::${warning#$(pwd)}  # remove the leading absolute path
-                  done
+                warnings=$(cat doxygen_output.txt | grep -F -w "warning")
+                if [ $? -eq  0 ]; then
+                    cat doxygen_output.txt | grep -F -w "warning" | while read warning; do
+                        echo ::error::${warning#$(pwd)}  # remove the leading absolute path
+                    done
 
-                  num_warnings=$(cat doxygen_output.txt | wc -l)
-                  echo "Doxygen run with $num_warnings warnings"
-                  exit 1
-              fi 
+                    num_warnings=$(cat doxygen_output.txt | wc -l)
+                    echo "Doxygen run with $num_warnings warnings"
+                    exit 1
+                fi 
 
-              echo "Doxygen run successfully"
-              exit 0
+                echo "Doxygen run successfully"
+                exit 0
+
+    clean:
+        needs: [deploy]
+        runs-on: ubuntu-latest
+        steps:
+          - name: Delete Artifact
+            uses: geekyeggo/delete-artifact@v2
+            with:
+                name: docs-html
+                
