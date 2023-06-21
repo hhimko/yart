@@ -1,4 +1,4 @@
-# Yet Another Ray Tracer
+# Yet Another Ray Tracer ![Documentation](https://github.com/hhimko/yart/actions/workflows/doxygen-gh-pages.yml/badge.svg)
 
 YART *(Yet Another Ray Tracer)* is a real-time ray tracing engine on CPU. 
 Created for a bachelors degree applied CS thesis titled "Implementation of a ray tracing engine using a CPU based renderer". 

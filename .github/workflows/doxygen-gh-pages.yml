@@ -11,11 +11,12 @@ on:
 
 
 jobs:
-    generate-check-deploy:
+    generate-deploy:
         permissions:
             contents: write
             pages: write  
-
+        outputs:
+            doxygen_warnings: ${{ steps.doxygen_output.outputs.warnings }}
         runs-on: ubuntu-latest
         steps:
           - name: Checkout
@@ -23,22 +24,23 @@ jobs:
 
           - name: Setup ACT For Running Locally
             if: ${{ env.ACT }} 
-            run: sudo apt-get update 
+            run: sudo apt-get update -q
 
           - name: Install Doxygen
             shell: bash
-            run: sudo apt-get install doxygen graphviz -y
+            run: sudo apt-get install doxygen graphviz -q -y
 
           - name: Generate Documentation
             shell: bash
             run: doxygen >doxygen_output.txt 2>&1
 
-          - name: Check Doxygen Output
+          - name: Save Doxygen Output
+            id: doxygen_output
             shell: bash
-            run: | 
-              cat doxygen_output.txt | grep --color -F -w "warning" | while read warning; do
-                echo ::warning::${warning#$(pwd)}  # remove the leading absolute path
-              done 
+            run: |
+                echo "warnings<<EOF" >> "$GITHUB_OUTPUT"
+                cat doxygen_output.txt >> "$GITHUB_OUTPUT"
+                echo "EOF" >> "$GITHUB_OUTPUT"
 
           - name: Create .nojekyll
             shell: bash
@@ -50,3 +52,32 @@ jobs:
             with:
                 folder: docs/html
                 
+    check:
+      needs: [generate-deploy]
+      permissions:
+        contents: write
+      runs-on: ubuntu-latest
+      steps:
+        - name: Retrieve Doxygen Output
+          shell: bash
+          run: |
+              echo "${{ needs.generate-deploy.outputs.doxygen_warnings }}" > doxygen_output.txt
+
+        - name: Check Doxygen Output
+          shell: bash
+          run: | 
+              set +e  # Remove the -e flag to avoid aborting the script when grep doesn't find any warnings 
+
+              warnings=$(cat doxygen_output.txt | grep -F -w "warning")
+              if [ $? -eq  0 ]; then
+                  cat doxygen_output.txt | grep -F -w "warning" | while read warning; do
+                      echo ::error::${warning#$(pwd)}  # remove the leading absolute path
+                  done
+
+                  num_warnings=$(cat doxygen_output.txt | wc -l)
+                  echo "Doxygen run with $num_warnings warnings"
+                  exit 1
+              fi 
+
+              echo "Doxygen run successfully"
+              exit 0
