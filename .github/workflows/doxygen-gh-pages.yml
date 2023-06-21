@@ -53,6 +53,9 @@ jobs:
             pages: write  
         runs-on: ubuntu-latest
         steps:
+          - name: Checkout
+            uses: actions/checkout@v3
+
           - name: Download Artifact
             uses: actions/download-artifact@v3
             with:
@@ -107,4 +110,3 @@ jobs:
             uses: geekyeggo/delete-artifact@v2
             with:
                 name: docs-html
-                
