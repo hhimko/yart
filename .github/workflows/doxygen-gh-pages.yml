@@ -46,7 +46,7 @@ jobs:
             run: touch docs/html/.nojekyll
 
           - name: Upload Artifact
-            uses: actions/upload-artifact@v3
+            uses: actions/upload-pages-artifact@v1
             with:
                 name: github-pages
                 path: docs/html
@@ -98,6 +98,8 @@ jobs:
 
     clean:
         needs: [deploy]
+        # Run even if deploy job failed
+        if: always() 
         runs-on: ubuntu-latest
         steps:
           - name: Delete Artifact
