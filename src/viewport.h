@@ -16,6 +16,10 @@ namespace yart
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     class Viewport {
     public:
+        /// @brief Create a new viewport from a given window
+        /// @param window Window on which to create the viewport on
+        /// @param width Width of the viewport image in pixels
+        /// @param height Height of the viewport image in pixels
         Viewport(yart::Window* window, uint32_t width, uint32_t height);
         Viewport(const Viewport&) = delete;
         Viewport& operator=(Viewport const&) = delete;
@@ -29,6 +33,10 @@ namespace yart
         /// @brief Apply changes made to the image data and update the underlying viewport image
         void Refresh(yart::Window* window);
 
+        /// @brief Get the viewport's image pixel array
+        /// @details The size of the array is equal to `width*height*4` where `width` and `height` can be 
+        ///     retrieved from Viewport::GetImageSize(), and `4` is the number of channels in the image (RGBA)
+        /// @return Pointer to the viewport's image pixel data
         float* GetImageData() const 
         {
             return m_imageData;

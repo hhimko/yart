@@ -73,6 +73,9 @@ namespace yart
         /// @return Requested present mode if available or VK_PRESENT_MODE_FIFO_KHR (always guaranteed)
         VkPresentModeKHR RequestVulkanSurfacePresentMode(VkPhysicalDevice device, VkSurfaceKHR surface, VkPresentModeKHR request_present_mode);
 
+        /// @brief Return the required swapchain image count from a given Vulkan present mode 
+        /// @param mode Requested Vulkan present mode
+        /// @return Number of required minimum swapchain images
         uint32_t GetMinImageCountFromPresentMode(VkPresentModeKHR mode);
 
         /// @brief Query available GPU memory types and return the index to a memory type with given properties
@@ -84,10 +87,21 @@ namespace yart
         ///     <a href="https://asawicki.info/news_1740_vulkan_memory_types_on_pc_and_how_to_use_them">blog entry</a> by Adam Sawicki
         uint32_t FindVulkanMemoryType(VkPhysicalDevice device, VkMemoryPropertyFlags property_flags, uint32_t type_bits);
 
+        /// @brief Allocate and begin a single time submit command buffer from a given command pool
+        /// @details Recording to the command buffer should be concluded later, using EndSingleTimeVulkanCommandBuffer()
+        /// @param device Handle to a Vulkan device, on which to allocate the command buffer
+        /// @param command_pool Handle to a Vulkan command pool from which to allocate the command buffer
+        /// @return Handle to the newly allocated command buffer or `VK_NULL_HANDLE` on fail
         VkCommandBuffer BeginSingleTimeVulkanCommandBuffer(VkDevice device, VkCommandPool command_pool);
 
+        /// @brief Finish recording commands to, and free a single time command buffer, created using BeginSingleTimeVulkanCommandBuffer()
+        /// @param device Handle to the Vulkan device, on which the command buffer was created
+        /// @param command_pool Handle to the Vulkan command pool from which the command buffer was allocated  
+        /// @param queue Handle to a Vulkan queue on which to submit the command pool
+        /// @param command_buffer Handle to the Vulkan command buffer
+        /// @return Whether the command buffer was successfully submitted
+        /// @warning This method blocks the CPU until the queue has finished executing
         bool EndSingleTimeVulkanCommandBuffer(VkDevice device, VkCommandPool command_pool, VkQueue queue, VkCommandBuffer command_buffer);
 
     } // namespace utils
-    
 } // namespace yart

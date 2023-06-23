@@ -39,6 +39,8 @@ namespace yart
         /// @brief Perform window shutdown and cleanup
         void Close();
 
+        /// @brief Get the main window viewport instance
+        /// @return Pointer to a Viewport instance
         yart::Viewport* GetViewport() const 
         {
             return m_viewport.get();
