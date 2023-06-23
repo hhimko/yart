@@ -41,36 +41,30 @@ jobs:
                 cat doxygen_output.txt >> "$GITHUB_OUTPUT"
                 echo "EOF" >> "$GITHUB_OUTPUT"
 
+          - name: Create .nojekyll
+            shell: bash
+            run: touch docs/html/.nojekyll
+
           - name: Upload Artifact
             uses: actions/upload-artifact@v3
             with:
-                name: docs-html
+                name: github-pages
                 path: docs/html
 
     deploy:
         needs: [generate]
         permissions:
-            pages: write  
+            pages: write # To deploy to Pages
+            id-token: write # To verify the deployment originates from an appropriate source
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
         runs-on: ubuntu-latest
         steps:
-          - name: Checkout
-            uses: actions/checkout@v3
-
-          - name: Download Artifact
-            uses: actions/download-artifact@v3
-            with:
-                name: docs-html
-                path: docs/html
-
-          - name: Create .nojekyll
-            shell: bash
-            run: touch docs/html/.nojekyll
-
           - name: Deploy to GitHub Pages # Does not run locally with act
+            id: deployment
             if: ${{ !env.ACT }} 
-            uses: JamesIves/github-pages-deploy-action@v4
-            with:
-                folder: docs/html
+            uses: actions/deploy-pages@v2
                 
     check-warnings:
         needs: [generate]
@@ -94,7 +88,7 @@ jobs:
                         echo ::error::${warning#$(pwd)}  # remove the leading absolute path
                     done
 
-                    num_warnings=$(cat doxygen_output.txt | wc -l)
+                    num_warnings=$(cat doxygen_output.txt | grep -F -w "warning" | wc -l)
                     echo "Doxygen run with $num_warnings warnings"
                     exit 1
                 fi 
@@ -109,4 +103,4 @@ jobs:
           - name: Delete Artifact
             uses: geekyeggo/delete-artifact@v2
             with:
-                name: docs-html
+                name: github-pages
