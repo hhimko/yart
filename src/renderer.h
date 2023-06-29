@@ -54,8 +54,10 @@ namespace yart
         std::vector<uint32_t> m_horizontalPixelIterator;
 
         // -- CAMERA DATA -- // 
+        static constexpr glm::vec3 UP_DIRECTION = { .0f, 1.0f, .0f }; // World up vector used for camera positioning
+
         glm::vec3 m_cameraPosition = { .0f, .0f, -5.0f }; // World space position 
-        glm::vec3 m_cameraLookDirection = { .0f, .0f, 1.0f }; // Look-at vector
+        glm::vec3 m_cameraLookDirection = { .0f, .0f, 1.0f }; // Normalized look-at vector
         
         float m_fieldOfView = 90.0f * DEG_TO_RAD; // Horizontal camera FOV in radians
         float m_nearClippingPlane = 0.1f;

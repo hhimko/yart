@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "utils/core_utils.h"
+#include "utils/glm_utils.h"
 
 
 namespace yart
@@ -29,6 +30,15 @@ namespace yart
         });
     }
 
+    bool Renderer::UpdateCamera()
+    {
+        const glm::vec3 u = -glm::normalize(glm::cross(m_cameraLookDirection, UP_DIRECTION)); // Camera view horizontal (right) direction vector
+        const glm::vec3 v = glm::cross(-u, m_cameraLookDirection); // Camera view vertical (up) direction vector
+
+        /// TODO: Renderer::UpdateCamera is unimplemented
+        return false;
+    }
+
     void Renderer::Resize(uint32_t width, uint32_t height)
     {
         // Resize and fill pixel iterators
@@ -42,5 +52,23 @@ namespace yart
         
         m_width = width;
         m_height = height;
+
+        // Change in aspect ratio requires the camera matrix to be recalculated 
+        RecalculateCameraTransformationMatrix();
     }
+
+    void Renderer::RecalculateCameraTransformationMatrix()
+    {
+        // Calculate the view matrix inverse (camera space to world space)
+        const glm::mat4 view_matrix = yart::utils::CreateViewMatrix(m_cameraLookDirection, UP_DIRECTION);
+        const glm::mat4 view_matrix_inverse = glm::inverse(view_matrix);
+
+        // Calculate the projection matrix inverse (screen space to camera space)
+        float w = static_cast<float>(m_width);
+        float h = static_cast<float>(m_height);
+        const glm::mat4 projection_matrix_inverse = yart::utils::CreateInverseProjectionMatrix(m_fieldOfView, w, h, m_nearClippingPlane);
+
+        m_inverseViewProjectionMatrix = view_matrix_inverse * projection_matrix_inverse;
+    }
+
 } // namespace yart

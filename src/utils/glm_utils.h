@@ -8,7 +8,6 @@ namespace yart
     namespace utils 
     {
         /// @brief Create a world space to camera space transformation matrix, otherwise known as the view matrix
-        /// @param position Camera position in world space
         /// @param look_dir Camera look direction vector. The vector is assumed to be relative to camera position and normalized
         /// @param up Normalized up vector
         /// @tparam T A floating-point scalar type
@@ -16,11 +15,11 @@ namespace yart
         /// @return The view matrix
         /// @note This method is based on `glm::lookAt`, which was transformed to match YART's requirements
         template<typename T, glm::qualifier Q>
-        GLM_FUNC_QUALIFIER glm::mat<4, 4, T, Q> CreateViewMatrix(glm::vec<3, T, Q> const& position, glm::vec<3, T, Q> const& look_dir, glm::vec<3, T, Q> const& up)
+        GLM_FUNC_QUALIFIER glm::mat<4, 4, T, Q> CreateViewMatrix(glm::vec<3, T, Q> const& look_dir, glm::vec<3, T, Q> const& up)
         {
             // 'look_dir' vector is equivalent to camera's forward direction (positive z)
-            glm::vec<3, T, Q> const u(-glm::normalize(glm::cross(look_dir, up))); // Camera's 'left' direction (positive x)  
-            glm::vec<3, T, Q> const v(glm::cross(-u, look_dir)); // Camera's 'up' direction (positive y)
+            glm::vec<3, T, Q> const u(-glm::normalize(glm::cross(look_dir, up))); // Camera view 'right' direction (positive x)  
+            glm::vec<3, T, Q> const v(glm::cross(-u, look_dir)); // Camera view 'up' direction (positive y)
 
             glm::mat<4, 4, T, Q> view_matrix(0);
             view_matrix[0][0] = u.x;
@@ -51,7 +50,7 @@ namespace yart
             T u = near_clip * glm::tan(fov / static_cast<T>(2.0));
             T v = u / aspect_ratio;
 
-            glm::mat<4, 4, T, Q> inverse_projection_matrix(0);
+            glm::mat<4, 4, T, glm::defaultp> inverse_projection_matrix(0);
             inverse_projection_matrix[0][0] = static_cast<T>(2.0) / width * u;  // | screen coordinate normalization + rescaling to match the aspect ratio
             inverse_projection_matrix[1][1] = static_cast<T>(2.0) / height * v; // | 
             inverse_projection_matrix[2][2] = near_clip; // z translation to the near clipping plane
