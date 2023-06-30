@@ -1,5 +1,7 @@
 #include "renderer.h"
 
+#include <imgui.h>
+
 #include <algorithm>
 #include <execution>
 #include <iostream>
@@ -20,12 +22,14 @@ namespace yart
         // Multithreaded iteration through all pixels
         std::for_each(std::execution::par, m_verticalPixelIterator.begin(), m_verticalPixelIterator.end(), [&](uint32_t y) {
             std::for_each(std::execution::par, m_horizontalPixelIterator.begin(), m_horizontalPixelIterator.end(), [&](uint32_t x) {
-                size_t idx = ((y * width) + x) * 4;
+                size_t idx = (y * width + x) * 4;
 
-                buffer[idx + 0] = static_cast<float>(x) / (width - 1);
-                buffer[idx + 1] = static_cast<float>(y) / (height - 1);
-                buffer[idx + 2] = 0.f;
-                buffer[idx + 3] = 1.f;
+                glm::vec4 ray_direction = m_inverseViewProjectionMatrix * glm::vec4{ x + 0.5f, y + 0.5f, 1.0f, 1.0f };
+
+                buffer[idx + 0] = ray_direction.r;
+                buffer[idx + 1] = ray_direction.g;
+                buffer[idx + 2] = ray_direction.b;
+                buffer[idx + 3] = 1.0f;
             });
         });
     }
@@ -37,6 +41,11 @@ namespace yart
 
         /// TODO: Renderer::UpdateCamera is unimplemented
         return false;
+    }
+
+    void Renderer::OnImGui()
+    {
+        ImGui::Text("Hello from Renderer");
     }
 
     void Renderer::Resize(uint32_t width, uint32_t height)
@@ -70,5 +79,4 @@ namespace yart
 
         m_inverseViewProjectionMatrix = view_matrix_inverse * projection_matrix_inverse;
     }
-
 } // namespace yart

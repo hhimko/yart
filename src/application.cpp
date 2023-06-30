@@ -1,6 +1,7 @@
 #include "application.h"
 
 #include <iostream>
+#include <functional>
 
 
 namespace yart
@@ -60,6 +61,9 @@ namespace yart
     {
         if (!m_window->Create(YART_WINDOW_TITLE, YART_WINDOW_WIDTH, YART_WINDOW_HEIGHT))
             return false;
+
+        // Register ImGui windows
+        m_window->RegisterImGuiWindow("Renderer", std::bind(&Renderer::OnImGui, m_renderer));      
 
         return true;
     }

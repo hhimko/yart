@@ -28,6 +28,9 @@ namespace yart
         /// @return Whether the camera has been moved
         bool UpdateCamera();
 
+        /// @brief Issue ImGui draw commands for the renderer
+        void OnImGui();
+
     private:
         /// @brief Set the render output image size 
         /// @param width Width of the render output in pixels 

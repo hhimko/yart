@@ -71,6 +71,13 @@ namespace yart
         // Issue ImGui render commands 
         OnImGUI();
 
+        // Render registered ImGui windows 
+        for (auto &&window : m_registeredImGuiWindows) {
+            ImGui::Begin(window.name);
+            window.callback();
+            ImGui::End();
+        }
+
         // Render viewport image using ImGui
         ImTextureID viewport_image = (ImTextureID)m_viewport->m_image.GetDescriptorSet();
 
@@ -109,6 +116,15 @@ namespace yart
     void Window::Close()
     {
         Cleanup();
+    }
+
+    void Window::RegisterImGuiWindow(const char* window_name, imgui_callback_t callback)
+    {
+        ImGuiWindow window;
+        window.name = window_name;
+        window.callback = callback;
+
+        m_registeredImGuiWindows.push_back(window);
     }
 
     bool Window::InitGLFW(const char* win_title, int win_w, int win_h) 

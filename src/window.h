@@ -7,6 +7,7 @@
 #include <backends/imgui_impl_glfw.h> // Platform backend
 #include <backends/imgui_impl_vulkan.h> // Renderer backend
 
+#include <functional>
 #include <memory>
 #include <vector>
 
@@ -21,6 +22,8 @@ namespace yart
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     class Window {
     public:
+        typedef std::function<void()> imgui_callback_t;
+
         Window() = default;
         Window(const Window&) = delete;
         Window& operator=(Window const&) = delete;
@@ -38,6 +41,11 @@ namespace yart
 
         /// @brief Perform window shutdown and cleanup
         void Close();
+
+        /// @brief Register a custom ImGui window to be rendered every frame 
+        /// @param window_name Name of the window
+        /// @param callback Callback function to window contents definition 
+        void RegisterImGuiWindow(const char* window_name, imgui_callback_t callback);
 
         /// @brief Get the main window viewport instance
         /// @return Pointer to a Viewport instance
@@ -124,7 +132,14 @@ namespace yart
         void Cleanup();
 
     private:
+        /// @brief Struct containing data for displaying custom ImGUI windows
+        struct ImGuiWindow {
+            const char* name;
+            imgui_callback_t callback;
+        };
+
         utils::LTStack m_LTStack;
+        std::vector<ImGuiWindow> m_registeredImGuiWindows;
         std::unique_ptr<yart::Viewport> m_viewport = nullptr; // Main window viewport
         
         // -- SWAPCHAIN DATA -- // 
