@@ -17,13 +17,15 @@
 
 namespace yart
 {
+    /// @brief Callback function for rendering custom ImGui windows  
+    typedef std::function<void()> imgui_callback_t;
+
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     /// @brief Wrapper class for windowing backends
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     class Window {
     public:
-        typedef std::function<void()> imgui_callback_t;
-
         Window() = default;
         Window(const Window&) = delete;
         Window& operator=(Window const&) = delete;
@@ -49,9 +51,9 @@ namespace yart
 
         /// @brief Get the main window viewport instance
         /// @return Pointer to a Viewport instance
-        yart::Viewport* GetViewport() const 
+        std::shared_ptr<yart::Viewport> GetViewport() const 
         {
-            return m_viewport.get();
+            return m_viewport;
         }
 
     private:
@@ -140,7 +142,7 @@ namespace yart
 
         utils::LTStack m_LTStack;
         std::vector<ImGuiWindow> m_registeredImGuiWindows;
-        std::unique_ptr<yart::Viewport> m_viewport = nullptr; // Main window viewport
+        std::shared_ptr<yart::Viewport> m_viewport = nullptr; // Main window viewport
         
         // -- SWAPCHAIN DATA -- // 
         utils::LTStack m_swapchainLTStack;

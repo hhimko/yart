@@ -29,6 +29,7 @@ namespace yart
         if (!Setup())
             return EXIT_FAILURE;
 
+
         m_running = true; // m_running is indirectly controlled by Application::Shutdown()                 
 
         // -- APPLICATION MAINLOOP -- // 
@@ -43,7 +44,7 @@ namespace yart
             viewport->GetImageSize(&viewport_width, &viewport_height);
             
             m_renderer.Render(viewport->GetImageData(), viewport_width, viewport_height);
-            viewport->Refresh(m_window);
+            viewport->Refresh(m_window); // Refresh display 
 
             // Render and present a frame to a platform window on GPU
             m_window->Render();

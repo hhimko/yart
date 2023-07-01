@@ -825,7 +825,7 @@ namespace yart
         });
 
         VkExtent2D viewport_extent = m_surfaceExtent;
-        m_viewport = std::make_unique<yart::Viewport>(this, viewport_extent.width, viewport_extent.height);
+        m_viewport = std::make_shared<yart::Viewport>(this, viewport_extent.width, viewport_extent.height);
 
         return true;
     }
