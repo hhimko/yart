@@ -62,7 +62,7 @@ namespace yart
         glm::vec3 m_cameraPosition = { .0f, .0f, -5.0f }; // World space position 
         glm::vec3 m_cameraLookDirection = { .0f, .0f, 1.0f }; // Normalized look-at vector
         
-        float m_fieldOfView = 90.0f * DEG_TO_RAD; // Horizontal camera FOV in radians
+        float m_fieldOfView = 90.0f; // Horizontal camera FOV in degrees
         float m_nearClippingPlane = 0.1f;
         float m_farClippingPlane = 1000.0f;
 

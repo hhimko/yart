@@ -10,6 +10,14 @@
 #include "utils/glm_utils.h"
 
 
+#define FOV_MIN 45.0f
+#define FOV_MAX 180.0f
+#define NEAR_CLIP_MIN 0.0f
+#define NEAR_CLIP_MAX 10.0f
+#define FAR_CLIP_MIN 100.0f
+#define FAR_CLIP_MAX 1000.0f
+
+
 namespace yart
 {
     void Renderer::Render(float buffer[], uint32_t width, uint32_t height)
@@ -45,7 +53,23 @@ namespace yart
 
     void Renderer::OnImGui()
     {
-        ImGui::Text("Hello from Renderer");
+        // Whether the camera transformation matrix should be recalculated
+        bool recalculate = false;
+
+
+        if (ImGui::SliderFloat("FOV", &m_fieldOfView, FOV_MIN, FOV_MAX)) {
+            recalculate = true;
+        }
+
+        if (ImGui::SliderFloat("Near clipping plane", &m_nearClippingPlane, NEAR_CLIP_MIN, NEAR_CLIP_MAX)) {
+            recalculate = true;
+        }
+
+        ImGui::SliderFloat("Far clipping plane", &m_farClippingPlane, FAR_CLIP_MIN, FAR_CLIP_MAX);
+
+
+        if (recalculate)
+            RecalculateCameraTransformationMatrix();
     }
 
     void Renderer::Resize(uint32_t width, uint32_t height)
@@ -75,7 +99,8 @@ namespace yart
         // Calculate the projection matrix inverse (screen space to camera space)
         float w = static_cast<float>(m_width);
         float h = static_cast<float>(m_height);
-        const glm::mat4 projection_matrix_inverse = yart::utils::CreateInverseProjectionMatrix(m_fieldOfView, w, h, m_nearClippingPlane);
+        float fov = m_fieldOfView * DEG_TO_RAD;
+        const glm::mat4 projection_matrix_inverse = yart::utils::CreateInverseProjectionMatrix(fov, w, h, m_nearClippingPlane);
 
         m_inverseViewProjectionMatrix = view_matrix_inverse * projection_matrix_inverse;
     }

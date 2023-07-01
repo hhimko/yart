@@ -64,7 +64,7 @@ namespace yart
             return false;
 
         // Register ImGui windows
-        m_window->RegisterImGuiWindow("Renderer", std::bind(&Renderer::OnImGui, m_renderer));      
+        m_window->RegisterImGuiWindow("Renderer", std::bind(&Renderer::OnImGui, &m_renderer));      
 
         return true;
     }
