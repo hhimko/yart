@@ -3,6 +3,8 @@
 #include <iostream>
 #include <functional>
 
+#include "input.h"
+
 
 namespace yart
 {
@@ -36,6 +38,9 @@ namespace yart
         while (m_running) {
             // Poll and handle incoming events
             glfwPollEvents();
+
+            // Update the input system
+            Input::Update();
 
             // Ray trace the scene on CPU onto the viewport image buffer
             auto viewport = m_window->GetViewport();

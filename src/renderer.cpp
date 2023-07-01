@@ -8,6 +8,7 @@
 
 #include "utils/core_utils.h"
 #include "utils/glm_utils.h"
+#include "input.h"
 
 
 #define FOV_MIN 45.0f
