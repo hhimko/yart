@@ -2,8 +2,8 @@
 
 #include <memory>
 
-#include "window.h"
-#include "renderer.h"
+#include "platform/window.h"
+#include "core/renderer.h"
 
 #define YART_WINDOW_TITLE "Yet Another Ray Tracer"
 #define YART_WINDOW_WIDTH 1280

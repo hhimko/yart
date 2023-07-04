@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "viewport.h"
-#include "utils/core_utils.h"
+#include "../utils/yart_utils.h"
 
 
 namespace yart

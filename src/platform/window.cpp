@@ -4,7 +4,7 @@
 #include <iostream>
 
 #include "utils/vk_utils.h"
-#include "application.h"
+#include "../application.h"
 
 
 // Helper macro to help locate all VkAllocationCallbacks dependencies

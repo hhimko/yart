@@ -3,7 +3,7 @@
 #include <iostream>
 #include <functional>
 
-#include "input.h"
+#include "platform/input.h"
 
 
 namespace yart
