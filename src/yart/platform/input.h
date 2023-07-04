@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../application.h"
+
+#include "yart/application.h"
 
 
 namespace yart

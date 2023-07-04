@@ -1,14 +1,16 @@
 #include "renderer.h"
 
-#include <imgui.h>
 
 #include <algorithm>
 #include <execution>
 #include <iostream>
 
-#include "../utils/yart_utils.h"
-#include "../utils/glm_utils.h"
-#include "../platform/input.h"
+#include <imgui.h>
+
+#include "yart/application.h"
+#include "yart/utils/yart_utils.h"
+#include "yart/utils/glm_utils.h"
+#include "yart/platform/input.h"
 
 
 #define FOV_MIN 45.0f
@@ -45,10 +47,39 @@ namespace yart
 
     bool Renderer::UpdateCamera()
     {
-        const glm::vec3 u = -glm::normalize(glm::cross(m_cameraLookDirection, UP_DIRECTION)); // Camera view horizontal (right) direction vector
-        const glm::vec3 v = glm::cross(-u, m_cameraLookDirection); // Camera view vertical (up) direction vector
+        // Whether the camera transformation matrix should be recalculated
+        bool recalculate = false;
 
-        /// TODO: Renderer::UpdateCamera is unimplemented
+        // Rotation
+        ImVec2 mouse_drag = ImGui::GetMouseDragDelta(ImGuiMouseButton_Right);
+        std::cout << mouse_drag.x << ", " << mouse_drag.y << std::endl;
+
+        ImGui::ResetMouseDragDelta(ImGuiMouseButton_Right);
+
+        // Forward/backward movement
+        float vertical_speed = yart::Input::GetVerticalAxis();
+        if (vertical_speed != 0) {
+            m_cameraPosition += m_cameraLookDirection * vertical_speed * m_cameraMoveSpeed;
+        }
+
+        // Side-to-side movement
+        float horizontal_speed = yart::Input::GetHorizontalAxis();
+        if (horizontal_speed != 0) {
+            const glm::vec3 u = -glm::normalize(glm::cross(m_cameraLookDirection, UP_DIRECTION)); // Camera view horizontal (right) direction vector
+            m_cameraPosition += u * horizontal_speed * m_cameraMoveSpeed;
+        }
+
+        // Ascend/descend movement
+        float elevation_speed = static_cast<float>(ImGui::IsKeyDown(ImGuiKey_Space));
+        elevation_speed -= static_cast<float>(ImGui::IsKeyDown(ImGuiKey_LeftCtrl));
+        if (elevation_speed != 0) {
+            m_cameraPosition += UP_DIRECTION * elevation_speed * m_cameraMoveSpeed;
+        }
+
+
+        if (recalculate)
+            RecalculateCameraTransformationMatrix();
+
         return false;
     }
 

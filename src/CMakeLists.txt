@@ -11,6 +11,8 @@ set_target_properties(yart PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DI
 set_target_properties(yart PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set_target_properties(yart PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+target_include_directories(yart PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
 target_link_libraries(yart 
     PRIVATE Vulkan::Vulkan
     PRIVATE glfw

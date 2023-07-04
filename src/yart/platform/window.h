@@ -1,5 +1,10 @@
 #pragma once
 
+
+#include <functional>
+#include <memory>
+#include <vector>
+
 #define GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -7,12 +12,8 @@
 #include <backends/imgui_impl_glfw.h> // Platform backend
 #include <backends/imgui_impl_vulkan.h> // Renderer backend
 
-#include <functional>
-#include <memory>
-#include <vector>
-
 #include "viewport.h"
-#include "../utils/yart_utils.h"
+#include "yart/utils/yart_utils.h"
 
 
 namespace yart

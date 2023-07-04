@@ -1,11 +1,12 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
 
 #include <stdio.h>
 #include <vector>
 
-#include "../../utils/yart_utils.h"
+#include <vulkan/vulkan.h>
+
+#include "yart/utils/yart_utils.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

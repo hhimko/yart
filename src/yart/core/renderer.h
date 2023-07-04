@@ -1,5 +1,6 @@
 #pragma once
 
+
 #include <cstdint>
 #include <vector>
 
@@ -65,6 +66,8 @@ namespace yart
         float m_fieldOfView = 90.0f; // Horizontal camera FOV in degrees
         float m_nearClippingPlane = 0.1f;
         float m_farClippingPlane = 1000.0f;
+
+        float m_cameraMoveSpeed = 0.01f;
 
         // Cached view projection matrix inverse for transforming screen space coordinates into world space 
         glm::mat4 m_inverseViewProjectionMatrix; 

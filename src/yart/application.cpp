@@ -1,9 +1,10 @@
 #include "application.h"
 
+
 #include <iostream>
 #include <functional>
 
-#include "platform/input.h"
+#include "yart/platform/input.h"
 
 
 namespace yart
@@ -39,8 +40,9 @@ namespace yart
             // Poll and handle incoming events
             glfwPollEvents();
 
-            // Update the input system
+            // Handle user input
             Input::Update();
+            m_renderer.UpdateCamera();
 
             // Ray trace the scene on CPU onto the viewport image buffer
             auto viewport = m_window->GetViewport();

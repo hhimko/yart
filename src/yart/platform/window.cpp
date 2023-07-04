@@ -1,10 +1,11 @@
 #include "window.h"
 
+
 #include <algorithm>
 #include <iostream>
 
+#include "yart/application.h"
 #include "utils/vk_utils.h"
-#include "../application.h"
 
 
 // Helper macro to help locate all VkAllocationCallbacks dependencies

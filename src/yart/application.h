@@ -1,9 +1,10 @@
 #pragma once
 
+
 #include <memory>
 
-#include "platform/window.h"
-#include "core/renderer.h"
+#include "yart/platform/window.h"
+#include "yart/core/renderer.h"
 
 #define YART_WINDOW_TITLE "Yet Another Ray Tracer"
 #define YART_WINDOW_WIDTH 1280
