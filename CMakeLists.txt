@@ -140,4 +140,4 @@ target_link_libraries(imgui
 )
 
 # Add yart source 
-add_subdirectory(src)
+include(${CMAKE_SOURCE_DIR}/src/config.cmake)
