@@ -7,10 +7,10 @@
 
 #include <imgui.h>
 
-#include "yart/application.h"
 #include "yart/utils/yart_utils.h"
 #include "yart/utils/glm_utils.h"
 #include "yart/platform/input.h"
+#include "yart/application.h"
 
 
 #define FOV_MIN 45.0f
@@ -52,8 +52,6 @@ namespace yart
 
         // Rotation
         ImVec2 mouse_drag = ImGui::GetMouseDragDelta(ImGuiMouseButton_Right);
-        std::cout << mouse_drag.x << ", " << mouse_drag.y << std::endl;
-
         ImGui::ResetMouseDragDelta(ImGuiMouseButton_Right);
 
         // Forward/backward movement

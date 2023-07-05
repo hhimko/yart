@@ -18,32 +18,31 @@
 
 namespace yart
 {
-    /// @brief Callback function for rendering custom ImGui windows  
-    typedef std::function<void()> imgui_callback_t;
-
-
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-    /// @brief Wrapper class for windowing backends
+    /// @brief Wrapper singleton class for windowing backends
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     class Window {
     public:
-        Window() = default;
+        /// @brief Callback function for rendering custom ImGui windows  
+        typedef std::function<void()> imgui_callback_t;
+
         Window(const Window&) = delete;
         Window& operator=(Window const&) = delete;
         ~Window();
+
+        /// @brief Get the static singleton instance, lazily initialized on first call
+        /// @return Static Window instance
+        static Window& Get();
 
         /// @brief Initialize and open the window
         /// @param title Initial window title
         /// @param win_w Initial width of the window in pixels
         /// @param win_h Initial height of the window in pixels
         /// @return Whether the window has been successfully created 
-        bool Create(const char* title, int win_w, int win_h);
+        bool Init(const char* title, int win_w, int win_h);
 
         /// @brief Submit frame for render and present the next frame-in-flight to the window
         void Render();
-
-        /// @brief Perform window shutdown and cleanup
-        void Close();
 
         /// @brief Register a custom ImGui window to be rendered every frame 
         /// @param window_name Name of the window
@@ -58,7 +57,7 @@ namespace yart
         }
 
     private:
-        typedef PFN_vkDebugUtilsMessengerCallbackEXT vk_debug_callback_t;
+        Window() = default;
 
         /// @brief Container for per frame-in-flight related data
         /// @note FrameInFlight members are all set in Window::CreateSwapchainFramesInFlight
@@ -89,7 +88,7 @@ namespace yart
         bool InitVulkan();
         static std::vector<const char*> GetRequiredVulkanExtensions();
         static VkInstance CreateVulkanInstance(const std::vector<const char*>& extensions);
-        static VkDebugUtilsMessengerEXT CreateVulkanDebugMessenger(VkInstance instance, vk_debug_callback_t callback);
+        static VkDebugUtilsMessengerEXT CreateVulkanDebugMessenger(VkInstance instance, PFN_vkDebugUtilsMessengerCallbackEXT callback);
         static VkPhysicalDevice SelectVulkanPhysicalDevice(VkInstance instance, VkPhysicalDeviceProperties& properties);
         static bool GetVulkanQueueFamilyIndex(VkPhysicalDevice physical_device, uint32_t* result, VkQueueFlags flags, VkSurfaceKHR surface = VK_NULL_HANDLE);
         static VkDevice CreateVulkanLogicalDevice(VkPhysicalDevice physical_device, uint32_t queue_family, const std::vector<const char*>& extensions);
@@ -177,9 +176,9 @@ namespace yart
         
 
         // -- FRIEND FUNCTION DECLARATIONS -- //
-        friend yart::Viewport::Viewport(yart::Window* window, uint32_t width, uint32_t height);
-        friend void yart::Viewport::Refresh(Window* window);
-        friend void yart::Viewport::Resize(Window* window, uint32_t width, uint32_t height);
+        friend yart::Viewport::Viewport(uint32_t width, uint32_t height);
+        friend void yart::Viewport::Resize(uint32_t width, uint32_t height);
+        friend void yart::Viewport::Refresh();
 
     };
 } // namespace yart

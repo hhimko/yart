@@ -9,17 +9,6 @@
 
 namespace yart
 {
-    Application::Application()
-    {
-        m_window = new yart::Window();
-    }
-
-    Application::~Application()
-    {
-        m_window->Close();
-        delete m_window;
-    }
-
     Application &Application::Get()
     {
         static Application instance; // Instantiated on first call and guaranteed to be destroyed on exit 
@@ -33,6 +22,7 @@ namespace yart
             return EXIT_FAILURE;
 
 
+        yart::Window& window = yart::Window::Get();
         m_running = true; // m_running is indirectly controlled by Application::Shutdown()                 
 
         // -- APPLICATION MAINLOOP -- // 
@@ -45,16 +35,16 @@ namespace yart
             m_renderer.UpdateCamera();
 
             // Ray trace the scene on CPU onto the viewport image buffer
-            auto viewport = m_window->GetViewport();
+            auto viewport = window.GetViewport();
 
             uint32_t viewport_width, viewport_height;
             viewport->GetImageSize(&viewport_width, &viewport_height);
             
             m_renderer.Render(viewport->GetImageData(), viewport_width, viewport_height);
-            viewport->Refresh(m_window); // Refresh display 
+            viewport->Refresh(); // Refresh display 
 
             // Render and present a frame to a platform window on GPU
-            m_window->Render();
+            window.Render();
         }
 
         return EXIT_SUCCESS;
@@ -67,11 +57,13 @@ namespace yart
 
     bool Application::Setup()
     {
-        if (!m_window->Create(YART_WINDOW_TITLE, YART_WINDOW_WIDTH, YART_WINDOW_HEIGHT))
+         yart::Window& window = yart::Window::Get();
+
+        if (!window.Init(YART_WINDOW_TITLE, YART_WINDOW_WIDTH, YART_WINDOW_HEIGHT))
             return false;
 
         // Register ImGui windows
-        m_window->RegisterImGuiWindow("Renderer", std::bind(&Renderer::OnImGui, &m_renderer));      
+        window.RegisterImGuiWindow("Renderer", std::bind(&Renderer::OnImGui, &m_renderer));      
 
         return true;
     }

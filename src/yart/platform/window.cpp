@@ -45,7 +45,13 @@ namespace yart
         Cleanup();
     }
 
-    bool Window::Create(const char* title, int win_w, int win_h)
+    Window &Window::Get()
+    {
+        static Window instance; // Instantiated on first call and guaranteed to be destroyed on exit 
+        return instance;
+    }
+
+    bool Window::Init(const char* title, int win_w, int win_h)
     {
         if (!InitGLFW(title, win_w, win_h))
             return false;
@@ -112,11 +118,6 @@ namespace yart
             WindowResize(static_cast<uint32_t>(win_w), static_cast<uint32_t>(win_h));
             m_shouldRebuildSwapchain = false;
         }
-    }
-
-    void Window::Close()
-    {
-        Cleanup();
     }
 
     void Window::RegisterImGuiWindow(const char* window_name, imgui_callback_t callback)
@@ -283,7 +284,7 @@ namespace yart
         return instance; 
     }
 
-    VkDebugUtilsMessengerEXT Window::CreateVulkanDebugMessenger(VkInstance instance, vk_debug_callback_t callback)
+    VkDebugUtilsMessengerEXT Window::CreateVulkanDebugMessenger(VkInstance instance, PFN_vkDebugUtilsMessengerCallbackEXT callback)
     {
         // Create a single all-purpose debug messenger object  
         VkDebugUtilsMessengerEXT debug_messenger = VK_NULL_HANDLE;
@@ -798,7 +799,7 @@ namespace yart
         ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
         ImGui::Text("Avg. %.3f ms/frame", 1000.0f / ImGui::GetIO().Framerate);
 
-        m_viewport->OnImGUI(this);
+        m_viewport->OnImGUI();
 
         ImGui::End();
     }
@@ -826,7 +827,7 @@ namespace yart
         });
 
         VkExtent2D viewport_extent = m_surfaceExtent;
-        m_viewport = std::make_shared<yart::Viewport>(this, viewport_extent.width, viewport_extent.height);
+        m_viewport = std::make_shared<yart::Viewport>(viewport_extent.width, viewport_extent.height);
 
         return true;
     }
@@ -860,7 +861,7 @@ namespace yart
         m_currentFrameInFlight = 0;
         
         // Resize viewport image
-        m_viewport->Resize(this, width, height);
+        m_viewport->Resize(width, height);
     }
 
     bool Window::FrameRender(ImDrawData* draw_data)

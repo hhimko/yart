@@ -20,7 +20,6 @@ namespace yart
     public:
         Application(const Application&) = delete;
         Application& operator=(Application const&) = delete;
-        ~Application();
 
         /// @brief Get the static singleton instance, lazily initialized on first call
         /// @return Static Application instance
@@ -34,7 +33,7 @@ namespace yart
         void Shutdown();
 
     private:
-        Application();
+        Application() = default;
 
         /// @brief Initialize members and hook up event handlers
         /// @return Boolean value indicating whether the application has been successfully initialized 
@@ -43,7 +42,6 @@ namespace yart
     private:
         bool m_running = false;
 
-        yart::Window* m_window;
         yart::Renderer m_renderer;
 
     };
