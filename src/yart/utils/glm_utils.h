@@ -62,5 +62,11 @@ namespace yart
             return inverse_projection_matrix;
         }
 
+        /// @brief Convert spherical coordinates `(r, θ, φ)` to cartesian coordinates, where the radial distance `r` is set to `1`
+        /// @param yaw Angle (`φ`) of rotation around the `y` axis in radians
+        /// @param pitch Angle (`θ`) of rotation around the `x` axis in radians
+        /// @return Unit vector based on `yaw` and `pitch` rotations
+        glm::vec3 SphericalToCartesianUnitVector(float yaw, float pitch);
+
     } // namespace utils
 } // namespace yart

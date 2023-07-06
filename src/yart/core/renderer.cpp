@@ -36,6 +36,7 @@ namespace yart
                 size_t idx = (y * width + x) * 4;
 
                 glm::vec4 ray_direction = m_inverseViewProjectionMatrix * glm::vec4{ x + 0.5f, y + 0.5f, 1.0f, 1.0f };
+                ray_direction = glm::normalize(ray_direction);
 
                 buffer[idx + 0] = ray_direction.r;
                 buffer[idx + 1] = ray_direction.g;
@@ -44,12 +45,30 @@ namespace yart
             });
         });
     }
-
-    bool Renderer::UpdateCamera()
+    
+    void Renderer::OnImGui()
     {
         // Whether the camera transformation matrix should be recalculated
         bool recalculate = false;
 
+
+        if (ImGui::SliderFloat("FOV", &m_fieldOfView, FOV_MIN, FOV_MAX)) {
+            recalculate = true;
+        }
+
+        if (ImGui::SliderFloat("Near clipping plane", &m_nearClippingPlane, NEAR_CLIP_MIN, NEAR_CLIP_MAX)) {
+            recalculate = true;
+        }
+
+        ImGui::SliderFloat("Far clipping plane", &m_farClippingPlane, FAR_CLIP_MIN, FAR_CLIP_MAX);
+
+
+        if (recalculate)
+            RecalculateCameraTransformationMatrix();
+    }
+
+    bool Renderer::UpdateCamera()
+    {
         // -- TRANSLATION -- //
         // Forward/backward movement
         float vertical_speed = yart::Input::GetVerticalAxis();
@@ -77,36 +96,16 @@ namespace yart
             yart::Input::SetCursorLocked(true); // Lock and hide the cursor
             const glm::ivec2& mouse = yart::Input::GetMouseMoveDelta();
 
+            if (mouse.x != 0 || mouse.y != 0) {
+                RotateCameraWithMouseMoveDelta(mouse);
+                RecalculateCameraTransformationMatrix();
+            }
         } else {
             yart::Input::SetCursorLocked(false); // Unlock the cursor 
         }
 
 
-        if (recalculate)
-            RecalculateCameraTransformationMatrix();
-
         return false;
-    }
-
-    void Renderer::OnImGui()
-    {
-        // Whether the camera transformation matrix should be recalculated
-        bool recalculate = false;
-
-
-        if (ImGui::SliderFloat("FOV", &m_fieldOfView, FOV_MIN, FOV_MAX)) {
-            recalculate = true;
-        }
-
-        if (ImGui::SliderFloat("Near clipping plane", &m_nearClippingPlane, NEAR_CLIP_MIN, NEAR_CLIP_MAX)) {
-            recalculate = true;
-        }
-
-        ImGui::SliderFloat("Far clipping plane", &m_farClippingPlane, FAR_CLIP_MIN, FAR_CLIP_MAX);
-
-
-        if (recalculate)
-            RecalculateCameraTransformationMatrix();
     }
 
     void Renderer::Resize(uint32_t width, uint32_t height)
@@ -140,5 +139,14 @@ namespace yart
         const glm::mat4 projection_matrix_inverse = yart::utils::CreateInverseProjectionMatrix(fov, w, h, m_nearClippingPlane);
 
         m_inverseViewProjectionMatrix = view_matrix_inverse * projection_matrix_inverse;
+    }
+
+    void Renderer::RotateCameraWithMouseMoveDelta(const glm::ivec2& mouse_drag)
+    {
+        m_cameraYaw += static_cast<float>(mouse_drag.x) * 0.01f;
+        m_cameraPitch += static_cast<float>(mouse_drag.y) * 0.01f;
+        m_cameraPitch = glm::clamp(m_cameraPitch, CAMERA_PITCH_MIN, CAMERA_PITCH_MAX);
+
+        m_cameraLookDirection = yart::utils::SphericalToCartesianUnitVector(m_cameraYaw, m_cameraPitch);
     }
 } // namespace yart
