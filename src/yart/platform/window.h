@@ -12,8 +12,9 @@
 #include <backends/imgui_impl_glfw.h> // Platform backend
 #include <backends/imgui_impl_vulkan.h> // Renderer backend
 
-#include "viewport.h"
 #include "yart/utils/yart_utils.h"
+#include "viewport.h"
+#include "input.h"
 
 
 namespace yart
@@ -179,6 +180,7 @@ namespace yart
         friend yart::Viewport::Viewport(uint32_t width, uint32_t height);
         friend void yart::Viewport::Resize(uint32_t width, uint32_t height);
         friend void yart::Viewport::Refresh();
+        friend class yart::Input; // yart::Input implementation depends on GLFWwindow instance to handle OS events
 
     };
 } // namespace yart

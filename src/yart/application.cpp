@@ -57,8 +57,7 @@ namespace yart
 
     bool Application::Setup()
     {
-         yart::Window& window = yart::Window::Get();
-
+        yart::Window& window = yart::Window::Get();
         if (!window.Init(YART_WINDOW_TITLE, YART_WINDOW_WIDTH, YART_WINDOW_HEIGHT))
             return false;
 

@@ -50,10 +50,7 @@ namespace yart
         // Whether the camera transformation matrix should be recalculated
         bool recalculate = false;
 
-        // Rotation
-        ImVec2 mouse_drag = ImGui::GetMouseDragDelta(ImGuiMouseButton_Right);
-        ImGui::ResetMouseDragDelta(ImGuiMouseButton_Right);
-
+        // -- TRANSLATION -- //
         // Forward/backward movement
         float vertical_speed = yart::Input::GetVerticalAxis();
         if (vertical_speed != 0) {
@@ -72,6 +69,16 @@ namespace yart
         elevation_speed -= static_cast<float>(ImGui::IsKeyDown(ImGuiKey_LeftCtrl));
         if (elevation_speed != 0) {
             m_cameraPosition += UP_DIRECTION * elevation_speed * m_cameraMoveSpeed;
+        }
+
+
+        // -- ROTATION -- //
+        if (ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
+            yart::Input::SetCursorLocked(true); // Lock and hide the cursor
+            const glm::ivec2& mouse = yart::Input::GetMouseMoveDelta();
+
+        } else {
+            yart::Input::SetCursorLocked(false); // Unlock the cursor 
         }
 
 
