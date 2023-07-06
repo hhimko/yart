@@ -1,3 +1,8 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file
+/// @brief Implementation of the platform specific Input class for GLFW 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #include "input.h"
 
 
@@ -32,7 +37,7 @@ namespace yart
     void Input::SetCursorLocked(bool state)
     {
         yart::Window& window = yart::Window::Get();
-        
+
         int glfw_input_mode = state ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL;
         glfwSetInputMode(window.m_window, GLFW_CURSOR, glfw_input_mode);
     }
