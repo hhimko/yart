@@ -22,7 +22,17 @@
     #define YART_VULKAN_DEBUG_UTILS 
 #endif
 
+
+/// @brief Default value for Vulkan's `VkAllocationCallbacks` parameters (`VK_NULL_HANDLE`) 
+/// @details The purpose of this macro is to help locate all VkAllocationCallbacks dependencies throughout the file
+#define DEFAULT_VK_ALLOC VK_NULL_HANDLE
+
+
 #ifdef YART_DEBUG
+    /// @brief Check Vulkan's `VkResult` return value and log to `stderr` on error
+    /// @param res Value from Vulkan's `VkResult` enum
+    /// @param ret Error value to be returned when `ret` is other than `VK_SUCCESS`
+    /// @note This macro exits quietly on release builds and prints to `stderr` on debug builds
     #define CHECK_VK_RESULT_RETURN(res, ret)                                                        \
         if (res != VK_SUCCESS) {                                                                    \
             fprintf(stderr, "[%s(%d)] Vulkan Error: VkResult = %d\n", __FUNCTION__, __LINE__, res); \
@@ -30,22 +40,36 @@
                 return ret;                                                                         \
         }
 #else
+    /// @brief Check Vulkan's `VkResult` return value
+    /// @param res Value from Vulkan's `VkResult` enum
+    /// @param ret Error value to be returned when `ret` is other than `VK_SUCCESS`
+    /// @note This macro exits quietly on release builds and prints to `stderr` on debug builds
     #define CHECK_VK_RESULT_RETURN(res, ret)    \
         if (res < 0)                            \
             return ret;
 #endif
 
-#define CHECK_VK_RESULT_ABORT(res)    \
-        if (res < 0)                            \
-            YART_ABORT("VkResult != VK_SUCCESS");
 
-#define ASSERT_VK_HANDLE_INIT(handle, err)     \
+/// @brief Check the value of Vulkan's `VkResult` return value and abort the program on error
+/// @param res Value from Vulkan's `VkResult` enum
+#define CHECK_VK_RESULT_ABORT(res)            \
+    if (res < 0)                              \
+        YART_ABORT("VkResult != VK_SUCCESS");
+
+
+/// @brief Check whether a Vulkan handle has been initialized successfully and print to `stderr` on error
+/// @param handle Handle to a Vulkan object
+/// @param err Error message to print on failed assertion
+#define ASSERT_VK_HANDLE_INIT(handle, err)  \
     if (handle == VK_NULL_HANDLE) {         \
         std::cerr << err << std::endl;      \
         return 0;                           \
     }
+    
 
-// Helper macro for loading in extension function pointers from VkInstance into the local scope
+/// @brief Helper macro for loading in Vulkan extension function pointers from `VkInstance` into the local scope
+/// @param instance A valid `VkInstance` handle
+/// @param name Name of the extension to load
 #define LOAD_VK_INSTANCE_FP(instance, name)         \
     auto name = reinterpret_cast<PFN_##name>(       \
         reinterpret_cast<void*>(                    \

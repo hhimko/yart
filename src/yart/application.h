@@ -12,9 +12,14 @@
 #include "yart/core/renderer.h"
 
 
-#define YART_WINDOW_TITLE "Yet Another Ray Tracer"
-#define YART_WINDOW_WIDTH 1280
-#define YART_WINDOW_HEIGHT 720
+/// @brief YART's application window name
+#define YART_WINDOW_TITLE "Yet Another Ray Tracer" 
+
+/// @brief YART's application default window width in pixels
+#define YART_WINDOW_WIDTH 1280 
+
+/// @brief YART's application default window height in pixels
+#define YART_WINDOW_HEIGHT 720 
 
 
 namespace yart

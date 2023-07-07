@@ -15,10 +15,6 @@
 #include "utils/vk_utils.h"
 
 
-// Helper macro to help locate all VkAllocationCallbacks dependencies
-#define DEFAULT_VK_ALLOC VK_NULL_HANDLE
-
-
 namespace yart
 {
     Image::Image(VkDevice device, VkPhysicalDevice physical_device, VkSampler sampler, uint32_t width, uint32_t height)

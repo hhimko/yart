@@ -13,11 +13,9 @@
 #include "utils/vk_utils.h"
 
 
-// Helper macro to help locate all VkAllocationCallbacks dependencies
-#define DEFAULT_VK_ALLOC VK_NULL_HANDLE
-#define MIN_IMAGE_COUNT 2
-
-#define CURRENT_FRAME_IN_FLIGHT m_framesInFlight[m_currentFrameInFlight]
+#ifndef DOXYGEN_EXCLUDE // Exclude from documentation
+    #define CURRENT_FRAME_IN_FLIGHT m_framesInFlight[m_currentFrameInFlight]
+#endif
 
 
 static void on_glfw_error(int error_code, const char *description) 
