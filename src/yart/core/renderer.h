@@ -40,10 +40,51 @@ namespace yart
         bool UpdateCamera();
 
     private:
+        /// @brief Structure defining a ray in a three dimensional space 
+        struct Ray {
+            /// @brief Origin of the ray in world space
+            glm::vec3 origin; 
+
+            /// @brief Direction (unit) vector of the ray
+            glm::vec3 direction;
+
+        };
+
+        /// @brief Structure holding data returned as a result of tracing a ray into the scene 
+        struct HitPayload {
+            /// @brief Distance from the ray origin to a registered hit surface, or a negative value on ray miss
+            float hitDistance;
+
+            union {
+                glm::vec3 resultColor;
+                glm::vec3 hitPosition;
+            };
+            
+        };
+
+
         /// @brief Set the render output image size 
         /// @param width Width of the render output in pixels 
         /// @param height Height of the render output in pixels 
         void Resize(uint32_t width, uint32_t height);
+
+
+        // -- SIMULATED RAY TRACING SHADERS -- //
+
+        /// @brief Shoot a ray into the scene and store the results in a HitPayload structure
+        /// @param ray Traced ray
+        /// @param payload HitPayload structure, where the ray tracing results will be stored
+        void TraceRay(const Ray& ray, HitPayload& payload);
+
+        /// @brief Simulated `ClosestHit()` shader, executed on the closest scene geometry hit by the ray
+        /// @param ray Traced ray
+        /// @param payload HitPayload structure, where the ray tracing results will be stored
+        void ClosestHit(const Ray& ray, HitPayload& payload);
+
+        /// @brief Simulated `Miss()` shader, executed when no scene geometry is hit by the ray
+        /// @param ray Traced ray
+        /// @param payload HitPayload structure, where the ray tracing results will be stored
+        void Miss(const Ray& ray, HitPayload& payload);
 
 
         // -- CAMERA PRIVATE METHODS -- // 

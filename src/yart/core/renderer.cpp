@@ -50,19 +50,25 @@ namespace yart
         YART_ASSERT(buffer != nullptr);
         if (width != m_width || height != m_height)
             Resize(width, height);
+            
 
+        // -- RAY GENERATION LOOP -- //
 
         // Multithreaded iteration through all pixels
         std::for_each(std::execution::par, m_verticalPixelIterator.begin(), m_verticalPixelIterator.end(), [&](uint32_t y) {
             std::for_each(std::execution::par, m_horizontalPixelIterator.begin(), m_horizontalPixelIterator.end(), [&](uint32_t x) {
-                size_t idx = (y * width + x) * 4;
 
                 glm::vec4 ray_direction = m_inverseViewProjectionMatrix * glm::vec4{ x + 0.5f, y + 0.5f, 1.0f, 1.0f };
                 ray_direction = glm::normalize(ray_direction);
 
-                buffer[idx + 0] = ray_direction.r;
-                buffer[idx + 1] = ray_direction.g;
-                buffer[idx + 2] = ray_direction.b;
+                // Trace a ray from the camera's origin into the scene
+                HitPayload payload;
+                TraceRay({m_cameraPosition, ray_direction}, payload);
+
+                size_t idx = (y * width + x) * 4;
+                buffer[idx + 0] = payload.resultColor.r;
+                buffer[idx + 1] = payload.resultColor.g;
+                buffer[idx + 2] = payload.resultColor.b;
                 buffer[idx + 3] = 1.0f;
             });
         });
@@ -146,6 +152,25 @@ namespace yart
 
         // Change in aspect ratio requires the camera matrix to be recalculated 
         RecalculateCameraTransformationMatrix();
+    }
+
+    void Renderer::TraceRay(const Ray& ray, HitPayload& payload)
+    {
+        if (glm::dot(ray.direction, UP_DIRECTION) < 0){
+            return Miss(ray, payload);
+        }
+
+        ClosestHit(ray, payload);
+    }
+
+    void Renderer::ClosestHit(const Ray &ray, HitPayload &payload)
+    {
+        payload.resultColor = glm::vec3{0,0,0};
+    }
+
+    void Renderer::Miss(const Ray &ray, HitPayload &payload)
+    {
+        payload.resultColor = ray.direction;
     }
 
     void Renderer::RecalculateCameraTransformationMatrix()
