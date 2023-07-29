@@ -11,6 +11,8 @@
 
 #include <glm/glm.hpp>
 
+#include "ray.h"
+
 
 namespace yart
 {
@@ -40,16 +42,6 @@ namespace yart
         bool UpdateCamera();
 
     private:
-        /// @brief Structure defining a ray in a three dimensional space 
-        struct Ray {
-            /// @brief Origin of the ray in world space
-            glm::vec3 origin; 
-
-            /// @brief Direction (unit) vector of the ray
-            glm::vec3 direction;
-
-        };
-
         /// @brief Structure holding data returned as a result of tracing a ray into the scene 
         struct HitPayload {
             /// @brief Distance from the ray origin to a registered hit surface, or a negative value on ray miss
@@ -74,17 +66,17 @@ namespace yart
         /// @brief Shoot a ray into the scene and store the results in a HitPayload structure
         /// @param ray Traced ray
         /// @param payload HitPayload structure, where the ray tracing results will be stored
-        void TraceRay(const Ray& ray, HitPayload& payload);
+        void TraceRay(const yart::Ray& ray, HitPayload& payload);
 
         /// @brief Simulated `ClosestHit()` shader, executed on the closest scene geometry hit by the ray
         /// @param ray Traced ray
         /// @param payload HitPayload structure, where the ray tracing results will be stored
-        void ClosestHit(const Ray& ray, HitPayload& payload);
+        void ClosestHit(const yart::Ray& ray, HitPayload& payload);
 
         /// @brief Simulated `Miss()` shader, executed when no scene geometry is hit by the ray
         /// @param ray Traced ray
         /// @param payload HitPayload structure, where the ray tracing results will be stored
-        void Miss(const Ray& ray, HitPayload& payload);
+        void Miss(const yart::Ray& ray, HitPayload& payload);
 
 
         // -- CAMERA PRIVATE METHODS -- // 
@@ -102,6 +94,7 @@ namespace yart
 
     private:
         static constexpr float PI = 3.14159274f; 
+        static constexpr float EPSILON = 0.0001f; 
         static constexpr float DEG_TO_RAD = PI / 180.0f; // Degrees to radians conversion constant
 
         uint32_t m_width = 0; // Width of the render output in pixels 
@@ -113,8 +106,8 @@ namespace yart
 
         // -- CAMERA DATA -- // 
         static constexpr glm::vec3 UP_DIRECTION = { .0f, 1.0f, .0f }; // World up vector used for camera positioning
-        static constexpr float CAMERA_PITCH_MIN = -90.0f * DEG_TO_RAD + 0.0001f;
-        static constexpr float CAMERA_PITCH_MAX =  90.0f * DEG_TO_RAD - 0.0001f;
+        static constexpr float CAMERA_PITCH_MIN = -90.0f * DEG_TO_RAD + EPSILON;
+        static constexpr float CAMERA_PITCH_MAX =  90.0f * DEG_TO_RAD - EPSILON;
 
         glm::vec3 m_cameraPosition = { .0f, .0f, -5.0f }; // World space position 
         glm::vec3 m_cameraLookDirection = { .0f, .0f, 1.0f }; // Normalized look-at vector, calculated from camera's yaw and pitch rotations

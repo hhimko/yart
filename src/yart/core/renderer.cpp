@@ -156,11 +156,12 @@ namespace yart
 
     void Renderer::TraceRay(const Ray& ray, HitPayload& payload)
     {
-        if (glm::dot(ray.direction, UP_DIRECTION) < 0){
-            return Miss(ray, payload);
+        float t, u, v;
+        if (yart::Ray::IntersectTriangle(ray, {-1, 0, 10}, {1, 0, 10}, {0, 1, 10}, t, u, v)) {
+            return ClosestHit(ray, payload);
         }
 
-        ClosestHit(ray, payload);
+        return Miss(ray, payload);
     }
 
     void Renderer::ClosestHit(const Ray &ray, HitPayload &payload)
