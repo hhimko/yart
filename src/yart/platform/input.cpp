@@ -56,16 +56,16 @@ namespace yart
         s_horizontalAxis = 0.0f;
         s_verticalAxis = 0.0f;
 
-        s_horizontalAxis += 1.0f * ImGui::IsKeyDown(ImGuiKey_RightArrow);
-        s_horizontalAxis -= 1.0f * ImGui::IsKeyDown(ImGuiKey_LeftArrow);
+        s_horizontalAxis += 1.0f * ImGui::IsKeyDown(ImGuiKey_D);
+        s_horizontalAxis -= 1.0f * ImGui::IsKeyDown(ImGuiKey_A);
 
-        s_verticalAxis += 1.0f * ImGui::IsKeyDown(ImGuiKey_UpArrow);
-        s_verticalAxis -= 1.0f * ImGui::IsKeyDown(ImGuiKey_DownArrow);
+        s_verticalAxis += 1.0f * ImGui::IsKeyDown(ImGuiKey_W);
+        s_verticalAxis -= 1.0f * ImGui::IsKeyDown(ImGuiKey_S);
 
         // Update mouse state
         double mouse_x, mouse_y;
         glfwGetCursorPos(window.m_window, &mouse_x, &mouse_y);
-        glm::ivec2 mouse_pos = { -mouse_x, mouse_y };
+        glm::ivec2 mouse_pos = { mouse_x, mouse_y };
 
         s_mouseMoveDelta = s_mousePosition - mouse_pos;
         s_mousePosition = mouse_pos;

@@ -28,7 +28,7 @@
 
 /// @brief Smallest valid value for camera's near clipping plane distance
 /// @details Used in Renderer::OnImGui() to adjust the near clip slider range
-#define NEAR_CLIP_MIN 0.0f
+#define NEAR_CLIP_MIN 0.001f
 
 /// @brief Largest valid value for camera's near clipping plane distance
 /// @details Used in Renderer::OnImGui() to adjust the near clip slider range
@@ -157,8 +157,9 @@ namespace yart
     void Renderer::TraceRay(const Ray& ray, HitPayload& payload)
     {
         float t, u, v;
-        if (yart::Ray::IntersectTriangle(ray, {-1, 0, 10}, {1, 0, 10}, {0, 1, 10}, t, u, v)) {
-            return ClosestHit(ray, payload);
+        if (yart::Ray::IntersectTriangle(ray, {-1, 0, 0}, {0, 1, 0}, {1, 0, 0}, t, u, v) && t > m_nearClippingPlane) {
+            payload.resultColor = glm::vec3{u,v,1-u-v};
+            return; // ClosestHit(ray, payload);
         }
 
         return Miss(ray, payload);

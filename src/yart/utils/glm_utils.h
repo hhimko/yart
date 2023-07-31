@@ -31,9 +31,9 @@ namespace yart
             view_matrix[0][0] = u.x;
             view_matrix[1][0] = u.y;
             view_matrix[2][0] = u.z;
-            view_matrix[0][1] = v.x;
-            view_matrix[1][1] = v.y;
-            view_matrix[2][1] = v.z;
+            view_matrix[0][1] = -v.x; // | Output image pixel coordinates are flipped on the y-axis in relation to the camera rays
+            view_matrix[1][1] = -v.y; // |
+            view_matrix[2][1] = -v.z; // |
             view_matrix[0][2] = look_dir.x;
             view_matrix[1][2] = look_dir.y;
             view_matrix[2][2] = look_dir.z;

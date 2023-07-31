@@ -13,6 +13,8 @@ namespace yart
         float &t, float &u, float &v
     )
     {
+        // https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection.html
+        
         glm::vec3 E01 = v1 - v0;
         glm::vec3 E02 = v2 - v0;
 
@@ -31,7 +33,7 @@ namespace yart
             return false;
 
         glm::vec3 Q = glm::cross(T, E01);
-        v = glm::dot(ray.origin, Q) * inv_det;
+        v = glm::dot(ray.direction, Q) * inv_det;
         if (v < 0.f || u + v > 1.f) 
             return false;
 
