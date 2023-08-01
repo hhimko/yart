@@ -9,6 +9,8 @@
 #include <algorithm>
 #include <iostream>
 
+#include <imgui.h>
+
 #include "yart/application.h"
 #include "utils/vk_utils.h"
 
@@ -81,13 +83,6 @@ namespace yart
         // Issue ImGui render commands 
         OnImGUI();
 
-        // Render registered ImGui windows 
-        for (auto &&window : m_registeredImGuiWindows) {
-            ImGui::Begin(window.name);
-            window.callback();
-            ImGui::End();
-        }
-
         // Render viewport image using ImGui
         ImTextureID viewport_image = (ImTextureID)m_viewport->m_image.GetDescriptorSet();
 
@@ -121,15 +116,6 @@ namespace yart
             WindowResize(static_cast<uint32_t>(win_w), static_cast<uint32_t>(win_h));
             m_shouldRebuildSwapchain = false;
         }
-    }
-
-    void Window::RegisterImGuiWindow(const char* window_name, imgui_callback_t callback)
-    {
-        ImGuiWindow window;
-        window.name = window_name;
-        window.callback = callback;
-
-        m_registeredImGuiWindows.push_back(window);
     }
 
     bool Window::InitGLFW(const char* win_title, int win_w, int win_h) 
@@ -805,6 +791,9 @@ namespace yart
         m_viewport->OnImGUI();
 
         ImGui::End();
+
+        if (m_dearImGuiCallback)
+            m_dearImGuiCallback();
     }
 
     bool Window::CreateViewports()

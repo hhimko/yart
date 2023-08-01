@@ -6,14 +6,13 @@
 #pragma once
 
 
-#include <functional>
 #include <memory>
 #include <vector>
+#include <functional>
 
 #define GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include <imgui.h>
 #include <backends/imgui_impl_glfw.h> // Platform backend
 #include <backends/imgui_impl_vulkan.h> // Renderer backend
 
@@ -29,8 +28,9 @@ namespace yart
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     class Window {
     public:
-        /// @brief Callback function for rendering custom ImGui windows  
+        /// @brief Dear ImGui callback type for registering user defined draw commands
         typedef std::function<void()> imgui_callback_t;
+
 
         Window(const Window&) = delete;
         Window& operator=(Window const&) = delete;
@@ -50,10 +50,12 @@ namespace yart
         /// @brief Submit frame for render and present the next frame-in-flight to the window
         void Render();
 
-        /// @brief Register a custom ImGui window to be rendered every frame 
-        /// @param window_name Name of the window
-        /// @param callback Callback function to window contents definition 
-        void RegisterImGuiWindow(const char* window_name, imgui_callback_t callback);
+        /// @brief Set a custom Dear ImGui callback for registering user defined draw commands 
+        /// @param callback ImGui callback function
+        void SetDearImGuiCallback(imgui_callback_t callback)
+        {
+            m_dearImGuiCallback = callback;
+        }
 
         /// @brief Get the main window viewport instance
         /// @return Pointer to a Viewport instance
@@ -114,7 +116,7 @@ namespace yart
         /// @return Whether Dear ImGUI has been successfully initialized
         bool InitImGUI();
 
-        /// @brief Record Dear ImGUI render commands for this class
+        /// @brief Record custom Dear ImGUI render commands
         void OnImGUI();
 
         /// @brief Create viewport images along with a shared sampler
@@ -140,15 +142,9 @@ namespace yart
         void Cleanup();
 
     private:
-        /// @brief Struct containing data for displaying custom ImGUI windows
-        struct ImGuiWindow {
-            const char* name;
-            imgui_callback_t callback;
-        };
-
-        utils::LTStack m_LTStack;
-        std::vector<ImGuiWindow> m_registeredImGuiWindows;
         std::shared_ptr<yart::Viewport> m_viewport = nullptr; // Main window viewport
+        imgui_callback_t m_dearImGuiCallback;
+        utils::LTStack m_LTStack;
         
         // -- SWAPCHAIN DATA -- // 
         utils::LTStack m_swapchainLTStack;

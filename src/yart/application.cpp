@@ -9,6 +9,7 @@
 #include <iostream>
 #include <functional>
 
+#include "GUI/gui.h"
 #include "yart/platform/input.h"
 
 
@@ -36,7 +37,7 @@ namespace yart
             glfwPollEvents();
 
             // Handle user input
-            Input::Update();
+            yart::Input::Update();
             m_renderer.UpdateCamera();
 
             // Ray trace the scene on CPU onto the viewport image buffer
@@ -45,8 +46,9 @@ namespace yart
             uint32_t viewport_width, viewport_height;
             viewport->GetImageSize(&viewport_width, &viewport_height);
             
-            m_renderer.Render(viewport->GetImageData(), viewport_width, viewport_height);
-            viewport->Refresh(); // Refresh display 
+            bool viewport_dirty = m_renderer.Render(viewport->GetImageData(), viewport_width, viewport_height);
+            if (viewport_dirty)
+                viewport->Refresh(); // Refresh display 
 
             // Render and present a frame to a platform window on GPU
             window.Render();
@@ -66,8 +68,11 @@ namespace yart
         if (!window.Init(YART_WINDOW_TITLE, YART_WINDOW_WIDTH, YART_WINDOW_HEIGHT))
             return false;
 
-        // Register ImGui windows
-        window.RegisterImGuiWindow("Renderer", std::bind(&Renderer::OnImGui, &m_renderer));      
+        // Set a custom Dear ImGui callback
+        window.SetDearImGuiCallback(yart::GUI::Render);  
+
+        // Register Dear ImGui windows
+        yart::GUI::RegisterImGuiWindow("Renderer", std::bind(&yart::Renderer::OnImGui, &m_renderer));
 
         return true;
     }

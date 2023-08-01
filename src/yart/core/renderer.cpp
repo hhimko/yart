@@ -45,7 +45,7 @@
 
 namespace yart
 {
-    void Renderer::Render(float buffer[], uint32_t width, uint32_t height)
+    bool Renderer::Render(float buffer[], uint32_t width, uint32_t height)
     {
         YART_ASSERT(buffer != nullptr);
         if (width != m_width || height != m_height)
@@ -72,6 +72,11 @@ namespace yart
                 buffer[idx + 3] = 1.0f;
             });
         });
+
+
+        bool was_dirty = m_dirty;
+        m_dirty = false;
+        return was_dirty;
     }
     
     void Renderer::OnImGui()
@@ -82,13 +87,17 @@ namespace yart
 
         if (ImGui::SliderFloat("FOV", &m_fieldOfView, FOV_MIN, FOV_MAX)) {
             recalculate = true;
+            m_dirty = true;
         }
 
         if (ImGui::SliderFloat("Near clipping plane", &m_nearClippingPlane, NEAR_CLIP_MIN, NEAR_CLIP_MAX)) {
             recalculate = true;
+            m_dirty = true;
         }
 
-        ImGui::SliderFloat("Far clipping plane", &m_farClippingPlane, FAR_CLIP_MIN, FAR_CLIP_MAX);
+        if (ImGui::SliderFloat("Far clipping plane", &m_farClippingPlane, FAR_CLIP_MIN, FAR_CLIP_MAX)) {
+            m_dirty = true;
+        }
 
 
         if (recalculate)
@@ -102,6 +111,7 @@ namespace yart
         float vertical_speed = yart::Input::GetVerticalAxis();
         if (vertical_speed != 0) {
             m_cameraPosition += m_cameraLookDirection * vertical_speed * m_cameraMoveSpeed;
+            m_dirty = true;
         }
 
         // Side-to-side movement
@@ -109,6 +119,7 @@ namespace yart
         if (horizontal_speed != 0) {
             const glm::vec3 u = -glm::normalize(glm::cross(m_cameraLookDirection, UP_DIRECTION)); // Camera view horizontal (right) direction vector
             m_cameraPosition += u * horizontal_speed * m_cameraMoveSpeed;
+            m_dirty = true;
         }
 
         // Ascend/descend movement
@@ -116,6 +127,7 @@ namespace yart
         elevation_speed -= static_cast<float>(ImGui::IsKeyDown(ImGuiKey_LeftCtrl));
         if (elevation_speed != 0) {
             m_cameraPosition += UP_DIRECTION * elevation_speed * m_cameraMoveSpeed;
+            m_dirty = true;
         }
 
 
@@ -127,6 +139,7 @@ namespace yart
             if (mouse.x != 0 || mouse.y != 0) {
                 RotateCameraWithMouseMoveDelta(mouse);
                 RecalculateCameraTransformationMatrix();
+                m_dirty = true;
             }
         } else {
             yart::Input::SetCursorLocked(false); // Unlock the cursor 
@@ -150,6 +163,8 @@ namespace yart
         m_width = width;
         m_height = height;
 
+        m_dirty = true;
+
         // Change in aspect ratio requires the camera matrix to be recalculated 
         RecalculateCameraTransformationMatrix();
     }
@@ -157,7 +172,7 @@ namespace yart
     void Renderer::TraceRay(const Ray& ray, HitPayload& payload)
     {
         float t, u, v;
-        if (yart::Ray::IntersectTriangle(ray, {-1, 0, 0}, {0, 1, 0}, {1, 0, 0}, t, u, v) && t > m_nearClippingPlane) {
+        if (yart::Ray::IntersectTriangle(ray, {-1, 0, 0}, {0, 1, 0}, {1, 0, 0}, t, u, v) && t > m_nearClippingPlane && t < m_farClippingPlane) {
             payload.resultColor = glm::vec3{u,v,1-u-v};
             return; // ClosestHit(ray, payload);
         }

@@ -13,15 +13,14 @@ namespace yart
 {
     /// @brief Structure defining a ray in a three dimensional space 
     struct Ray {
+    public:
         /// @brief Origin of the ray in world space
         glm::vec3 origin; 
 
         /// @brief Direction (unit) vector of the ray
         glm::vec3 direction;
 
-
-        static constexpr float EPSILON = 0.0001f;
-
+    public:
         /// @brief Ray-triangle intersection check, implemented using the Möller-Trumbore algorithm
         /// @param ray Traced ray
         /// @param v0 First vertex of the triangle in world space
@@ -35,6 +34,9 @@ namespace yart
             const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, 
             float& t, float& u, float& v
         );
+
+    private:
+        static constexpr float EPSILON = 0.0001f;
 
     };
 } // namespace yart
