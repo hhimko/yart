@@ -68,8 +68,9 @@ namespace yart
         if (!window.Init(YART_WINDOW_TITLE, YART_WINDOW_WIDTH, YART_WINDOW_HEIGHT))
             return false;
 
-        // Set a custom Dear ImGui callback
+        // Setup GUI rendering
         window.SetDearImGuiCallback(yart::GUI::Render);  
+        yart::GUI::ApplyCustomStyle();
 
         // Register Dear ImGui windows
         yart::GUI::RegisterImGuiWindow("Renderer", std::bind(&yart::Renderer::OnImGui, &m_renderer));
