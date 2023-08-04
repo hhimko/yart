@@ -73,7 +73,7 @@ namespace yart
         yart::GUI::ApplyCustomStyle();
 
         // Register Dear ImGui windows
-        yart::GUI::RegisterImGuiWindow("Renderer", std::bind(&yart::Renderer::OnImGui, &m_renderer));
+        yart::GUI::RegisterWindow("Renderer", std::bind(&yart::Renderer::OnImGui, &m_renderer));
 
         return true;
     }

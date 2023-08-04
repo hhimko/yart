@@ -10,12 +10,12 @@
 
 
 /// @brief Current GUI context
-static yart::GUI::GUIContext s_context;  
+static yart::GUI::GuiContext s_context;  
 
 
 namespace yart
 {
-    GUI::GUIContext& GUI::GetCurrentContext()
+    GUI::GuiContext& GUI::GetCurrentContext()
     {
         return s_context;
     }
@@ -107,13 +107,9 @@ namespace yart
         }
     }
 
-    void GUI::RegisterImGuiWindow(const char *window_name, imgui_callback_t callback)
+    void GUI::RegisterWindow(const char *window_name, imgui_callback_t callback)
     {
-        GUIContext::ImGuiWindow window;
-        window.name = window_name;
-        window.callback = callback;
-
-        s_context.registeredImGuiWindows.push_back(window);
+        s_context.registeredWindows.emplace_back(window_name, callback);
     }
 
     void GUI::Render() 
@@ -123,33 +119,8 @@ namespace yart
 
 
         // Render registered ImGui windows 
-        for (auto &&window : s_context.registeredImGuiWindows) {
-            ImGuiWindow* imgui_window = ImGui::FindWindowByName(window.name);
-            if (imgui_window) {
-                auto size = imgui_window->Size;
-                auto pos = imgui_window->Pos;
-
-                auto* ctx = ImGui::GetCurrentContext();
-                auto* nav = ctx->NavWindow;
-
-                if (imgui_window != nav && !ImGui::IsMouseHoveringRect({pos.x - 2, pos.y - 2}, {pos.x + size.x + 2, pos.y + size.y + 2}, false)) {
-                    auto* draw_list = ImGui::GetForegroundDrawList();
-                    draw_list->AddRect(pos, {pos.x + size.x, pos.y + size.y}, 0xFF0000FF);
-                    ImGui::PushStyleColor(ImGuiCol_WindowBg, { YART_GUI_COLOR_BLACK, YART_GUI_ALPHA_MEDIUM });
-                }
-            }
-
-
-            ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f); // Window title bottom border on
-            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 6.0f, 4.0f }); // Window title vertical padding +2 
-            ImGui::Begin(window.name);
-            ImGui::PopStyleVar(2);
-
-            ImGui::PopStyleColor();
-
-            window.callback();
-            ImGui::End();
-        }
+        for (auto &&window : s_context.registeredWindows)
+            RenderWindow(window);
 
 
         // -- Render Main Menu Bar -- // 
