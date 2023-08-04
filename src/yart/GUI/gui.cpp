@@ -117,7 +117,6 @@ namespace yart
         // Uncomment to display Dear ImGui's debug window
         // ImGui::ShowDemoWindow();
 
-
         // Render registered ImGui windows 
         for (auto &&window : s_context.registeredWindows)
             RenderWindow(window);
@@ -135,5 +134,8 @@ namespace yart
 		}
 
         ImGui::EndMainMenuBar();
+
+
+        RenderViewAxesWindow({0,0,0}, {0,0,0}, {0,0,0});
     }   
 } // namespace yart

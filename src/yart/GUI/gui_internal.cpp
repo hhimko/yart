@@ -52,15 +52,14 @@ namespace yart
             }
 
 
-            // Draw the window
-            ImGui::PushStyleColor(ImGuiCol_WindowBg, { YART_GUI_COLOR_BLACK, window_alpha });
+            // Open the window
             ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f); // Window title bottom border on
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 6.0f, 4.0f }); // Window title vertical padding +2 
             
+            ImGui::SetNextWindowBgAlpha(window_alpha);
             ImGui::Begin(window.name);
 
             ImGui::PopStyleVar(2);
-            ImGui::PopStyleColor();
             
 
             // Draw window contents 
@@ -75,6 +74,63 @@ namespace yart
             // Restore global alpha value
             style->Alpha = restore_alpha;
 
+
+            ImGui::End();
+        }
+
+        bool IsMouseHoveringCircle(const ImVec2 &pos, float radius)
+        {
+            ImGuiIO& io = ImGui::GetIO();
+            float dx = io.MousePos.x - pos.x;
+            float dy = io.MousePos.y - pos.y;
+            return dx * dx + dy * dy <= radius * radius;
+        }
+
+        void RenderViewAxesWindow(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis)
+        {
+            static const ImVec2 window_size = { 75.0f, 75.0f }; // Expected to be a square
+            static const ImVec2 window_margin = { 20.0f, 10.0f };
+
+            static const ImGuiWindowFlags window_flags = (
+                ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav
+                | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoBackground
+            );
+
+
+            // Set a constant window size and position
+            ImVec2 viewport_pos = ImGui::GetMainViewport()->WorkPos;
+            ImVec2 viewport_size = ImGui::GetMainViewport()->WorkSize;
+            ImVec2 window_center = {
+                viewport_pos.x + viewport_size.x - window_size.x / 2 - window_margin.x, 
+                viewport_pos.y + window_size.y / 2 + window_margin.y 
+            };
+
+            ImGui::SetNextWindowPos(window_center, ImGuiCond_None, { 0.5f, 0.5f });
+            ImGui::SetNextWindowSize(window_size);
+
+
+            // Open the window
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0.0f, 0.0f });
+            ImGui::Begin("View Axes Context", nullptr, window_flags);
+            ImGui::PopStyleVar();
+
+
+            // Draw window contents
+            auto* imgui_window = ImGui::GetCurrentWindow();
+            ImDrawList* draw_list = imgui_window->DrawList;
+            float circle_radius = window_size.x / 2;
+            
+            bool hovered = false;
+            if (ImGui::IsWindowHovered())
+                hovered = IsMouseHoveringCircle(window_center, circle_radius);
+
+            static const ImU32 background_color = ImGui::ColorConvertFloat4ToU32({ YART_GUI_COLOR_LIGHT_GRAY, YART_GUI_ALPHA_LOW });
+            static const ImU32 background_color_hovered = ImGui::ColorConvertFloat4ToU32({ YART_GUI_COLOR_LIGHT_GRAY, YART_GUI_ALPHA_MEDIUM });
+
+            if (hovered)
+                draw_list->AddNgonFilled(window_center, circle_radius, background_color_hovered, 16);
+            else
+                draw_list->AddNgonFilled(window_center, circle_radius, background_color, 16);
 
             ImGui::End();
         }
