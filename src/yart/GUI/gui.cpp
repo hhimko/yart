@@ -112,7 +112,12 @@ namespace yart
         s_context.registeredWindows.emplace_back(window_name, callback);
     }
 
-    void GUI::Render() 
+    void GUI::RenderViewAxesWindow(const glm::vec3 &x_axis, const glm::vec3 &y_axis, const glm::vec3 &z_axis)
+    {
+        return GUI::RenderViewAxesWindowEx(x_axis, y_axis, z_axis);
+    }
+
+    void GUI::Render()
     {
         // Uncomment to display Dear ImGui's debug window
         // ImGui::ShowDemoWindow();
@@ -134,8 +139,5 @@ namespace yart
 		}
 
         ImGui::EndMainMenuBar();
-
-
-        RenderViewAxesWindow({0,0,0}, {0,0,0}, {0,0,0});
     }   
 } // namespace yart

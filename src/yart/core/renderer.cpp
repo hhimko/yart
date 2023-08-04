@@ -16,6 +16,7 @@
 #include "yart/utils/glm_utils.h"
 #include "yart/platform/input.h"
 #include "yart/application.h"
+#include "yart/GUI/gui.h"
 
 
 /// @brief Smallest valid value for camera's FOV in degrees
@@ -99,6 +100,11 @@ namespace yart
             m_dirty = true;
         }
 
+
+        // Render the view axes context window
+        const glm::vec3 x = -glm::normalize(glm::cross(m_cameraLookDirection, UP_DIRECTION)); // Camera view horizontal (positive x) direction vector
+        const glm::vec3 y = glm::cross(x, m_cameraLookDirection); // Camera view vertical (positive y) direction vector
+        yart::GUI::RenderViewAxesWindow(x, y, m_cameraLookDirection);
 
         if (recalculate)
             RecalculateCameraTransformationMatrix();

@@ -9,6 +9,7 @@
 #include <functional>
 
 #include <imgui.h>
+#include <glm/glm.hpp>
 
 
 // -- YART APPLICATION COLOR PALETTE -- //
@@ -69,6 +70,12 @@ namespace yart
         /// @param window_name Name of the window
         /// @param callback Callback function to window contents definition 
         void RegisterWindow(const char* window_name, imgui_callback_t callback);
+
+        /// @brief Render the view axes context window
+        /// @param x_axis View x-axis
+        /// @param y_axis View y-axis
+        /// @param z_axis View z-axis
+        void RenderViewAxesWindow(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis);
 
         /// @brief Issue Dear ImGui render commands for the current GUI context
         /// @note This method should only be called after calling `ImGui::NewFrame()`

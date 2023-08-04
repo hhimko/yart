@@ -9,7 +9,6 @@
 
 #include <vector>
 
-#include <glm/glm.hpp>
 #include <imgui_internal.h>
 
 #include "gui.h"
@@ -23,6 +22,10 @@ namespace yart
         struct GuiWindow {
         public:
             GuiWindow() = delete;
+
+            /// @brief GuiWindow constructor
+            /// @param name Window title
+            /// @param callback Window contents immediate rendering callback  
             GuiWindow(const char* name, imgui_callback_t callback);
 
         public:
@@ -57,7 +60,7 @@ namespace yart
         /// @param x_axis View x-axis
         /// @param y_axis View y-axis
         /// @param z_axis View z-axis
-        void RenderViewAxesWindow(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis);
+        void RenderViewAxesWindowEx(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis);
 
     } // namespace GUI
 } // namespace yart

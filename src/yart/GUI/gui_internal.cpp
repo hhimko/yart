@@ -86,10 +86,10 @@ namespace yart
             return dx * dx + dy * dy <= radius * radius;
         }
 
-        void RenderViewAxesWindow(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis)
+        void RenderViewAxesWindowEx(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis)
         {
-            static const ImVec2 window_size = { 75.0f, 75.0f }; // Expected to be a square
-            static const ImVec2 window_margin = { 20.0f, 10.0f };
+            static constexpr ImVec2 window_size = { 75.0f, 75.0f }; // Expected to be a square
+            static constexpr ImVec2 window_margin = { 20.0f, 10.0f };
 
             static const ImGuiWindowFlags window_flags = (
                 ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav
@@ -118,19 +118,34 @@ namespace yart
             // Draw window contents
             auto* imgui_window = ImGui::GetCurrentWindow();
             ImDrawList* draw_list = imgui_window->DrawList;
-            float circle_radius = window_size.x / 2;
+            static constexpr float circle_radius = window_size.x / 2;
             
             bool hovered = false;
             if (ImGui::IsWindowHovered())
                 hovered = IsMouseHoveringCircle(window_center, circle_radius);
 
+            // Background
             static const ImU32 background_color = ImGui::ColorConvertFloat4ToU32({ YART_GUI_COLOR_LIGHT_GRAY, YART_GUI_ALPHA_LOW });
             static const ImU32 background_color_hovered = ImGui::ColorConvertFloat4ToU32({ YART_GUI_COLOR_LIGHT_GRAY, YART_GUI_ALPHA_MEDIUM });
 
             if (hovered)
-                draw_list->AddNgonFilled(window_center, circle_radius, background_color_hovered, 16);
+                draw_list->AddCircleFilled(window_center, circle_radius, background_color_hovered);
             else
-                draw_list->AddNgonFilled(window_center, circle_radius, background_color, 16);
+                draw_list->AddCircleFilled(window_center, circle_radius, background_color);
+
+            // Axes
+            static constexpr float axis_max_length = circle_radius - 10.0f;
+            static constexpr float axis_thickness = 2.0f;
+
+            glm::vec3 center(window_center.x, window_center.y, 0);
+            glm::vec3 test = center + x_axis * axis_max_length;
+            draw_list->AddLine(window_center, {test.x, test.y}, 0xFF0000FF, axis_thickness);
+
+            glm::vec3 test1 = center + y_axis * axis_max_length;
+            draw_list->AddLine(window_center, {test1.x, test1.y}, 0xFF00FF00, axis_thickness);
+
+            glm::vec3 test2 = center + z_axis * axis_max_length;
+            draw_list->AddLine(window_center, {test2.x, test2.y}, 0xFFFF0000, axis_thickness);
 
             ImGui::End();
         }
