@@ -102,12 +102,10 @@ namespace yart
 
 
         // Render the view axes context window
-        //const glm::vec3 dir = yart::utils::SphericalToCartesianUnitVector(m_cameraYaw, -m_cameraPitch);
-        const glm::vec3 dir = m_cameraLookDirection;
-        const glm::vec3 u = glm::normalize(glm::cross(dir, UP_DIRECTION)); // Camera view horizontal (positive x) direction vector
-        const glm::vec3 v = glm::cross(-u, dir); // Camera view vertical (positive y) direction vector
-        const glm::vec3 w = -dir; // Camera view vertical (positive y) direction vector
-        yart::GUI::RenderViewAxesWindow(u, v, w);
+        const glm::vec3 x_axis = { glm::sin(m_cameraYaw), glm::sin(m_cameraPitch) * glm::cos(m_cameraYaw), -glm::cos(m_cameraYaw) };
+        const glm::vec3 y_axis = { 0, -glm::cos(m_cameraPitch), -glm::sin(m_cameraPitch) };
+        const glm::vec3 z_axis = glm::normalize(glm::cross(x_axis, y_axis));
+        yart::GUI::RenderViewAxesWindow(x_axis, y_axis, z_axis);
 
         if (recalculate)
             RecalculateCameraTransformationMatrix();

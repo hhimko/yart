@@ -94,10 +94,9 @@ namespace yart
             float col_mul = axis.z / 4.0f + 0.75f;
             ImU32 col = ImGui::ColorConvertFloat4ToU32({ color.x * col_mul, color.y * col_mul, color.z * col_mul, 1.0f });
 
-            glm::vec3 axis_pos = win_pos + axis * (length - handle_radius + 0.5f);
-            draw_list->AddLine({ win_pos.x, win_pos.y }, {axis_pos.x, axis_pos.y}, col, axis_thickness);
-
             glm::vec3 handle_pos = win_pos + axis * length;
+            draw_list->AddLine({ win_pos.x, win_pos.y }, {handle_pos.x, handle_pos.y}, col, axis_thickness);
+
             draw_list->AddCircleFilled({handle_pos.x, handle_pos.y}, handle_radius, col);
         }
 
