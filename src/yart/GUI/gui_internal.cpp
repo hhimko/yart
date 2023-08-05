@@ -86,12 +86,12 @@ namespace yart
             return dx * dx + dy * dy <= radius * radius;
         }
 
-        void DrawViewAxisH(ImDrawList* draw_list, const glm::vec3& win_pos, const glm::vec3& axis, const glm::vec3& color, float length)
+        void DrawPositiveViewAxisH(ImDrawList* draw_list, const glm::vec3& win_pos, const glm::vec3& axis, const glm::vec3& color, float length, bool hovered)
         {
             static constexpr float axis_thickness = 2.5f;
-            static constexpr float handle_radius = axis_thickness * 3.0f;
+            static constexpr float handle_radius = 6.5f;
 
-            float col_mul = axis.z / 4.0f + 0.75f;
+            float col_mul = hovered ? 1.0f : axis.z / 5.0f + 0.5f;
             ImU32 col = ImGui::ColorConvertFloat4ToU32({ color.x * col_mul, color.y * col_mul, color.z * col_mul, 1.0f });
 
             glm::vec3 handle_pos = win_pos + axis * length;
@@ -100,7 +100,21 @@ namespace yart
             draw_list->AddCircleFilled({handle_pos.x, handle_pos.y}, handle_radius, col);
         }
 
-        void DrawViewAxesH(ImDrawList* draw_list, const glm::vec3& win_pos, const glm::vec3* axes, Axis* order, float length)
+        void DrawNegativeViewAxisH(ImDrawList* draw_list, const glm::vec3& win_pos, const glm::vec3& axis, const glm::vec3& color, float length, bool hovered)
+        {
+            static constexpr float handle_thickness = 2.0f;
+            static constexpr float handle_radius = 7.0f;
+
+            float col_mul = hovered ? 1.0f : axis.z / 5.0f + 0.5f;
+            ImU32 outer_col = ImGui::ColorConvertFloat4ToU32({ color.x * col_mul, color.y * col_mul, color.z * col_mul, 1.0f });
+            ImU32 inner_col = ImGui::ColorConvertFloat4ToU32({ color.x * col_mul * 0.5f, color.y * col_mul * 0.5f, color.z * col_mul * 0.5f, 1.0f });
+
+            glm::vec3 handle_pos = win_pos + axis * length;
+            draw_list->AddCircleFilled({handle_pos.x, handle_pos.y}, handle_radius - 0.5f, inner_col, 0);
+            draw_list->AddCircle({handle_pos.x, handle_pos.y}, handle_radius, outer_col, 0, handle_thickness);
+        }
+
+        Axis DrawViewAxesH(ImDrawList* draw_list, const glm::vec3& win_pos, const glm::vec3* axes, Axis* order, float length, bool active)
         {
             static constexpr glm::vec3 colors[] = {
                 { 1.0f, 0.0f, 0.0f }, // X-axis (red)
@@ -108,14 +122,87 @@ namespace yart
                 { 0.0f, 0.0f, 1.0f }  // Z-axis (blue)
             };
 
-            static constexpr float axis_thickness = 2.5f;
-            static constexpr float handle_radius = axis_thickness * 3.0f;
 
+            // No need to render negative view axes and check for input if the window is not active
+            if (!active) {
+                for (int i=0; i < 3; ++i) {
+                    int axis_index = (static_cast<int>(order[i]) - 1) / 2;
+                    DrawPositiveViewAxisH(draw_list, win_pos, axes[axis_index], colors[axis_index], length, false);
+                }
 
-            for (int i=0; i < 3; ++i) {
-                int axis_index = (static_cast<int>(order[i]) - 1) / 2;
-                DrawViewAxisH(draw_list, win_pos, axes[axis_index], colors[axis_index], length);
+                return Axis::NONE;
             }
+
+
+            Axis hovered_axis = Axis::NONE;
+            if (axes[0].z + axes[1].z + axes[2].z <= -0.5f || axes[1].z < -0.8f) {
+                for (int i=0; i < 6; ++i) {
+                    static constexpr int indexes[6] = { 2, 1, 0, 0, 1, 2 };
+                    const glm::vec3& axis = axes[(static_cast<int>(order[indexes[i]]) - 1) / 2];
+
+                    bool hovering = false;
+                    if (i < 3)
+                        hovering = IsMouseHoveringCircle({ win_pos.x - axis.x * length, win_pos.y - axis.y * length }, 6.5f);
+                    else 
+                        hovering = IsMouseHoveringCircle({ win_pos.x + axis.x * length, win_pos.y + axis.y * length }, 6.5f);
+
+                    if (hovering) {
+                        if (i >= 3)
+                            hovered_axis = order[indexes[i]]; // Positive axes
+                        else
+                            hovered_axis = static_cast<Axis>(static_cast<uint8_t>(order[indexes[i]]) + 1); // Negative axes
+                    
+                        break;
+                    }
+                }
+
+                for (int i=0; i < 3; ++i) {
+                    int axis_index = (static_cast<int>(order[i]) - 1) / 2;
+                    Axis axis = order[i];
+                    DrawPositiveViewAxisH(draw_list, win_pos, axes[axis_index], colors[axis_index], length, axis == hovered_axis);
+                }
+
+                for (int i=2; i >= 0; --i) {
+                    int axis_index = (static_cast<int>(order[i]) - 1) / 2;
+                    Axis axis =  static_cast<Axis>(static_cast<uint8_t>(order[i]) + 1);
+                    DrawNegativeViewAxisH(draw_list, win_pos, -axes[axis_index], colors[axis_index], length, axis == hovered_axis);
+                }
+            } else {
+                for (int i=0; i < 6; ++i) {
+                    static constexpr int indexes[6] = { 2, 1, 0, 0, 1, 2 };
+                    const glm::vec3& axis = axes[(static_cast<int>(order[indexes[i]]) - 1) / 2];
+
+                    bool hovering = false;
+                    if (i >= 3)
+                        hovering = IsMouseHoveringCircle({ win_pos.x - axis.x * length, win_pos.y - axis.y * length }, 6.5f);
+                    else 
+                        hovering = IsMouseHoveringCircle({ win_pos.x + axis.x * length, win_pos.y + axis.y * length }, 6.5f);
+
+                    if (hovering) {
+                        if (i < 3)
+                            hovered_axis = order[indexes[i]]; // Positive axes
+                        else
+                            hovered_axis = static_cast<Axis>(static_cast<uint8_t>(order[indexes[i]]) + 1); // Negative axes
+                    
+                        break;
+                    }
+                }
+
+                for (int i=2; i >= 0; --i) {
+                    int axis_index = (static_cast<int>(order[i]) - 1) / 2;
+                    Axis axis =  static_cast<Axis>(static_cast<uint8_t>(order[i]) + 1);
+                    DrawNegativeViewAxisH(draw_list, win_pos, -axes[axis_index], colors[axis_index], length, axis == hovered_axis);
+                }
+
+                for (int i=0; i < 3; ++i) {
+                    int axis_index = (static_cast<int>(order[i]) - 1) / 2;
+                    Axis axis = order[i];
+                    DrawPositiveViewAxisH(draw_list, win_pos, axes[axis_index], colors[axis_index], length, axis == hovered_axis);
+                }
+            }
+
+
+            return Axis::NONE;
         }
 
         void RenderViewAxesWindowEx(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis)
@@ -197,7 +284,7 @@ namespace yart
                 }
             }
 
-            DrawViewAxesH(draw_list, center, axes, order, axis_length);
+            DrawViewAxesH(draw_list, center, axes, order, axis_length, hovered);
 
 
             ImGui::End();
