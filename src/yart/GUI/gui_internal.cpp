@@ -86,6 +86,39 @@ namespace yart
             return dx * dx + dy * dy <= radius * radius;
         }
 
+        void DrawViewAxisH(ImDrawList* draw_list, const glm::vec3& win_pos, const glm::vec3& axis, const glm::vec3& color, float length)
+        {
+            static constexpr float axis_thickness = 2.5f;
+            static constexpr float handle_radius = axis_thickness * 3.0f;
+
+            float col_mul = axis.z / 4.0f + 0.75f;
+            ImU32 col = ImGui::ColorConvertFloat4ToU32({ color.x * col_mul, color.y * col_mul, color.z * col_mul, 1.0f });
+
+            glm::vec3 axis_pos = win_pos + axis * (length - handle_radius + 0.5f);
+            draw_list->AddLine({ win_pos.x, win_pos.y }, {axis_pos.x, axis_pos.y}, col, axis_thickness);
+
+            glm::vec3 handle_pos = win_pos + axis * length;
+            draw_list->AddCircleFilled({handle_pos.x, handle_pos.y}, handle_radius, col);
+        }
+
+        void DrawViewAxesH(ImDrawList* draw_list, const glm::vec3& win_pos, const glm::vec3* axes, Axis* order, float length)
+        {
+            static constexpr glm::vec3 colors[] = {
+                { 1.0f, 0.0f, 0.0f }, // X-axis (red)
+                { 0.0f, 1.0f, 0.0f }, // Y-axis (green)
+                { 0.0f, 0.0f, 1.0f }  // Z-axis (blue)
+            };
+
+            static constexpr float axis_thickness = 2.5f;
+            static constexpr float handle_radius = axis_thickness * 3.0f;
+
+
+            for (int i=0; i < 3; ++i) {
+                int axis_index = (static_cast<int>(order[i]) - 1) / 2;
+                DrawViewAxisH(draw_list, win_pos, axes[axis_index], colors[axis_index], length);
+            }
+        }
+
         void RenderViewAxesWindowEx(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis)
         {
             static constexpr ImVec2 window_size = { 75.0f, 75.0f }; // Expected to be a square
@@ -126,26 +159,47 @@ namespace yart
 
             // Background
             static const ImU32 background_color = ImGui::ColorConvertFloat4ToU32({ YART_GUI_COLOR_LIGHT_GRAY, YART_GUI_ALPHA_LOW });
-            static const ImU32 background_color_hovered = ImGui::ColorConvertFloat4ToU32({ YART_GUI_COLOR_LIGHT_GRAY, YART_GUI_ALPHA_MEDIUM });
 
             if (hovered)
-                draw_list->AddCircleFilled(window_center, circle_radius, background_color_hovered);
-            else
                 draw_list->AddCircleFilled(window_center, circle_radius, background_color);
 
             // Axes
-            static constexpr float axis_max_length = circle_radius - 10.0f;
-            static constexpr float axis_thickness = 2.0f;
-
+            glm::vec3 axes[] = { x_axis, y_axis, z_axis };
             glm::vec3 center(window_center.x, window_center.y, 0);
-            glm::vec3 test = center + x_axis * axis_max_length;
-            draw_list->AddLine(window_center, {test.x, test.y}, 0xFF0000FF, axis_thickness);
+            static constexpr float axis_length = circle_radius - 10.0f;
 
-            glm::vec3 test1 = center + y_axis * axis_max_length;
-            draw_list->AddLine(window_center, {test1.x, test1.y}, 0xFF00FF00, axis_thickness);
+            // Z-sort the axes in draw order
+            Axis* order = nullptr;
+            if (x_axis.z > y_axis.z) {
+                if (y_axis.z > z_axis.z) {
+                    static Axis zyx[3] = { Axis::POSITIVE_Z, Axis::POSITIVE_Y, Axis::POSITIVE_X };
+                    order = zyx;
+                } else {
+                    if (x_axis.z > z_axis.z) {
+                        static Axis yzx[3] = { Axis::POSITIVE_Y, Axis::POSITIVE_Z, Axis::POSITIVE_X };
+                        order = yzx;
+                    } else {
+                        static Axis yxz[3] = { Axis::POSITIVE_Y, Axis::POSITIVE_X, Axis::POSITIVE_Z};
+                        order = yxz;
+                    }
+                }
+            } else {
+                if (x_axis.z > z_axis.z) {
+                    static Axis zxy[3] = { Axis::POSITIVE_Z, Axis::POSITIVE_X, Axis::POSITIVE_Y };
+                    order = zxy;
+                } else {
+                    if (y_axis.z > z_axis.z) {
+                        static Axis xzy[3] = { Axis::POSITIVE_X, Axis::POSITIVE_Z, Axis::POSITIVE_Y };
+                        order = xzy;
+                    } else {
+                        static Axis xyz[3] = { Axis::POSITIVE_X, Axis::POSITIVE_Y, Axis::POSITIVE_Z };
+                        order = xyz;
+                    }
+                }
+            }
 
-            glm::vec3 test2 = center + z_axis * axis_max_length;
-            draw_list->AddLine(window_center, {test2.x, test2.y}, 0xFFFF0000, axis_thickness);
+            DrawViewAxesH(draw_list, center, axes, order, axis_length);
+
 
             ImGui::End();
         }
