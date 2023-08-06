@@ -112,9 +112,9 @@ namespace yart
         s_context.registeredWindows.emplace_back(window_name, callback);
     }
 
-    void GUI::RenderViewAxesWindow(const glm::vec3 &x_axis, const glm::vec3 &y_axis, const glm::vec3 &z_axis)
+    bool GUI::RenderViewAxesWindow(const glm::vec3 &x_axis, const glm::vec3 &y_axis, const glm::vec3 &z_axis, glm::vec3& clicked_axis)
     {
-        return GUI::RenderViewAxesWindowEx(x_axis, y_axis, z_axis);
+        return GUI::RenderViewAxesWindowEx(x_axis, y_axis, z_axis, clicked_axis);
     }
 
     void GUI::Render()

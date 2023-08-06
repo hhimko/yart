@@ -88,12 +88,10 @@ namespace yart
 
         if (ImGui::SliderFloat("FOV", &m_fieldOfView, FOV_MIN, FOV_MAX)) {
             recalculate = true;
-            m_dirty = true;
         }
 
         if (ImGui::SliderFloat("Near clipping plane", &m_nearClippingPlane, NEAR_CLIP_MIN, NEAR_CLIP_MAX)) {
             recalculate = true;
-            m_dirty = true;
         }
 
         if (ImGui::SliderFloat("Far clipping plane", &m_farClippingPlane, FAR_CLIP_MIN, FAR_CLIP_MAX)) {
@@ -105,10 +103,22 @@ namespace yart
         const glm::vec3 x_axis = { glm::sin(m_cameraYaw), glm::sin(m_cameraPitch) * glm::cos(m_cameraYaw), -glm::cos(m_cameraYaw) };
         const glm::vec3 y_axis = { 0, -glm::cos(m_cameraPitch), -glm::sin(m_cameraPitch) };
         const glm::vec3 z_axis = glm::normalize(glm::cross(x_axis, y_axis));
-        yart::GUI::RenderViewAxesWindow(x_axis, y_axis, z_axis);
 
-        if (recalculate)
+        glm::vec3 clicked_axis = {0, 0, 0};
+        if (yart::GUI::RenderViewAxesWindow(x_axis, y_axis, z_axis, clicked_axis)) {
+            // Base axis to pitch, yaw rotation transformation magic
+            m_cameraPitch = clicked_axis.y * CAMERA_PITCH_MAX;
+            m_cameraYaw = (clicked_axis.y + clicked_axis.z) * 90.0f * DEG_TO_RAD + (clicked_axis.x == -1.0f) * 180.0f * DEG_TO_RAD;
+
+            m_cameraLookDirection = yart::utils::SphericalToCartesianUnitVector(m_cameraYaw, m_cameraPitch); // Can't use `clicked_axis` directly here, because of rotation clamping
+            recalculate = true;
+        }
+
+
+        if (recalculate) {
             RecalculateCameraTransformationMatrix();
+            m_dirty = true;
+        }
     }
 
     bool Renderer::UpdateCamera()
@@ -144,7 +154,11 @@ namespace yart
             const glm::ivec2& mouse = yart::Input::GetMouseMoveDelta();
 
             if (mouse.x != 0 || mouse.y != 0) {
-                RotateCameraWithMouseMoveDelta(mouse);
+                m_cameraYaw += static_cast<float>(mouse.x) * 0.01f;
+                m_cameraPitch += static_cast<float>(mouse.y) * 0.01f;
+                m_cameraPitch = glm::clamp(m_cameraPitch, CAMERA_PITCH_MIN, CAMERA_PITCH_MAX);
+                m_cameraLookDirection = yart::utils::SphericalToCartesianUnitVector(m_cameraYaw, m_cameraPitch);;
+
                 RecalculateCameraTransformationMatrix();
                 m_dirty = true;
             }
@@ -211,13 +225,5 @@ namespace yart
 
         m_inverseViewProjectionMatrix = view_matrix_inverse * projection_matrix_inverse;
     }
-
-    void Renderer::RotateCameraWithMouseMoveDelta(const glm::ivec2& mouse_drag)
-    {
-        m_cameraYaw += static_cast<float>(mouse_drag.x) * 0.01f;
-        m_cameraPitch += static_cast<float>(mouse_drag.y) * 0.01f;
-        m_cameraPitch = glm::clamp(m_cameraPitch, CAMERA_PITCH_MIN, CAMERA_PITCH_MAX);
-
-        m_cameraLookDirection = yart::utils::SphericalToCartesianUnitVector(m_cameraYaw, m_cameraPitch);
-    }
+    
 } // namespace yart

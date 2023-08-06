@@ -89,10 +89,6 @@ namespace yart
         ///        - near clipping plane
         void RecalculateCameraTransformationMatrix();
 
-        /// @brief Rotate the camera around its origin based on a screen position cursor movement delta 
-        /// @param mouse_drag Amount of pixels moved by the cursor since last frame
-        void RotateCameraWithMouseMoveDelta(const glm::ivec2& mouse_drag);
-
     private:
         static constexpr float PI = 3.14159274f; 
         static constexpr float EPSILON = 0.0001f; 
@@ -114,7 +110,7 @@ namespace yart
         glm::vec3 m_cameraPosition = { .0f, .0f, -5.0f }; // World space position 
         glm::vec3 m_cameraLookDirection = { .0f, .0f, 1.0f }; // Normalized look-at vector, calculated from camera's yaw and pitch rotations
         float m_cameraYaw = 90.0f * DEG_TO_RAD; // Horizontal camera rotation in radians (around the y axis)
-        float m_cameraPitch = .0f; // Vertical camera rotation in radians (around the x axis)
+        float m_cameraPitch = 0.0f; // Vertical camera rotation in radians (around the x axis)
         
         float m_fieldOfView = 90.0f; // Horizontal camera FOV in degrees
         float m_nearClippingPlane = 0.1f;

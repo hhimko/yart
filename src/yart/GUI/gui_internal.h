@@ -60,7 +60,9 @@ namespace yart
         /// @param x_axis View x-axis
         /// @param y_axis View y-axis
         /// @param z_axis View z-axis
-        void RenderViewAxesWindowEx(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis);
+        /// @param clicked_axis Output variable set to a base axis clicked by the user
+        /// @return Whether the user has clicked on an axis and the `clicked_axis` output variable has been set 
+        bool RenderViewAxesWindowEx(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis, glm::vec3& clicked_axis);
 
     } // namespace GUI
 } // namespace yart
