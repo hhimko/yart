@@ -93,6 +93,13 @@ namespace yart
             return dx * dx + dy * dy <= radius * radius;
         }
 
+        /// @brief Positive view axis rendering helper function
+        /// @param draw_list ImGui window draw list
+        /// @param win_pos Center window position of the view axes context window
+        /// @param axis Normalized axis direction
+        /// @param color Color of the axis
+        /// @param length Maximum axis length in pixels 
+        /// @param hovered Whether the axis handle is currently hovered
         void DrawPositiveViewAxisH(ImDrawList* draw_list, const glm::vec3& win_pos, const glm::vec3& axis, const glm::vec3& color, float length, bool hovered)
         {
             static constexpr float axis_thickness = 2.5f;
@@ -107,6 +114,13 @@ namespace yart
             draw_list->AddCircleFilled({handle_pos.x, handle_pos.y}, handle_radius, col);
         }
 
+        /// @brief Negative view axis rendering helper function
+        /// @param draw_list ImGui window draw list
+        /// @param win_pos Center window position of the view axes context window
+        /// @param axis Normalized axis direction
+        /// @param color Color of the axis
+        /// @param length Maximum axis length in pixels 
+        /// @param hovered Whether the axis handle is currently hovered
         void DrawNegativeViewAxisH(ImDrawList* draw_list, const glm::vec3& win_pos, const glm::vec3& axis, const glm::vec3& color, float length, bool hovered)
         {
             static constexpr float handle_thickness = 2.0f;
@@ -121,6 +135,16 @@ namespace yart
             draw_list->AddCircle({handle_pos.x, handle_pos.y}, handle_radius, outer_col, 0, handle_thickness);
         }
 
+        /// @brief View axes rendering helper function
+        /// @param draw_list ImGui window draw list
+        /// @param win_pos Center window position of the view axes context window
+        /// @param axis0 First axis in the drawing order (back)
+        /// @param axis1 Second axis in the drawing order (middle)
+        /// @param axis2 Third axis in the drawing order (front)
+        /// @param order The order in which the X, Y and Z axes will be drawn
+        /// @param length Maximum axis length in pixels 
+        /// @param active Whether the view axes context window is currently active
+        /// @param swap Wether the negative axes should be rendered prior to the positive ones
         void DrawViewAxesH(ImDrawList* draw_list, const glm::vec3& win_pos, const glm::vec3& axis0, const glm::vec3& axis1, const glm::vec3& axis2, const int* order, float length, bool active, bool swap)
         {
             static constexpr glm::vec3 axes_colors_LUT[] = {
