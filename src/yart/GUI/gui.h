@@ -58,18 +58,6 @@ namespace yart
         /// @brief GUI context, holding all state required to render a specific UI layout
         struct GuiContext; // Opaque type without including `gui_internal.h`
 
-        /// @brief Axis type enumeration
-        /// @warning Do not modify underlying enum values! Many methods rely on their numeric representation
-        enum class Axis: uint8_t {
-            NONE       = 0,
-            POSITIVE_X = 1,
-            NEGATIVE_X = 2,
-            POSITIVE_Y = 3,
-            NEGATIVE_Y = 4,
-            POSITIVE_Z = 5,
-            NEGATIVE_Z = 6,
-        };
-
 
         /// @brief Get the active GUI context
         /// @return The currently active context object
