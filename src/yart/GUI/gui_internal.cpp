@@ -109,9 +109,8 @@ namespace yart
             ImU32 col = ImGui::ColorConvertFloat4ToU32({ color.x * col_mul, color.y * col_mul, color.z * col_mul, 1.0f });
 
             glm::vec3 handle_pos = win_pos + axis * length;
-            draw_list->AddLine({ win_pos.x, win_pos.y }, {handle_pos.x, handle_pos.y}, col, axis_thickness);
-
-            draw_list->AddCircleFilled({handle_pos.x, handle_pos.y}, handle_radius, col);
+            draw_list->AddLine({ win_pos.x, win_pos.y }, { handle_pos.x, handle_pos.y }, col, axis_thickness);
+            draw_list->AddCircleFilled({ handle_pos.x, handle_pos.y }, handle_radius, col);
         }
 
         /// @brief Negative view axis rendering helper function
@@ -145,6 +144,8 @@ namespace yart
         /// @param length Maximum axis length in pixels 
         /// @param active Whether the view axes context window is currently active
         /// @param swap Wether the negative axes should be rendered prior to the positive ones
+        /// @param clicked_axis Output variable set to a base axis clicked by the user
+        /// @return Whether the user has clicked on an axis and the `clicked_axis` output variable has been set 
         bool DrawViewAxesH(ImDrawList* draw_list, const glm::vec3& win_pos, const glm::vec3& axis0, const glm::vec3& axis1, const glm::vec3& axis2, const int* order, float length, bool active, bool swap, glm::vec3& clicked_axis)
         {
             static constexpr glm::vec3 axes_colors_LUT[] = {
@@ -194,6 +195,7 @@ namespace yart
             }
 
 
+            // Return the clicked axis
             if (hovered_axis_index >= 0 && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
                 int hovered_axis;
                 if (swap && hovered_axis_index < 3 || !swap && hovered_axis_index >= 3)
