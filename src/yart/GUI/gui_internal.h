@@ -40,6 +40,9 @@ namespace yart
         /// @brief GUI context, holding all state required to render a specific UI layout
         struct GuiContext {
         public:
+            /// @brief Custom Dear ImGui render function callbacks registered by the application
+            std::vector<imgui_callback_t> registeredCallbacks;
+
             /// @brief GUI windows registered by the application  
             std::vector<GuiWindow> registeredWindows;
             

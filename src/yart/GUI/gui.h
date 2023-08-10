@@ -66,9 +66,13 @@ namespace yart
         /// @brief Applies the default YART application GUI style and color palette
         void ApplyCustomStyle();
 
-        /// @brief Register a custom ImGui window to be rendered every frame 
+        /// @brief Register a global Dear ImGui render function
+        /// @param callback Callback function pointer
+        void RegisterCallback(imgui_callback_t callback);
+
+        /// @brief Register a custom Dear ImGui window to be rendered every frame 
         /// @param window_name Name of the window
-        /// @param callback Callback function to window contents definition 
+        /// @param callback Callback function pointer
         void RegisterWindow(const char* window_name, imgui_callback_t callback);
 
         /// @brief Render the view axes context window

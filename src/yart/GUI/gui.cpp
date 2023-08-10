@@ -107,6 +107,11 @@ namespace yart
         }
     }
 
+    void GUI::RegisterCallback(imgui_callback_t callback)
+    {
+        s_context.registeredCallbacks.push_back(callback);
+    }
+
     void GUI::RegisterWindow(const char *window_name, imgui_callback_t callback)
     {
         s_context.registeredWindows.emplace_back(window_name, callback);
@@ -121,6 +126,11 @@ namespace yart
     {
         // Uncomment to display Dear ImGui's debug window
         // ImGui::ShowDemoWindow();
+
+
+        // Render registered global callbacks
+        for (auto &&callback : s_context.registeredCallbacks)
+            callback();
 
         // Render registered ImGui windows 
         for (auto &&window : s_context.registeredWindows)

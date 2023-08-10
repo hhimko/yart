@@ -20,27 +20,27 @@
 
 
 /// @brief Smallest valid value for camera's FOV in degrees
-/// @details Used in Renderer::OnImGui() to adjust the FOV slider range
+/// @details Used in Renderer::OnGuiWindow() to adjust the FOV slider range
 #define FOV_MIN 45.0f
 
 /// @brief Largest valid value for camera's FOV in degrees
-/// @details Used in Renderer::OnImGui() to adjust the FOV slider range
+/// @details Used in Renderer::OnGuiWindow() to adjust the FOV slider range
 #define FOV_MAX 180.0f
 
 /// @brief Smallest valid value for camera's near clipping plane distance
-/// @details Used in Renderer::OnImGui() to adjust the near clip slider range
+/// @details Used in Renderer::OnGuiWindow() to adjust the near clip slider range
 #define NEAR_CLIP_MIN 0.001f
 
 /// @brief Largest valid value for camera's near clipping plane distance
-/// @details Used in Renderer::OnImGui() to adjust the near clip slider range
+/// @details Used in Renderer::OnGuiWindow() to adjust the near clip slider range
 #define NEAR_CLIP_MAX 10.0f
 
 /// @brief Smallest valid value for camera's far clipping plane distance
-/// @details Used in Renderer::OnImGui() to adjust the far clip slider range
+/// @details Used in Renderer::OnGuiWindow() to adjust the far clip slider range
 #define FAR_CLIP_MIN 100.0f
 
 /// @brief Largest valid value for camera's far clipping plane distance
-/// @details Used in Renderer::OnImGui() to adjust the far clip slider range
+/// @details Used in Renderer::OnGuiWindow() to adjust the far clip slider range
 #define FAR_CLIP_MAX 1000.0f
 
 
@@ -80,7 +80,7 @@ namespace yart
         return was_dirty;
     }
     
-    void Renderer::OnImGui()
+    void Renderer::OnGuiWindow()
     {
         // Whether the camera transformation matrix should be recalculated
         bool recalculate = false;
@@ -99,7 +99,14 @@ namespace yart
         }
 
 
-        // Render the view axes context window
+        if (recalculate) {
+            RecalculateCameraTransformationMatrix();
+            m_dirty = true;
+        }
+    }
+
+    void Renderer::OnGuiViewAxes()
+    {
         const glm::vec3 x_axis = { glm::sin(m_cameraYaw), glm::sin(m_cameraPitch) * glm::cos(m_cameraYaw), -glm::cos(m_cameraYaw) };
         const glm::vec3 y_axis = { 0, -glm::cos(m_cameraPitch), -glm::sin(m_cameraPitch) };
         const glm::vec3 z_axis = glm::normalize(glm::cross(x_axis, y_axis));
@@ -109,13 +116,8 @@ namespace yart
             // Base axis to pitch, yaw rotation transformation magic
             m_cameraPitch = clicked_axis.y * CAMERA_PITCH_MAX;
             m_cameraYaw = (clicked_axis.y + clicked_axis.z) * 90.0f * DEG_TO_RAD + (clicked_axis.x == -1.0f) * 180.0f * DEG_TO_RAD;
-
             m_cameraLookDirection = yart::utils::SphericalToCartesianUnitVector(m_cameraYaw, m_cameraPitch); // Can't use `clicked_axis` directly here, because of rotation clamping
-            recalculate = true;
-        }
 
-
-        if (recalculate) {
             RecalculateCameraTransformationMatrix();
             m_dirty = true;
         }

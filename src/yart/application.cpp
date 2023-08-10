@@ -72,8 +72,9 @@ namespace yart
         window.SetDearImGuiCallback(yart::GUI::Render);  
         yart::GUI::ApplyCustomStyle();
 
-        // Register Dear ImGui windows
-        yart::GUI::RegisterWindow("Renderer", std::bind(&yart::Renderer::OnImGui, &m_renderer));
+        // Register GUI callbacks
+        yart::GUI::RegisterCallback(std::bind(&yart::Renderer::OnGuiViewAxes, &m_renderer));
+        yart::GUI::RegisterWindow("Renderer", std::bind(&yart::Renderer::OnGuiWindow, &m_renderer));
 
         return true;
     }
