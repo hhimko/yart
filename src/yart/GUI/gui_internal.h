@@ -49,15 +49,22 @@ namespace yart
         };
 
 
-        /// @brief Render a YART GUI window 
-        /// @param window Window to be rendered
-        void RenderWindow(const GuiWindow& window);
+        void BeginVerticalLayout(float& height);
+
+        /// @brief Goes to the next segment
+        void LayoutSeparator(float& height);
+
+        void EndLayout();
 
         /// @brief Check whether the mouse cursor lies within a given circle
         /// @param pos Circle position on the screen
         /// @param radius Radius of the circle
         /// @return Whether the mouse cursor is inside circle
         bool IsMouseHoveringCircle(const ImVec2& pos, float radius);
+
+        /// @brief Render a YART GUI window 
+        /// @param window Window to be rendered
+        void RenderWindow(const GuiWindow& window);
 
         /// @brief Render the view axes context window
         /// @param x_axis View x-axis
