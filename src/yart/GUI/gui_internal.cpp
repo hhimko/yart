@@ -11,9 +11,16 @@
 #define WITH(handle) for(auto* _h = handle; _h != nullptr; _h = nullptr)
 
 #ifndef DOXYGEN_EXCLUDE // Exclude from documentation
+    enum LayoutDir_ : uint8_t {
+        LayoutDir_Horizontal,
+        LayoutDir_Vertical
+    };
+
+
     #define TEMP_BUFFER_SIZE 5
 
     #define HOVER_RECT_PADDING 2.0f
+    #define LAYOUT_SEGMENT_MIN_SIZE 50.0f
 
     #define AXIS_POSITIVE_X 0
     #define AXIS_POSITIVE_Y 1
@@ -34,34 +41,44 @@ namespace yart
 
     }
 
-    void GUI::BeginVerticalLayout(float& height)
+    bool BeginLayoutEx(LayoutDir_ layout_direction, float& size)
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
-
-        if (height <= 0) {
-            float min_height = ImMax(g->Style.ChildRounding * 2.0f + 2.0f, 20.0f);
-            height = ImMax((ImGui::GetContentRegionAvail().y - SEPARATOR_HANDLE_THICKNESS) / 2.0f, min_height);
+        if (size <= 0.0f) {
+            float min_size = ImMax(g->Style.ChildRounding * 2.0f + 2.0f, LAYOUT_SEGMENT_MIN_SIZE);
+            float content_avail = layout_direction == LayoutDir_Horizontal ? ImGui::GetContentRegionAvail().x : ImGui::GetContentRegionAvail().y;
+            size = ImMax((content_avail - SEPARATOR_HANDLE_THICKNESS) / 2.0f, min_size);
         }
 
+        // The whole layout is captured into a group to act as a single item 
         ImGui::BeginGroup();
 
-        // Start capturing the upper segment
+        // Start capturing the fist segment
         ImVec2 old_item_spacing = g->Style.ItemSpacing;
-        g->Style.ItemSpacing = {0, 0};
-        ImGui::BeginChild("LayoutSegment_Upper", {0, height}, true);
+        g->Style.ItemSpacing = { 0.0f, 0.0f };
+
+        ImVec2 region = layout_direction == LayoutDir_Horizontal ? ImVec2(size, 0) : ImVec2(0, size);
+        bool ret = ImGui::BeginChild("LayoutSegment_First", region, true);
+            
         g->Style.ItemSpacing = old_item_spacing;
+
+        return ret;
     }
 
-    float SeparatorHandle() 
+    bool GUI::BeginHorizontalLayout(float &width)
     {
-        ImGuiContext* g = ImGui::GetCurrentContext();
-        ImGuiWindow* window = g->CurrentWindow;
+        return BeginLayoutEx(LayoutDir_Horizontal, width);
+    }
 
-        ImVec2 old_item_spacing = g->Style.ItemSpacing;
-        g->Style.ItemSpacing = {0, 0};
-        const ImRect bb({ window->Pos.x, window->DC.CursorPos.y }, { window->Pos.x + window->Size.x, window->DC.CursorPos.y + SEPARATOR_HANDLE_THICKNESS });
-        ImGui::ItemSize({ 0.0f, SEPARATOR_HANDLE_THICKNESS });
-        g->Style.ItemSpacing = old_item_spacing;
+    bool GUI::BeginVerticalLayout(float& height)
+    {
+        return BeginLayoutEx(LayoutDir_Vertical, height);
+    }
+
+    ImVec2 SeparatorHandle(ImVec2 pos, ImVec2 size, ImGuiMouseCursor_ cursor) 
+    {
+        const ImRect bb(pos, { pos.x + size.x, pos.y + size.y });
+        ImGui::ItemSize(size);
 
         ImGuiID id = ImGui::GetID("SeparatorHandle");
         ImGui::ItemAdd(bb, id);
@@ -70,51 +87,68 @@ namespace yart
         ImGui::ButtonBehavior(bb, id, &hovered, &held);
 
         if (hovered || held)
-            ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
+            ImGui::SetMouseCursor(cursor);
 
         if (held) {
-            float y_drag = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left, 0.0f).y;
+            ImVec2 drag = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left, 0.0f);
             ImGui::ResetMouseDragDelta();
-            return y_drag;
+            return drag;
         }
 
-        return 0.0f;
+        return {0.0f, 0.0f};
     }
 
-    void GUI::LayoutSeparator(float& height)
+    bool LayoutSeparatorEx(LayoutDir_ layout_direction, float& size) 
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
 
-        // Finalize capturing the upper segment
+        // Finalize capturing the previous segment
         ImVec2 old_item_spacing = g->Style.ItemSpacing;
-        g->Style.ItemSpacing = {0, 0};
+        g->Style.ItemSpacing = { 0.0f, 0.0f };
         ImGui::EndChild();
-        g->Style.ItemSpacing = old_item_spacing;
 
         // Draw and handle the separator
         ImGuiWindow* window = g->CurrentWindow;
-        
-        float drag_y = SeparatorHandle();
-        height += drag_y;
 
-        float min_height = ImMax(g->Style.ChildRounding * 2.0f + 2.0f, 20.0f);
-        if (height < min_height) 
-            height = min_height;
+        if (layout_direction == LayoutDir_Horizontal) ImGui::SameLine();
+        ImVec2 separator_size = layout_direction == LayoutDir_Horizontal ? ImVec2(SEPARATOR_HANDLE_THICKNESS, ImGui::GetContentRegionAvail().y) : ImVec2(window->Size.x, SEPARATOR_HANDLE_THICKNESS);
+        ImGuiMouseCursor_ cursor = layout_direction == LayoutDir_Horizontal ? ImGuiMouseCursor_ResizeEW : ImGuiMouseCursor_ResizeNS;
 
-        float max_height = window->ContentSize.y - min_height - SEPARATOR_HANDLE_THICKNESS;
-        if (max_height > min_height && height > max_height)
-            height = max_height;
+        ImVec2 drag = SeparatorHandle({ window->DC.CursorPos.x, window->DC.CursorPos.y }, separator_size, cursor);
+        size += layout_direction == LayoutDir_Horizontal ? drag.x : drag.y;
 
-        // Start capturing the lower segment
-        g->Style.ItemSpacing = {0, 0};
-        ImGui::BeginChild("LayoutSegment_Lower", {0, 0}, true);
+        float min_size = ImMax(g->Style.ChildRounding * 2.0f + 2.0f, LAYOUT_SEGMENT_MIN_SIZE);
+        if (size < min_size) 
+            size = min_size;
+
+        float content = layout_direction == LayoutDir_Horizontal ? window->ContentSize.x : window->ContentSize.y;
+        float max_size = content - min_size - SEPARATOR_HANDLE_THICKNESS;
+        if (max_size > min_size && size > max_size)
+            size = max_size;
+
+        // Start capturing the next segment
+        if (layout_direction == LayoutDir_Horizontal) ImGui::SameLine();
+        bool ret = ImGui::BeginChild("LayoutSegment_Second", { 0.0f, 0.0f }, true);
         g->Style.ItemSpacing = old_item_spacing;
+
+        return ret;
+    }
+
+    bool GUI::HorizontalLayoutSeparator(float& width)
+    {
+        return LayoutSeparatorEx(LayoutDir_Horizontal, width);
+    }
+
+    bool GUI::VerticalLayoutSeparator(float& height)
+    {
+        return LayoutSeparatorEx(LayoutDir_Vertical, height);
     }
 
     void GUI::EndLayout()
     {
-        // Finalize capturing the lower segment
+        // Finalize capturing the previous segment
         ImGui::EndChild();
+
         ImGui::EndGroup();
     }
 

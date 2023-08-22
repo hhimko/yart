@@ -49,10 +49,15 @@ namespace yart
         };
 
 
-        void BeginVerticalLayout(float& height);
+        bool BeginHorizontalLayout(float& width);
+
+        bool BeginVerticalLayout(float& height);
 
         /// @brief Goes to the next segment
-        void LayoutSeparator(float& height);
+        bool HorizontalLayoutSeparator(float& width);
+
+        /// @brief Goes to the next segment
+        bool VerticalLayoutSeparator(float& height);
 
         void EndLayout();
 

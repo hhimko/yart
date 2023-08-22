@@ -136,12 +136,26 @@ namespace yart
 
         ImGui::Text("Hello from upper segment");
 
-        GUI::LayoutSeparator(h);
+        GUI::VerticalLayoutSeparator(h);
+
+        // ImGui::Text("Hello from lower segment");
+
+        static float w;
+
+        GUI::BeginHorizontalLayout(w);
+
+        ImGui::Text("Hello from upper segment");
+
+        GUI::HorizontalLayoutSeparator(w);
 
         ImGui::Text("Hello from lower segment");
 
         GUI::EndLayout();
+
+        GUI::EndLayout();
         ImGui::End();
+
+        
 
 
         // Render registered global callbacks
