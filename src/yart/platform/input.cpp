@@ -18,6 +18,7 @@
 static float s_horizontalAxis;
 static float s_verticalAxis;
 
+static int s_current_mouse_mode = GLFW_CURSOR_NORMAL;
 static glm::ivec2 s_mousePosition = { 0, 0 }; 
 static glm::ivec2 s_mouseMoveDelta = { 0, 0 }; 
 
@@ -39,7 +40,13 @@ namespace yart
         yart::Window& window = yart::Window::Get();
 
         int glfw_input_mode = state ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL;
+        if (glfw_input_mode == s_current_mouse_mode)
+            return;
+
+        s_current_mouse_mode = glfw_input_mode;
         glfwSetInputMode(window.m_window, GLFW_CURSOR, glfw_input_mode);
+
+        s_mouseMoveDelta = { 0, 0 }; // Required to avoid jumping cursor issues 
     }
 
     const glm::ivec2 &Input::GetMouseMoveDelta()
@@ -50,7 +57,6 @@ namespace yart
     void Input::Update()
     {
         yart::Window& window = yart::Window::Get();
-
 
         // Update movement axes
         s_horizontalAxis = 0.0f;

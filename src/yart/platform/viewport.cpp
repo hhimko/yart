@@ -57,7 +57,7 @@ namespace yart
     {
         yart::Window& window = yart::Window::Get();
         if (width == m_imageWidth && height == m_imageHeight && scale == m_imageScale)
-            return;
+            return Refresh();
 
         m_imageWidth = width; 
         m_imageHeight = height;
