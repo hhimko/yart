@@ -15,9 +15,9 @@ static yart::GUI::GuiContext s_context;
 
 namespace yart
 {
-    GUI::GuiContext& GUI::GetCurrentContext()
+    GUI::GuiContext* GUI::GetCurrentContext()
     {
-        return s_context;
+        return &s_context;
     }
 
     void GUI::ApplyCustomStyle()
@@ -30,7 +30,7 @@ namespace yart
         style.ChildBorderSize = 1.0f;
         style.ChildRounding = 10.0f;
         style.FrameBorderSize = 0.0f;
-        style.PopupBorderSize = 0.0f;
+        style.PopupBorderSize = 1.0f;
         style.PopupRounding = 0.0f;
         style.FrameRounding = 3.0f;
         style.WindowRounding = 2.0f;
@@ -55,9 +55,9 @@ namespace yart
             colors[ImGuiCol_Text]                   = { YART_GUI_COLOR_WHITE,                YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_TextDisabled]           = { YART_GUI_COLOR_LIGHTER_GRAY,         YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_WindowBg]               = { YART_GUI_COLOR_BLACK,                YART_GUI_ALPHA_OPAQUE };
-            colors[ImGuiCol_ChildBg]                = { YART_GUI_COLOR_DARKER_GRAY,             YART_GUI_ALPHA_LOW };
+            colors[ImGuiCol_ChildBg]                = { YART_GUI_COLOR_BLACK,           YART_GUI_ALPHA_TRANSPARENT };
             colors[ImGuiCol_PopupBg]                = { YART_GUI_COLOR_BLACK,                YART_GUI_ALPHA_OPAQUE };
-            colors[ImGuiCol_Border]                 = { YART_GUI_COLOR_BLACK,           YART_GUI_ALPHA_TRANSPARENT };
+            colors[ImGuiCol_Border]                 = { YART_GUI_COLOR_GRAY,                 YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_BorderShadow]           = { YART_GUI_COLOR_BLACK,           YART_GUI_ALPHA_TRANSPARENT };
             colors[ImGuiCol_FrameBg]                = { YART_GUI_COLOR_DARK_GRAY,            YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_FrameBgHovered]         = { YART_GUI_COLOR_GRAY,                 YART_GUI_ALPHA_OPAQUE };
@@ -79,9 +79,9 @@ namespace yart
             colors[ImGuiCol_Header]                 = { YART_GUI_COLOR_DARK_PRIMARY,         YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_HeaderHovered]          = { YART_GUI_COLOR_PRIMARY,              YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_HeaderActive]           = { YART_GUI_COLOR_LIGHT_PRIMARY,        YART_GUI_ALPHA_OPAQUE };
-            colors[ImGuiCol_Separator]              = { YART_GUI_COLOR_LIGHT_GRAY,           YART_GUI_ALPHA_OPAQUE };
-            colors[ImGuiCol_SeparatorHovered]       = { YART_GUI_COLOR_BLACK,           YART_GUI_ALPHA_TRANSPARENT };
-            colors[ImGuiCol_SeparatorActive]        = { YART_GUI_COLOR_BLACK,           YART_GUI_ALPHA_TRANSPARENT };
+            colors[ImGuiCol_Separator]              = { YART_GUI_COLOR_GRAY,                 YART_GUI_ALPHA_OPAQUE };
+            colors[ImGuiCol_SeparatorHovered]       = { YART_GUI_COLOR_DARK_TERTIARY,        YART_GUI_ALPHA_OPAQUE };
+            colors[ImGuiCol_SeparatorActive]        = { YART_GUI_COLOR_TERTIARY,             YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_ResizeGrip]             = { YART_GUI_COLOR_BLACK,           YART_GUI_ALPHA_TRANSPARENT };
             colors[ImGuiCol_ResizeGripHovered]      = { YART_GUI_COLOR_BLACK,           YART_GUI_ALPHA_TRANSPARENT };
             colors[ImGuiCol_ResizeGripActive]       = { YART_GUI_COLOR_BLACK,           YART_GUI_ALPHA_TRANSPARENT };
@@ -128,35 +128,8 @@ namespace yart
         // Uncomment to display Dear ImGui's debug window
         // ImGui::ShowDemoWindow();
 
-
-        static float h;
-
-        ImGui::Begin("Test");
-        GUI::BeginVerticalLayout(h);
-
-        ImGui::Text("Hello from upper segment");
-
-        GUI::VerticalLayoutSeparator(h);
-
-        // ImGui::Text("Hello from lower segment");
-
-        static float w;
-
-        GUI::BeginHorizontalLayout(w);
-
-        ImGui::Text("Hello from upper segment");
-
-        GUI::HorizontalLayoutSeparator(w);
-
-        ImGui::Text("Hello from lower segment");
-
-        GUI::EndLayout();
-
-        GUI::EndLayout();
-        ImGui::End();
-
-        
-
+        GUI::RenderMainMenuBar();
+        GUI::RenderMainContentFrame();
 
         // Render registered global callbacks
         for (auto &&callback : s_context.registeredCallbacks)
@@ -165,19 +138,6 @@ namespace yart
         // Render registered ImGui windows 
         for (auto &&window : s_context.registeredWindows)
             RenderWindow(window);
-
-
-        // -- Render Main Menu Bar -- // 
-        ImGui::PushStyleColor(ImGuiCol_MenuBarBg, { YART_GUI_COLOR_BLACK, YART_GUI_ALPHA_OPAQUE });
-        ImGui::BeginMainMenuBar();
-        ImGui::PopStyleColor();
-
-        if (ImGui::BeginMenu("File")) {
-			ImGui::MenuItem("New");
-			ImGui::MenuItem("Create");
-            ImGui::EndMenu();
-		}
-
-        ImGui::EndMainMenuBar();
     }   
+
 } // namespace yart

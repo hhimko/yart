@@ -21,6 +21,7 @@
 
     #define HOVER_RECT_PADDING 2.0f
     #define LAYOUT_SEGMENT_MIN_SIZE 50.0f
+    #define SEPARATOR_HANDLE_THICKNESS 2.0f
 
     #define AXIS_POSITIVE_X 0
     #define AXIS_POSITIVE_Y 1
@@ -29,8 +30,6 @@
     #define AXIS_NEGATIVE_Y 4
     #define AXIS_NEGATIVE_Z 5
 #endif // #ifndef DOXYGEN_EXCLUDE 
-
-static float SEPARATOR_HANDLE_THICKNESS = 5.0f;
 
 
 namespace yart
@@ -41,7 +40,7 @@ namespace yart
 
     }
 
-    bool BeginLayoutEx(LayoutDir_ layout_direction, float& size)
+    bool BeginLayoutEx(LayoutDir_ layout_direction, float& size, ImGuiWindowFlags window_flags)
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
         if (size <= 0.0f) {
@@ -58,25 +57,27 @@ namespace yart
         g->Style.ItemSpacing = { 0.0f, 0.0f };
 
         ImVec2 region = layout_direction == LayoutDir_Horizontal ? ImVec2(size, 0) : ImVec2(0, size);
-        bool ret = ImGui::BeginChild("LayoutSegment_First", region, true);
+        bool ret = ImGui::BeginChild("LayoutSegment_First", region, false, window_flags);
             
         g->Style.ItemSpacing = old_item_spacing;
 
         return ret;
     }
 
-    bool GUI::BeginHorizontalLayout(float &width)
+    bool GUI::BeginHorizontalLayout(float &width, ImGuiWindowFlags window_flags)
     {
-        return BeginLayoutEx(LayoutDir_Horizontal, width);
+        return BeginLayoutEx(LayoutDir_Horizontal, width, window_flags);
     }
 
-    bool GUI::BeginVerticalLayout(float& height)
+    bool GUI::BeginVerticalLayout(float& height, ImGuiWindowFlags window_flags)
     {
-        return BeginLayoutEx(LayoutDir_Vertical, height);
+        return BeginLayoutEx(LayoutDir_Vertical, height, window_flags);
     }
 
     ImVec2 SeparatorHandle(ImVec2 pos, ImVec2 size, ImGuiMouseCursor_ cursor) 
     {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+
         const ImRect bb(pos, { pos.x + size.x, pos.y + size.y });
         ImGui::ItemSize(size);
 
@@ -85,6 +86,9 @@ namespace yart
 
         bool hovered, held;
         ImGui::ButtonBehavior(bb, id, &hovered, &held);
+
+        ImVec4 col = held ? g->Style.Colors[ImGuiCol_SeparatorActive] : (hovered ? g->Style.Colors[ImGuiCol_SeparatorHovered] : g->Style.Colors[ImGuiCol_Separator]);
+        ImGui::GetWindowDrawList()->AddRectFilled(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(col));
 
         if (hovered || held)
             ImGui::SetMouseCursor(cursor);
@@ -98,7 +102,7 @@ namespace yart
         return {0.0f, 0.0f};
     }
 
-    bool LayoutSeparatorEx(LayoutDir_ layout_direction, float& size) 
+    bool LayoutSeparatorEx(LayoutDir_ layout_direction, float& size, ImGuiWindowFlags window_flags) 
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
 
@@ -128,20 +132,20 @@ namespace yart
 
         // Start capturing the next segment
         if (layout_direction == LayoutDir_Horizontal) ImGui::SameLine();
-        bool ret = ImGui::BeginChild("LayoutSegment_Second", { 0.0f, 0.0f }, true);
+        bool ret = ImGui::BeginChild("LayoutSegment_Second", { 0.0f, 0.0f }, false, window_flags);
         g->Style.ItemSpacing = old_item_spacing;
 
         return ret;
     }
 
-    bool GUI::HorizontalLayoutSeparator(float& width)
+    bool GUI::HorizontalLayoutSeparator(float& width, ImGuiWindowFlags window_flags)
     {
-        return LayoutSeparatorEx(LayoutDir_Horizontal, width);
+        return LayoutSeparatorEx(LayoutDir_Horizontal, width, window_flags);
     }
 
-    bool GUI::VerticalLayoutSeparator(float& height)
+    bool GUI::VerticalLayoutSeparator(float& height, ImGuiWindowFlags window_flags)
     {
-        return LayoutSeparatorEx(LayoutDir_Vertical, height);
+        return LayoutSeparatorEx(LayoutDir_Vertical, height, window_flags);
     }
 
     void GUI::EndLayout()
@@ -160,11 +164,76 @@ namespace yart
         return dx * dx + dy * dy <= radius * radius;
     }
 
+    void GUI::RenderMainMenuBar()
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+
+        ImVec4 backup_color = g->Style.Colors[ImGuiCol_MenuBarBg];
+        g->Style.Colors[ImGuiCol_MenuBarBg] = { YART_GUI_COLOR_BLACK, YART_GUI_ALPHA_OPAQUE };
+        ImGui::BeginMainMenuBar();
+        g->Style.Colors[ImGuiCol_MenuBarBg] = backup_color;
+
+        // Render menu items
+        if (ImGui::BeginMenu("File")) {
+			ImGui::MenuItem("New");
+			ImGui::MenuItem("Create");
+            ImGui::EndMenu();
+		}
+
+        // Store the size of the main menu bar for content area computation
+        GuiContext* ctx = GUI::GetCurrentContext();
+        ctx->mainMenuBarHeight = ImGui::GetWindowSize().y;
+
+        ImGui::EndMainMenuBar();
+    }
+
+    void GUI::RenderMainContentFrame()
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        GuiContext* ctx = GUI::GetCurrentContext();
+
+        ImVec2 display_size = ImGui::GetIO().DisplaySize;
+        float menu_bar_height = ctx->mainMenuBarHeight;
+
+        ImGui::SetNextWindowPos({ 0.0f, menu_bar_height }, ImGuiCond_None, { 0.0f, 0.0f });
+        ImGui::SetNextWindowSize({ display_size.x, display_size.y - menu_bar_height }, ImGuiCond_None);
+
+        static constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoNavInputs | ImGuiWindowFlags_NoNavFocus;
+        
+        ImVec2 backup_padding = g->Style.WindowPadding;
+        g->Style.WindowPadding = {0,0};
+        ImGui::Begin("YART_MainContentFrame", nullptr, flags);
+        g->Style.WindowPadding = backup_padding;
+
+
+        GUI::BeginHorizontalLayout(ctx->viewportAreaWidth, ImGuiWindowFlags_None);
+
+        GUI::HorizontalLayoutSeparator(ctx->viewportAreaWidth, ImGuiWindowFlags_None);
+
+        GUI::RenderMainContextWindow();
+
+        GUI::EndLayout();
+
+        ImGui::End();
+    }
+
+    void GUI::RenderMainContextWindow()
+    {
+        GuiContext* ctx = GUI::GetCurrentContext();
+
+
+        GUI::BeginVerticalLayout(ctx->mainContextSeparatorHeight, ImGuiWindowFlags_AlwaysUseWindowPadding);
+
+        GUI::VerticalLayoutSeparator(ctx->mainContextSeparatorHeight, ImGuiWindowFlags_AlwaysUseWindowPadding);
+
+        GUI::EndLayout();
+    }
+
     void GUI::RenderWindow(const GuiWindow &window)
     {
         // Local alpha multiplier for the whole window
         float window_alpha = YART_GUI_ALPHA_OPAQUE;
-
+        
         // Try querying the window state prior to ImGui::Begin() to apply custom style
         ImGuiWindow* imgui_window = ImGui::FindWindowByName(window.name);
         WITH(imgui_window) {

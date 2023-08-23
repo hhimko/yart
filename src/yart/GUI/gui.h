@@ -61,7 +61,7 @@ namespace yart
 
         /// @brief Get the active GUI context
         /// @return The currently active context object
-        GuiContext& GetCurrentContext();
+        GuiContext* GetCurrentContext();
 
         /// @brief Applies the default YART application GUI style and color palette
         void ApplyCustomStyle();

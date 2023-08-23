@@ -45,19 +45,31 @@ namespace yart
 
             /// @brief GUI windows registered by the application  
             std::vector<GuiWindow> registeredWindows;
+
+            /// @brief Width of the render viewport area in pixels
+            float viewportAreaWidth;
+
+            /// @brief Height of the render viewport area in pixels
+            float viewportAreaHeight;
+
+            /// @brief Cached size of the main context window vertical separator
+            float mainContextSeparatorHeight;
+
+            /// @brief Current visible height of the main menu bar body 
+            float mainMenuBarHeight;
             
         };
 
 
-        bool BeginHorizontalLayout(float& width);
+        bool BeginHorizontalLayout(float& width, ImGuiWindowFlags window_flags);
 
-        bool BeginVerticalLayout(float& height);
-
-        /// @brief Goes to the next segment
-        bool HorizontalLayoutSeparator(float& width);
+        bool BeginVerticalLayout(float& height, ImGuiWindowFlags window_flags);
 
         /// @brief Goes to the next segment
-        bool VerticalLayoutSeparator(float& height);
+        bool HorizontalLayoutSeparator(float& width, ImGuiWindowFlags window_flags);
+
+        /// @brief Goes to the next segment
+        bool VerticalLayoutSeparator(float& height, ImGuiWindowFlags window_flags);
 
         void EndLayout();
 
@@ -66,6 +78,12 @@ namespace yart
         /// @param radius Radius of the circle
         /// @return Whether the mouse cursor is inside circle
         bool IsMouseHoveringCircle(const ImVec2& pos, float radius);
+
+        void RenderMainMenuBar();
+
+        void RenderMainContentFrame();
+
+        void RenderMainContextWindow();
 
         /// @brief Render a YART GUI window 
         /// @param window Window to be rendered
