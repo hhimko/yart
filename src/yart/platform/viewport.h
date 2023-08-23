@@ -8,6 +8,8 @@
 
 #include <stdint.h>
 
+#include <imgui.h>
+
 #include "image.h"
 
 
@@ -35,8 +37,29 @@ namespace yart
         /// @param height Pointer to a variable to be set with the height of the viewport image or NULL
         void GetImageSize(uint32_t* width, uint32_t* height);
 
+        /// @brief Resize the viewport
+        /// @param width New viewport width in pixels
+        /// @param height New viewport height in pixels 
+        /// @param scale New viewport scaling factor
+        void Resize(uint32_t width, uint32_t height, int scale);
+
+        /// @brief Resize the viewport and keep the current scaling factor
+        /// @param width New viewport width in pixels
+        /// @param height New viewport height in pixels 
+        void Resize(uint32_t width, uint32_t height);
+
         /// @brief Apply changes made to the image data and update the underlying viewport image
         void Refresh();
+
+        /// @brief Render the viewport image onto a Dear ImGui draw list
+        /// @param draw_list Dear ImGui draw list to render to 
+        void Render(ImDrawList* draw_list);
+
+        /// @brief Set the viewport render position
+        /// @param pos New position in pixel coordinates
+        void SetPosition(ImVec2 pos) {
+            m_position = pos;
+        }
 
         /// @brief Get the viewport's image pixel array
         /// @details The size of the array is equal to `width*height*4` where `width` and `height` can be 
@@ -48,14 +71,13 @@ namespace yart
         }        
 
     private:
-        void Resize(uint32_t width, uint32_t height);
-
         void OnImGUI();
 
     private:
         yart::Image m_image;
         float* m_imageData = nullptr;
 
+        ImVec2 m_position = { 0.0f, 0.0f }; // Render position in screen pixel coordinates
         uint32_t m_imageWidth;  // Original width of the image (does not take image scale into account)
         uint32_t m_imageHeight; // Original height of the image (does not take image scale into account)
         int m_imageScale = 1; // Should only ever be in the [1, +inf) range
@@ -65,4 +87,5 @@ namespace yart
         friend class yart::Window;
 
     };
+    
 } // namespace yart

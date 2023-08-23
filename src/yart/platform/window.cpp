@@ -84,13 +84,8 @@ namespace yart
         OnImGUI();
 
         // Render viewport image using ImGui
-        ImTextureID viewport_image = (ImTextureID)m_viewport->m_image.GetDescriptorSet();
-
-        static const ImVec2 p_min = { 0, 0 };
-        ImVec2 p_max = { static_cast<float>(m_surfaceExtent.width), static_cast<float>(m_surfaceExtent.height) };
-
         ImDrawList* bg_draw_list = ImGui::GetBackgroundDrawList();
-        bg_draw_list->AddImage(viewport_image, p_min, p_max);
+        m_viewport->Render(bg_draw_list);
 
         // Finalize ImGui frame and retrieve the render commands
         ImGui::Render();
@@ -398,7 +393,7 @@ namespace yart
     {
         VkDescriptorPool pool = VK_NULL_HANDLE;
 
-        const uint32_t size = 128;
+        const uint32_t size = 256;
         VkDescriptorPoolSize pool_sizes[] =
         {
             { VK_DESCRIPTOR_TYPE_SAMPLER, size },
@@ -717,8 +712,6 @@ namespace yart
 
     bool Window::InitImGUI()
     {
-        VkResult res;
-
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
 
@@ -747,35 +740,14 @@ namespace yart
         ImGui_ImplVulkan_Init(&init_info, m_vkRenderPass);
 
         // Upload fonts
-        VkCommandPool command_pool = CURRENT_FRAME_IN_FLIGHT.vkCommandPool;       // |
-        VkCommandBuffer command_buffer = CURRENT_FRAME_IN_FLIGHT.vkCommandBuffer; // | Use whichever command queue
-
-        res = vkResetCommandPool(m_vkDevice, command_pool, (VkCommandPoolResetFlags)0);
-        CHECK_VK_RESULT_RETURN(res, false); 
-
-        VkCommandBufferBeginInfo cmd_begin_info = {}; 
-        cmd_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        cmd_begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-        res = vkBeginCommandBuffer(command_buffer, &cmd_begin_info);
-        CHECK_VK_RESULT_RETURN(res, false); 
+        VkCommandPool command_pool = CURRENT_FRAME_IN_FLIGHT.vkCommandPool;
+        VkCommandBuffer command_buffer = yart::utils::BeginSingleTimeVulkanCommandBuffer(m_vkDevice, command_pool);
+        if (command_buffer == VK_NULL_HANDLE) 
+            return false;
 
         ImGui_ImplVulkan_CreateFontsTexture(command_buffer);
 
-        VkSubmitInfo submit_info = {};
-        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submit_info.pCommandBuffers = &command_buffer;
-        submit_info.commandBufferCount = 1;
-
-        res = vkEndCommandBuffer(command_buffer);
-        CHECK_VK_RESULT_RETURN(res, false); 
-
-        res = vkQueueSubmit(m_vkQueue, 1, &submit_info, VK_NULL_HANDLE);
-        CHECK_VK_RESULT_RETURN(res, false); 
-
-        res = vkDeviceWaitIdle(m_vkDevice);
-        CHECK_VK_RESULT_RETURN(res, false); 
-
+        yart::utils::EndSingleTimeVulkanCommandBuffer(m_vkDevice, command_pool, m_vkQueue, command_buffer);
         ImGui_ImplVulkan_DestroyFontUploadObjects();
 
         return true;
@@ -818,8 +790,7 @@ namespace yart
             vkDestroySampler(m_vkDevice, var, DEFAULT_VK_ALLOC);
         });
 
-        VkExtent2D viewport_extent = m_surfaceExtent;
-        m_viewport = std::make_shared<yart::Viewport>(viewport_extent.width, viewport_extent.height);
+        m_viewport = std::make_shared<yart::Viewport>(m_surfaceExtent.width, m_surfaceExtent.height);
 
         return true;
     }
@@ -851,9 +822,6 @@ namespace yart
             YART_ABORT("Failed to create swapchain frames in flight");
 
         m_currentFrameInFlight = 0;
-        
-        // Resize viewport image
-        m_viewport->Resize(width, height);
     }
 
     bool Window::FrameRender(ImDrawData* draw_data)

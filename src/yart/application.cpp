@@ -29,7 +29,7 @@ namespace yart
 
 
         yart::Window& window = yart::Window::Get();
-        m_running = true; // m_running is indirectly controlled by Application::Shutdown()                 
+        m_running = true; // m_running is indirectly controlled by Application::Shutdown()
 
         // -- APPLICATION MAINLOOP -- // 
         while (m_running) {
@@ -44,9 +44,14 @@ namespace yart
             auto viewport = window.GetViewport();
 
             uint32_t viewport_width, viewport_height;
-            viewport->GetImageSize(&viewport_width, &viewport_height);
+            GUI::GetMainViewportAreaSize(&viewport_width, &viewport_height);
+            viewport->Resize(viewport_width, viewport_height);
+            viewport->SetPosition(GUI::GetMainViewportAreaPosition());
+
+            uint32_t image_width, image_height;
+            viewport->GetImageSize(&image_width, &image_height);
             
-            bool viewport_dirty = m_renderer.Render(viewport->GetImageData(), viewport_width, viewport_height);
+            bool viewport_dirty = m_renderer.Render(viewport->GetImageData(), image_width, image_height);
             if (viewport_dirty)
                 viewport->Refresh(); // Refresh display 
 

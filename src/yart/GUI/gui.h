@@ -66,6 +66,15 @@ namespace yart
         /// @brief Applies the default YART application GUI style and color palette
         void ApplyCustomStyle();
 
+        /// @brief Get the current position of the render viewport area
+        /// @return Position in screen pixel coordinates
+        ImVec2 GetMainViewportAreaPosition();
+
+        /// @brief Get the current size of the render viewport area
+        /// @param width Pointer to be populated with viewport's width. May be NULL
+        /// @param height Pointer to be populated with viewport's height. May be NULL
+        void GetMainViewportAreaSize(uint32_t* width, uint32_t* height);
+
         /// @brief Register a global Dear ImGui render function
         /// @param callback Callback function pointer
         void RegisterCallback(imgui_callback_t callback);

@@ -108,14 +108,37 @@ namespace yart
         }
     }
 
+    ImVec2 GUI::GetMainViewportAreaPosition()
+    {
+        GuiContext* ctx = GetCurrentContext();
+        return ctx->renderViewportAreaPos;
+    }
+
+    void GUI::GetMainViewportAreaSize(uint32_t* width, uint32_t* height)
+    {
+        GuiContext* ctx = GetCurrentContext();
+
+        if (width != nullptr) {
+            uint32_t w = static_cast<uint32_t>(ctx->renderViewportAreaWidth);
+            *width = w > 0 ? w : 1;
+        }
+
+        if (height != nullptr) {
+            uint32_t h = static_cast<uint32_t>(ctx->renderViewportAreaHeight);
+            *height = h > 0 ? h : 1;
+        }
+    }
+
     void GUI::RegisterCallback(imgui_callback_t callback)
     {
-        s_context.registeredCallbacks.push_back(callback);
+        GuiContext* ctx = GetCurrentContext();
+        ctx->registeredCallbacks.push_back(callback);
     }
 
     void GUI::RegisterWindow(const char *window_name, imgui_callback_t callback)
     {
-        s_context.registeredWindows.emplace_back(window_name, callback);
+        GuiContext* ctx = GetCurrentContext();
+        ctx->registeredWindows.emplace_back(window_name, callback);
     }
 
     bool GUI::RenderViewAxesWindow(const glm::vec3 &x_axis, const glm::vec3 &y_axis, const glm::vec3 &z_axis, glm::vec3& clicked_axis)

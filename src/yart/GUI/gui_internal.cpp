@@ -195,20 +195,25 @@ namespace yart
         ImVec2 display_size = ImGui::GetIO().DisplaySize;
         float menu_bar_height = ctx->mainMenuBarHeight;
 
-        ImGui::SetNextWindowPos({ 0.0f, menu_bar_height }, ImGuiCond_None, { 0.0f, 0.0f });
+        ctx->renderViewportAreaPos = { 0.0f, menu_bar_height };
+        ctx->renderViewportAreaHeight = display_size.y - menu_bar_height;
+        ImGui::SetNextWindowPos(ctx->renderViewportAreaPos, ImGuiCond_None, { 0.0f, 0.0f });
         ImGui::SetNextWindowSize({ display_size.x, display_size.y - menu_bar_height }, ImGuiCond_None);
 
-        static constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoNavInputs | ImGuiWindowFlags_NoNavFocus;
+        static constexpr ImGuiWindowFlags flags = (
+            ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration | 
+            ImGuiWindowFlags_NoNavInputs | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground
+        );
         
         ImVec2 backup_padding = g->Style.WindowPadding;
         g->Style.WindowPadding = {0,0};
         ImGui::Begin("YART_MainContentFrame", nullptr, flags);
         g->Style.WindowPadding = backup_padding;
 
+        // Render the main frame layout
+        GUI::BeginHorizontalLayout(ctx->renderViewportAreaWidth, ImGuiWindowFlags_NoBackground);
 
-        GUI::BeginHorizontalLayout(ctx->viewportAreaWidth, ImGuiWindowFlags_None);
-
-        GUI::HorizontalLayoutSeparator(ctx->viewportAreaWidth, ImGuiWindowFlags_None);
+        GUI::HorizontalLayoutSeparator(ctx->renderViewportAreaWidth, ImGuiWindowFlags_None);
 
         GUI::RenderMainContextWindow();
 

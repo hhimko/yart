@@ -26,7 +26,7 @@ namespace yart
         delete[] m_imageData;
     }
 
-    void Viewport::GetImageSize(uint32_t *width, uint32_t *height)
+    void Viewport::GetImageSize(uint32_t* width, uint32_t* height)
     {
         if (width != nullptr)
             *width = m_imageWidth / m_imageScale;
@@ -43,12 +43,25 @@ namespace yart
         m_image.BindData(window.m_vkDevice, command_pool, window.m_vkQueue, m_imageData);
     }
 
-    void Viewport::Resize(uint32_t width, uint32_t height)
+    void Viewport::Render(ImDrawList *draw_list)
+    {
+        ImTextureID viewport_image = (ImTextureID)m_image.GetDescriptorSet();
+
+        const ImVec2 p_min = m_position;
+        const ImVec2 p_max = { static_cast<float>(m_imageWidth) + m_position.x, static_cast<float>(m_imageHeight) + m_position.y };
+
+        draw_list->AddImage(viewport_image, p_min, p_max);
+    }
+
+    void Viewport::Resize(uint32_t width, uint32_t height, int scale)
     {
         yart::Window& window = yart::Window::Get();
+        if (width == m_imageWidth && height == m_imageHeight && scale == m_imageScale)
+            return;
 
         m_imageWidth = width; 
         m_imageHeight = height;
+        m_imageScale = scale;
 
         uint32_t scaled_width = width / m_imageScale;
         uint32_t scaled_height = height / m_imageScale;
@@ -60,16 +73,23 @@ namespace yart
         Refresh();
     }
 
+    void Viewport::Resize(uint32_t width, uint32_t height)
+    {
+        return Resize(width, height, m_imageScale);
+    }
+
     void Viewport::OnImGUI()
     {
         ImGui::SeparatorText("Viewport");
 
         // Range slider for controlling the viewport scale 
-        bool scale_changed = ImGui::SliderInt("Scale", &m_imageScale, 1, 10);
+        int scale = m_imageScale;
+        bool scale_changed = ImGui::SliderInt("Scale", &scale, 1, 10);
         if (scale_changed)
-            Resize(m_imageWidth, m_imageHeight);
+            Resize(m_imageWidth, m_imageHeight, scale);
 
         ImGui::Text("Width: %d", m_imageWidth / m_imageScale);
         ImGui::Text("Height: %d", m_imageHeight / m_imageScale);
     }
+
 } // namespace yart

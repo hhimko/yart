@@ -46,11 +46,14 @@ namespace yart
             /// @brief GUI windows registered by the application  
             std::vector<GuiWindow> registeredWindows;
 
-            /// @brief Width of the render viewport area in pixels
-            float viewportAreaWidth;
+            /// @brief Current render viewport area position on screen in pixel coordinates
+            ImVec2 renderViewportAreaPos;
 
-            /// @brief Height of the render viewport area in pixels
-            float viewportAreaHeight;
+            /// @brief Current width of the render viewport area in pixels
+            float renderViewportAreaWidth;
+
+            /// @brief Current height of the render viewport area in pixels
+            float renderViewportAreaHeight;
 
             /// @brief Cached size of the main context window vertical separator
             float mainContextSeparatorHeight;
