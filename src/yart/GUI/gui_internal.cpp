@@ -34,7 +34,7 @@ namespace yart
         if (layout.size <= 0.0f) {
             float min_size = ImMax(g->Style.ChildRounding * 2.0f + 2.0f, LAYOUT_SEGMENT_MIN_SIZE);
             float content_avail = layout.direction == GUI::LayoutDir::HORIZONTAL ? ImGui::GetContentRegionAvail().x : ImGui::GetContentRegionAvail().y;
-            layout.size = ImMax((content_avail - SEPARATOR_HANDLE_THICKNESS) / 2.0f, min_size);
+            layout.size = ImMax((content_avail - SEPARATOR_HANDLE_THICKNESS) * layout.default_size_ratio, min_size);
         }
 
         // The whole layout is captured into a group to act as a single item 
@@ -103,6 +103,11 @@ namespace yart
 
         ImVec2 drag = SeparatorHandle({ window->DC.CursorPos.x, window->DC.CursorPos.y }, separator_size, cursor);
         layout.size += layout.direction == GUI::LayoutDir::HORIZONTAL ? drag.x : drag.y;
+
+        GuiContext* ctx = GUI::GetCurrentContext();
+        if (layout.preserveSecondSectionSize && drag.x == 0 && drag.y == 0)
+            layout.size += layout.direction == GUI::LayoutDir::HORIZONTAL ? ctx->displaySizeDelta.x : ctx->displaySizeDelta.y;
+
 
         float min_size = ImMax(g->Style.ChildRounding * 2.0f + 2.0f, LAYOUT_SEGMENT_MIN_SIZE);
         if (layout.size < min_size) 
@@ -188,9 +193,15 @@ namespace yart
         // Render the main frame layout
         static LayoutState horizontal_layout = { };
         horizontal_layout.direction = GUI::LayoutDir::HORIZONTAL;
+        horizontal_layout.preserveSecondSectionSize = true;
+        horizontal_layout.default_size_ratio = 3.0f / 4.0f;
         horizontal_layout.window_flags = ImGuiWindowFlags_NoBackground;
 
         GUI::BeginLayout(horizontal_layout);
+
+        // Store the viewport window ID 
+        ctx->renderViewportWindowID = g->CurrentWindow->ID;
+
         GUI::LayoutSeparator(horizontal_layout);
 
         GUI::RenderContextWindow();
@@ -207,6 +218,7 @@ namespace yart
         // Render the scene+context menu layout
         static LayoutState vertical_layout = { };
         vertical_layout.direction = GUI::LayoutDir::VERTICAL;
+        vertical_layout.default_size_ratio = 1.0f / 3.0f;
         vertical_layout.window_flags = ImGuiWindowFlags_AlwaysUseWindowPadding;
 
         GUI::BeginLayout(vertical_layout);
@@ -407,7 +419,7 @@ namespace yart
     bool GUI::RenderViewAxesWindowEx(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis, glm::vec3& clicked_axis)
     {
         static constexpr ImVec2 window_size = { 75.0f, 75.0f }; // Expected to be a square
-        static constexpr ImVec2 window_margin = { 20.0f, 10.0f };
+        static constexpr ImVec2 window_margin = { 25.0f, 15.0f };
 
         static const ImGuiWindowFlags window_flags = (
             ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav
@@ -416,10 +428,10 @@ namespace yart
 
 
         // Set a constant window size and position
-        ImVec2 viewport_pos = ImGui::GetMainViewport()->WorkPos;
-        ImVec2 viewport_size = ImGui::GetMainViewport()->WorkSize;
+        GuiContext* ctx = GUI::GetCurrentContext();
+        ImVec2 viewport_pos = ctx->renderViewportAreaPos;
         ImVec2 window_center = {
-            viewport_pos.x + viewport_size.x - window_size.x / 2 - window_margin.x, 
+            viewport_pos.x + ctx->renderViewportAreaWidth - window_size.x / 2 - window_margin.x, 
             viewport_pos.y + window_size.y / 2 + window_margin.y 
         };
 
@@ -439,7 +451,7 @@ namespace yart
         static constexpr float circle_radius = window_size.x / 2;
         
         bool hovered = false;
-        if (ImGui::IsWindowHovered())
+        if (GUI::IsMouseOverRenderViewport())
             hovered = IsMouseHoveringCircle(window_center, circle_radius);
 
         // Background

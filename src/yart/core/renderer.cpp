@@ -151,7 +151,9 @@ namespace yart
 
 
         // -- ROTATION -- //
-        if (ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
+        static bool currently_rotating = false;
+        if ((currently_rotating || GUI::IsMouseOverRenderViewport()) && ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
+            currently_rotating = true;
             yart::Input::SetCursorLocked(true); // Lock and hide the cursor
             const glm::ivec2& mouse = yart::Input::GetMouseMoveDelta();
 
@@ -166,6 +168,7 @@ namespace yart
             }
         } else {
             yart::Input::SetCursorLocked(false); // Unlock the cursor 
+            currently_rotating = false;
         }
 
 

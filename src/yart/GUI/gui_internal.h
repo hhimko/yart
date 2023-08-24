@@ -41,17 +41,21 @@ namespace yart
             /// @brief GUI windows registered by the application  
             std::vector<GuiWindow> registeredWindows;
 
+
+            /// @brief Amount of pixels the OS window size has changed since last frame
+            ImVec2 displaySizeDelta;
             /// @brief Current render viewport area position on screen in pixel coordinates
             ImVec2 renderViewportAreaPos;
             /// @brief Current width of the render viewport area in pixels
             float renderViewportAreaWidth;
             /// @brief Current height of the render viewport area in pixels
             float renderViewportAreaHeight;
+            /// @brief Dear ImGui window ID of the render viewport window
+            ImGuiID renderViewportWindowID;
             /// @brief Cached size of the main context window vertical separator
             float mainContextSeparatorHeight;
             /// @brief Current visible height of the main menu bar body 
             float mainMenuBarHeight;
-            
         };
 
         /// @brief Layout specification object used to store state of layout widgets
@@ -61,6 +65,10 @@ namespace yart
             LayoutDir direction;
             /// @brief Dear ImGui window flags for child windows inside layout
             ImGuiWindowFlags window_flags;
+            /// @brief Whether the size should be updated based on the second layout section when resizing the OS window
+            bool preserveSecondSectionSize;
+            /// @brief The default layout segment sizing ratio. Should be in the [0..1] range 
+            float default_size_ratio = 0.5f;
             /// @brief Separator handle position state
             float size;
             

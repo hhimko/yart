@@ -124,6 +124,17 @@ namespace yart
         return { w > 0 ? w : 1, h > 0 ? h : 1 }; 
     }
 
+    bool GUI::IsMouseOverRenderViewport()
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        if (g->HoveredWindow != nullptr) {
+            GuiContext* ctx = GUI::GetCurrentContext();
+            return g->HoveredWindow->ID == ctx->renderViewportWindowID;
+        }
+
+        return false;
+    }
+
     void GUI::RegisterCallback(imgui_callback_t callback)
     {
         GuiContext* ctx = GetCurrentContext();
@@ -151,6 +162,17 @@ namespace yart
         // Uncomment to display Dear ImGui's debug window
         // ImGui::ShowDemoWindow();
 
+
+        // Update the display size delta
+        GuiContext* ctx = GUI::GetCurrentContext();
+        static ImVec2 last_display_size = ImGui::GetIO().DisplaySize;
+        ImVec2 display_size = ImGui::GetIO().DisplaySize;
+
+        ctx->displaySizeDelta = { display_size.x - last_display_size.x, display_size.y - last_display_size.y};
+        last_display_size = display_size;
+
+
+        // Render the static layout
         GUI::RenderMainMenuBar();
         GUI::RenderMainContentFrame();
 

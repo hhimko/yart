@@ -74,6 +74,10 @@ namespace yart
         /// @return Size in screen pixels
         ImVec2 GetMainViewportAreaSize();
 
+        /// @brief Test whether the mouse cursor is currently directly over the render viewport
+        /// @return Whether mouse is over viewport
+        bool IsMouseOverRenderViewport();
+
         /// @brief Register a global Dear ImGui render function
         /// @param callback Callback function pointer
         void RegisterCallback(imgui_callback_t callback);
