@@ -42,10 +42,7 @@ namespace yart
 
             // Ray trace the scene on CPU onto the viewport image buffer
             auto viewport = window.GetViewport();
-
-            uint32_t viewport_width, viewport_height;
-            GUI::GetMainViewportAreaSize(&viewport_width, &viewport_height);
-            viewport->Resize(viewport_width, viewport_height);
+            viewport->Resize(GUI::GetMainViewportAreaSize());
             viewport->SetPosition(GUI::GetMainViewportAreaPosition());
 
             uint32_t image_width, image_height;
@@ -53,7 +50,7 @@ namespace yart
             
             bool viewport_dirty = m_renderer.Render(viewport->GetImageData(), image_width, image_height);
             if (viewport_dirty)
-                viewport->Refresh(); // Refresh display 
+                viewport->EnsureRefresh(); // Make sure the viewport image gets refreshed  
 
             // Render and present a frame to a platform window on GPU
             window.Render();

@@ -114,19 +114,14 @@ namespace yart
         return ctx->renderViewportAreaPos;
     }
 
-    void GUI::GetMainViewportAreaSize(uint32_t* width, uint32_t* height)
+    ImVec2 GUI::GetMainViewportAreaSize()
     {
         GuiContext* ctx = GetCurrentContext();
 
-        if (width != nullptr) {
-            uint32_t w = static_cast<uint32_t>(ctx->renderViewportAreaWidth);
-            *width = w > 0 ? w : 1;
-        }
+        float w = ctx->renderViewportAreaWidth;
+        float h = ctx->renderViewportAreaHeight;
 
-        if (height != nullptr) {
-            uint32_t h = static_cast<uint32_t>(ctx->renderViewportAreaHeight);
-            *height = h > 0 ? h : 1;
-        }
+        return { w > 0 ? w : 1, h > 0 ? h : 1 }; 
     }
 
     void GUI::RegisterCallback(imgui_callback_t callback)

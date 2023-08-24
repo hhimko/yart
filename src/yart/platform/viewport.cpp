@@ -18,7 +18,7 @@ namespace yart
         m_imageHeight = height;
 
         m_imageData = new float[width * height * 4];
-        Refresh();
+        m_shouldRefresh = true;
     }
 
     Viewport::~Viewport()
@@ -35,16 +35,11 @@ namespace yart
             *height = m_imageHeight / m_imageScale;
     }
 
-    void Viewport::Refresh()
-    {
-        yart::Window& window = yart::Window::Get();
-
-        VkCommandPool command_pool = window.m_framesInFlight[window.m_currentFrameInFlight].vkCommandPool;
-        m_image.BindData(window.m_vkDevice, command_pool, window.m_vkQueue, m_imageData);
-    }
-
     void Viewport::Render(ImDrawList *draw_list)
     {
+        if (m_shouldRefresh)
+            Refresh();
+
         ImTextureID viewport_image = (ImTextureID)m_image.GetDescriptorSet();
 
         const ImVec2 p_min = m_position;
@@ -53,11 +48,14 @@ namespace yart
         draw_list->AddImage(viewport_image, p_min, p_max);
     }
 
-    void Viewport::Resize(uint32_t width, uint32_t height, int scale)
+    void Viewport::Resize(ImVec2 size, int scale)
     {
         yart::Window& window = yart::Window::Get();
-        if (width == m_imageWidth && height == m_imageHeight && scale == m_imageScale)
-            return Refresh();
+
+        uint32_t width = static_cast<uint32_t>(size.x);
+        uint32_t height = static_cast<uint32_t>(size.y);
+        if (!m_shouldResize && width == m_imageWidth && height == m_imageHeight && scale == m_imageScale)
+            return;
 
         m_imageWidth = width; 
         m_imageHeight = height;
@@ -70,12 +68,22 @@ namespace yart
         m_imageData = new float[scaled_width * scaled_height * 4];
 
         m_image.Resize(window.m_vkDevice, window.m_vkPhysicalDevice, window.m_viewportImageSampler, scaled_width, scaled_height);
-        Refresh();
+        m_shouldResize = false;
+        m_shouldRefresh = true;
     }
 
-    void Viewport::Resize(uint32_t width, uint32_t height)
+    void Viewport::Resize(ImVec2 size)
     {
-        return Resize(width, height, m_imageScale);
+        return Resize(size, m_imageScale);
+    }
+
+    void Viewport::Refresh()
+    {
+        yart::Window& window = yart::Window::Get();
+
+        VkCommandPool command_pool = window.m_framesInFlight[window.m_currentFrameInFlight].vkCommandPool;
+        m_image.BindData(window.m_vkDevice, command_pool, window.m_vkQueue, m_imageData);
+        m_shouldRefresh = false;
     }
 
     void Viewport::OnImGUI()
@@ -86,7 +94,7 @@ namespace yart
         int scale = m_imageScale;
         bool scale_changed = ImGui::SliderInt("Scale", &scale, 1, 10);
         if (scale_changed)
-            Resize(m_imageWidth, m_imageHeight, scale);
+            SetScale(scale);
 
         ImGui::Text("Width: %d", m_imageWidth / m_imageScale);
         ImGui::Text("Height: %d", m_imageHeight / m_imageScale);

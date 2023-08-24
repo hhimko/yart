@@ -38,18 +38,13 @@ namespace yart
         void GetImageSize(uint32_t* width, uint32_t* height);
 
         /// @brief Resize the viewport
-        /// @param width New viewport width in pixels
-        /// @param height New viewport height in pixels 
+        /// @param size New viewport size in pixels
         /// @param scale New viewport scaling factor
-        void Resize(uint32_t width, uint32_t height, int scale);
+        void Resize(ImVec2 size, int scale);
 
         /// @brief Resize the viewport and keep the current scaling factor
-        /// @param width New viewport width in pixels
-        /// @param height New viewport height in pixels 
-        void Resize(uint32_t width, uint32_t height);
-
-        /// @brief Apply changes made to the image data and update the underlying viewport image
-        void Refresh();
+        /// @param size New viewport size in pixels
+        void Resize(ImVec2 size);
 
         /// @brief Render the viewport image onto a Dear ImGui draw list
         /// @param draw_list Dear ImGui draw list to render to 
@@ -59,6 +54,19 @@ namespace yart
         /// @param pos New position in pixel coordinates
         void SetPosition(ImVec2 pos) {
             m_position = pos;
+        }
+
+        /// @brief Set the viewport's image scale factor
+        /// @param scale New image scale factor
+        void SetScale(int scale) {
+            m_imageScale = scale;
+            m_shouldResize = true;
+        }
+
+        /// @brief Set an internal flag to make sure the viewport image gets refreshed before the next render command
+        /// @details Should be used when the image pixels have changed since the last Viewport::Render(), but the viewport size has not 
+        void EnsureRefresh() {
+            m_shouldRefresh = true;
         }
 
         /// @brief Get the viewport's image pixel array
@@ -71,6 +79,9 @@ namespace yart
         }        
 
     private:
+        /// @brief Apply changes made to the image data and update the underlying viewport image
+        void Refresh();
+
         void OnImGUI();
 
     private:
@@ -81,6 +92,8 @@ namespace yart
         uint32_t m_imageWidth;  // Original width of the image (does not take image scale into account)
         uint32_t m_imageHeight; // Original height of the image (does not take image scale into account)
         int m_imageScale = 1; // Should only ever be in the [1, +inf) range
+        bool m_shouldResize = false;
+        bool m_shouldRefresh = true;
 
 
         // -- FRIEND DECLARATIONS -- //

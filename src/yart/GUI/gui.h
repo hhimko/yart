@@ -71,9 +71,8 @@ namespace yart
         ImVec2 GetMainViewportAreaPosition();
 
         /// @brief Get the current size of the render viewport area
-        /// @param width Pointer to be populated with viewport's width. May be NULL
-        /// @param height Pointer to be populated with viewport's height. May be NULL
-        void GetMainViewportAreaSize(uint32_t* width, uint32_t* height);
+        /// @return Size in screen pixels
+        ImVec2 GetMainViewportAreaSize();
 
         /// @brief Register a global Dear ImGui render function
         /// @param callback Callback function pointer
