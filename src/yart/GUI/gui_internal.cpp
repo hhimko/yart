@@ -11,12 +11,6 @@
 #define WITH(handle) for(auto* _h = handle; _h != nullptr; _h = nullptr)
 
 #ifndef DOXYGEN_EXCLUDE // Exclude from documentation
-    enum LayoutDir_ : uint8_t {
-        LayoutDir_Horizontal,
-        LayoutDir_Vertical
-    };
-
-
     #define TEMP_BUFFER_SIZE 5
 
     #define HOVER_RECT_PADDING 2.0f
@@ -34,19 +28,13 @@
 
 namespace yart
 {
-    GUI::GuiWindow::GuiWindow(const char* name, imgui_callback_t callback)
-        : name(name), callback(callback)
-    {
-
-    }
-
-    bool BeginLayoutEx(LayoutDir_ layout_direction, float& size, ImGuiWindowFlags window_flags)
+    bool GUI::BeginLayout(LayoutState& layout)
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
-        if (size <= 0.0f) {
+        if (layout.size <= 0.0f) {
             float min_size = ImMax(g->Style.ChildRounding * 2.0f + 2.0f, LAYOUT_SEGMENT_MIN_SIZE);
-            float content_avail = layout_direction == LayoutDir_Horizontal ? ImGui::GetContentRegionAvail().x : ImGui::GetContentRegionAvail().y;
-            size = ImMax((content_avail - SEPARATOR_HANDLE_THICKNESS) / 2.0f, min_size);
+            float content_avail = layout.direction == GUI::LayoutDir::HORIZONTAL ? ImGui::GetContentRegionAvail().x : ImGui::GetContentRegionAvail().y;
+            layout.size = ImMax((content_avail - SEPARATOR_HANDLE_THICKNESS) / 2.0f, min_size);
         }
 
         // The whole layout is captured into a group to act as a single item 
@@ -56,24 +44,19 @@ namespace yart
         ImVec2 old_item_spacing = g->Style.ItemSpacing;
         g->Style.ItemSpacing = { 0.0f, 0.0f };
 
-        ImVec2 region = layout_direction == LayoutDir_Horizontal ? ImVec2(size, 0) : ImVec2(0, size);
-        bool ret = ImGui::BeginChild("LayoutSegment_First", region, false, window_flags);
+        ImVec2 region = layout.direction == GUI::LayoutDir::HORIZONTAL ? ImVec2(layout.size, 0) : ImVec2(0, layout.size);
+        bool ret = ImGui::BeginChild("LayoutSegment_First", region, false, layout.window_flags);
             
         g->Style.ItemSpacing = old_item_spacing;
 
         return ret;
     }
 
-    bool GUI::BeginHorizontalLayout(float &width, ImGuiWindowFlags window_flags)
-    {
-        return BeginLayoutEx(LayoutDir_Horizontal, width, window_flags);
-    }
-
-    bool GUI::BeginVerticalLayout(float& height, ImGuiWindowFlags window_flags)
-    {
-        return BeginLayoutEx(LayoutDir_Vertical, height, window_flags);
-    }
-
+    /// @brief Draw the separator handle and handle its inputs
+    /// @param pos Start position of the handle's bounding box
+    /// @param size Size of the handle's bounding box
+    /// @param cursor Cursor to be used while the handle is hovered over
+    /// @return Mouse drag amount since last frame 
     ImVec2 SeparatorHandle(ImVec2 pos, ImVec2 size, ImGuiMouseCursor_ cursor) 
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
@@ -102,7 +85,7 @@ namespace yart
         return {0.0f, 0.0f};
     }
 
-    bool LayoutSeparatorEx(LayoutDir_ layout_direction, float& size, ImGuiWindowFlags window_flags) 
+    bool GUI::LayoutSeparator(LayoutState& layout)
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
 
@@ -114,42 +97,34 @@ namespace yart
         // Draw and handle the separator
         ImGuiWindow* window = g->CurrentWindow;
 
-        if (layout_direction == LayoutDir_Horizontal) ImGui::SameLine();
-        ImVec2 separator_size = layout_direction == LayoutDir_Horizontal ? ImVec2(SEPARATOR_HANDLE_THICKNESS, ImGui::GetContentRegionAvail().y) : ImVec2(window->Size.x, SEPARATOR_HANDLE_THICKNESS);
-        ImGuiMouseCursor_ cursor = layout_direction == LayoutDir_Horizontal ? ImGuiMouseCursor_ResizeEW : ImGuiMouseCursor_ResizeNS;
+        if (layout.direction == GUI::LayoutDir::HORIZONTAL) ImGui::SameLine();
+        ImVec2 separator_size = layout.direction == GUI::LayoutDir::HORIZONTAL ? ImVec2(SEPARATOR_HANDLE_THICKNESS, ImGui::GetContentRegionAvail().y) : ImVec2(window->Size.x, SEPARATOR_HANDLE_THICKNESS);
+        ImGuiMouseCursor_ cursor = layout.direction == GUI::LayoutDir::HORIZONTAL ? ImGuiMouseCursor_ResizeEW : ImGuiMouseCursor_ResizeNS;
 
         ImVec2 drag = SeparatorHandle({ window->DC.CursorPos.x, window->DC.CursorPos.y }, separator_size, cursor);
-        size += layout_direction == LayoutDir_Horizontal ? drag.x : drag.y;
+        layout.size += layout.direction == GUI::LayoutDir::HORIZONTAL ? drag.x : drag.y;
 
         float min_size = ImMax(g->Style.ChildRounding * 2.0f + 2.0f, LAYOUT_SEGMENT_MIN_SIZE);
-        if (size < min_size) 
-            size = min_size;
+        if (layout.size < min_size) 
+            layout.size = min_size;
 
-        float content = layout_direction == LayoutDir_Horizontal ? window->ContentSize.x : window->ContentSize.y;
+        float content = layout.direction == GUI::LayoutDir::HORIZONTAL ? window->Size.x : window->Size.y;
         float max_size = content - min_size - SEPARATOR_HANDLE_THICKNESS;
-        if (max_size > min_size && size > max_size)
-            size = max_size;
+        if (max_size > min_size && layout.size > max_size)
+            layout.size = max_size;
 
         // Start capturing the next segment
-        if (layout_direction == LayoutDir_Horizontal) ImGui::SameLine();
-        bool ret = ImGui::BeginChild("LayoutSegment_Second", { 0.0f, 0.0f }, false, window_flags);
+        if (layout.direction == GUI::LayoutDir::HORIZONTAL) ImGui::SameLine();
+        bool ret = ImGui::BeginChild("LayoutSegment_Second", { 0.0f, 0.0f }, false, layout.window_flags);
         g->Style.ItemSpacing = old_item_spacing;
 
         return ret;
     }
 
-    bool GUI::HorizontalLayoutSeparator(float& width, ImGuiWindowFlags window_flags)
+    void GUI::EndLayout(LayoutState& layout)
     {
-        return LayoutSeparatorEx(LayoutDir_Horizontal, width, window_flags);
-    }
+        (void)layout; // Unused
 
-    bool GUI::VerticalLayoutSeparator(float& height, ImGuiWindowFlags window_flags)
-    {
-        return LayoutSeparatorEx(LayoutDir_Vertical, height, window_flags);
-    }
-
-    void GUI::EndLayout()
-    {
         // Finalize capturing the previous segment
         ImGui::EndChild();
 
@@ -211,27 +186,34 @@ namespace yart
         g->Style.WindowPadding = backup_padding;
 
         // Render the main frame layout
-        GUI::BeginHorizontalLayout(ctx->renderViewportAreaWidth, ImGuiWindowFlags_NoBackground);
+        static LayoutState horizontal_layout = { };
+        horizontal_layout.direction = GUI::LayoutDir::HORIZONTAL;
+        horizontal_layout.window_flags = ImGuiWindowFlags_NoBackground;
 
-        GUI::HorizontalLayoutSeparator(ctx->renderViewportAreaWidth, ImGuiWindowFlags_None);
+        GUI::BeginLayout(horizontal_layout);
+        GUI::LayoutSeparator(horizontal_layout);
 
-        GUI::RenderMainContextWindow();
+        GUI::RenderContextWindow();
 
-        GUI::EndLayout();
-
+        GUI::EndLayout(horizontal_layout);
         ImGui::End();
+
+        // Store the viewport area size for renderer 
+        ctx->renderViewportAreaWidth = horizontal_layout.size;
     }
 
-    void GUI::RenderMainContextWindow()
+    void GUI::RenderContextWindow()
     {
-        GuiContext* ctx = GUI::GetCurrentContext();
+        // Render the scene+context menu layout
+        static LayoutState vertical_layout = { };
+        vertical_layout.direction = GUI::LayoutDir::VERTICAL;
+        vertical_layout.window_flags = ImGuiWindowFlags_AlwaysUseWindowPadding;
 
+        GUI::BeginLayout(vertical_layout);
 
-        GUI::BeginVerticalLayout(ctx->mainContextSeparatorHeight, ImGuiWindowFlags_AlwaysUseWindowPadding);
+        GUI::LayoutSeparator(vertical_layout);
 
-        GUI::VerticalLayoutSeparator(ctx->mainContextSeparatorHeight, ImGuiWindowFlags_AlwaysUseWindowPadding);
-
-        GUI::EndLayout();
+        GUI::EndLayout(vertical_layout);
     }
 
     void GUI::RenderWindow(const GuiWindow &window)

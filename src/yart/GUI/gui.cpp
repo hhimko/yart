@@ -133,7 +133,12 @@ namespace yart
     void GUI::RegisterWindow(const char *window_name, imgui_callback_t callback)
     {
         GuiContext* ctx = GetCurrentContext();
-        ctx->registeredWindows.emplace_back(window_name, callback);
+
+        GuiWindow window;
+        window.name = window_name;
+        window.callback = callback;
+
+        ctx->registeredWindows.push_back(window);
     }
 
     bool GUI::RenderViewAxesWindow(const glm::vec3 &x_axis, const glm::vec3 &y_axis, const glm::vec3 &z_axis, glm::vec3& clicked_axis)
