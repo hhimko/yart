@@ -739,6 +739,11 @@ namespace yart
         // Create ImGui render pipeline
         ImGui_ImplVulkan_Init(&init_info, m_vkRenderPass);
 
+        // Load application fonts
+        io.Fonts->AddFontDefault();
+        if (m_fontLoadCallback)
+            m_fontLoadCallback();
+
         // Upload fonts
         VkCommandPool command_pool = CURRENT_FRAME_IN_FLIGHT.vkCommandPool;
         VkCommandBuffer command_buffer = yart::utils::BeginSingleTimeVulkanCommandBuffer(m_vkDevice, command_pool);

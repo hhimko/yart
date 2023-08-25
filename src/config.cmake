@@ -19,3 +19,6 @@ target_link_libraries(yart
     PRIVATE glm
     PRIVATE imgui
 )
+
+# Copy dependencies into the build directory
+file(COPY "src/font/codicon.ttf" DESTINATION  "${CMAKE_CURRENT_BINARY_DIR}/bin/res/fonts")

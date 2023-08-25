@@ -50,11 +50,18 @@ namespace yart
         /// @brief Submit frame for render and present the next frame-in-flight to the window
         void Render();
 
-        /// @brief Set a custom Dear ImGui callback for registering user defined draw commands 
+        /// @brief Set a Dear ImGui callback for registering custom user defined draw commands 
         /// @param callback ImGui callback function
         void SetDearImGuiCallback(imgui_callback_t callback)
         {
             m_dearImGuiCallback = callback;
+        }
+
+        /// @brief Set a callback for loading custom Dear ImGui fonts
+        /// @param callback ImGui callback function
+        void SetFontLoadCallback(imgui_callback_t callback)
+        {
+            m_fontLoadCallback = callback;
         }
 
         /// @brief Get the main window viewport instance
@@ -144,6 +151,7 @@ namespace yart
     private:
         std::shared_ptr<yart::Viewport> m_viewport = nullptr; // Main window viewport
         imgui_callback_t m_dearImGuiCallback;
+        imgui_callback_t m_fontLoadCallback;
         utils::LTStack m_LTStack;
         
         // -- SWAPCHAIN DATA -- // 

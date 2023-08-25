@@ -7,6 +7,9 @@
 #include "gui_internal.h"
 
 
+#include "font/IconsCodicons.h"
+
+
 /// @brief Helper macro useful for opening `break`-able context scopes
 #define WITH(handle) for(auto* _h = handle; _h != nullptr; _h = nullptr)
 
@@ -14,7 +17,7 @@
     #define TEMP_BUFFER_SIZE 5
 
     #define HOVER_RECT_PADDING 2.0f
-    #define LAYOUT_SEGMENT_MIN_SIZE 50.0f
+    #define LAYOUT_SEGMENT_MIN_SIZE 85.0f
     #define SEPARATOR_HANDLE_THICKNESS 2.0f
 
     #define AXIS_POSITIVE_X 0
@@ -252,6 +255,8 @@ namespace yart
 
     void GUI::RenderContextWindow()
     {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+
         // Render the scene+context menu layout
         static LayoutState vertical_layout = { };
         vertical_layout.direction = GUI::LayoutDir::VERTICAL;
@@ -262,14 +267,18 @@ namespace yart
         GUI::BeginLayout(vertical_layout);
 
         if (GUI::BeginCustomTabBar("Scene")) {
-            ImGui::BeginChild("##Content");
+            ImGui::BeginChild("##Content", { 0.0f, 0.0f }, false, ImGuiWindowFlags_AlwaysUseWindowPadding);
+
+            ImGui::Text("Some scene debug text");
 
             ImGui::EndChild();
             ImGui::EndTabItem();
         }
 
         if(ImGui::BeginTabItem("Object")) {
-            ImGui::BeginChild("##Content");
+            ImGui::BeginChild("##Content", { 0.0f, 0.0f }, false, ImGuiWindowFlags_AlwaysUseWindowPadding);
+
+            ImGui::Text("Some object debug text");
 
             ImGui::EndChild();
             ImGui::EndTabItem();
@@ -279,8 +288,36 @@ namespace yart
         // Master inspector section
         GUI::LayoutSeparator(vertical_layout);
 
+        GUI::RenderInspectorNavBar();
+
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, { 0.0f, 0.0f });
+        ImGui::SameLine();
+        ImGui::PopStyleVar();
+
         if (GUI::BeginCustomTabBar("Inspector")) {
-            ImGui::BeginChild("##Content");
+            ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysUseWindowPadding;
+            ImGui::BeginChild("##Content", { 0.0f, 0.0f }, false, flags);
+
+            // Draw background without left edge rounding
+            ImGuiWindow* window = g->CurrentWindow;
+            float child_rounding = g->Style.ChildRounding;
+            ImVec2 p_min = { window->Pos.x, window->Pos.y };
+            ImVec2 p_max = { p_min.x + child_rounding, p_min.y + window->Size.y };
+
+            // Unsafe! The default clip rect has to be bypassed in order to draw over child's rounded edges
+            ImVec4 backup_clip_rect = g->CurrentWindow->DrawList->_ClipRectStack.back();
+            g->CurrentWindow->DrawList->PopClipRect();
+            static ImU32 bg_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_ChildBg]);
+            g->CurrentWindow->DrawList->AddRectFilled(p_min, p_max, bg_col);
+            g->CurrentWindow->DrawList->_ClipRectStack.push_back(backup_clip_rect);
+
+            ImGui::Text("Some debug text");
+            static int i = 1;
+            ImGui::SliderInt("Some slider", &i, 1, 10);
+
+            GUI::PushIconsFont();
+            ImGui::Button("" ICON_CI_ALERT );
+            ImGui::PopFont();
 
             ImGui::EndChild();
             ImGui::EndTabItem();
@@ -288,6 +325,24 @@ namespace yart
         GUI::EndCustomTabBar();
 
         GUI::EndLayout(vertical_layout);
+    }
+
+    void GUI::RenderInspectorNavBar()
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+       
+        ImGui::BeginChild("##SideNavBar", { 30.0f, 0.0f }, false, ImGuiWindowFlags_NoBackground);
+
+        // Draw background without right edge rounding
+        ImGuiWindow* window = g->CurrentWindow;
+        float child_rounding = g->Style.ChildRounding;
+        ImVec2 p_min = { window->Pos.x, window->Pos.y + 16.0f };
+        ImVec2 p_max = { p_min.x + window->Size.x + child_rounding, p_min.y + window->Size.y };
+
+        static ImU32 bg_col = ImGui::ColorConvertFloat4ToU32({ YART_GUI_COLOR_DARKEST_GRAY, YART_GUI_ALPHA_OPAQUE });
+        g->CurrentWindow->DrawList->AddRectFilled(p_min, p_max, bg_col, child_rounding);
+        
+        ImGui::EndChild();
     }
 
     void GUI::RenderWindow(const GuiWindow &window)

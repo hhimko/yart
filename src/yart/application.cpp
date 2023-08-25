@@ -67,6 +67,7 @@ namespace yart
     bool Application::Setup()
     {
         yart::Window& window = yart::Window::Get();
+        window.SetFontLoadCallback(yart::GUI::LoadFonts);
         if (!window.Init(YART_WINDOW_TITLE, YART_WINDOW_WIDTH, YART_WINDOW_HEIGHT))
             return false;
 

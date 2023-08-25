@@ -56,6 +56,11 @@ namespace yart
             float mainContextSeparatorHeight;
             /// @brief Current visible height of the main menu bar body 
             float mainMenuBarHeight;
+
+
+            /// @brief Pointer to a Dear ImGui icon Font object 
+            ImFont* iconsFont; 
+
         };
 
         /// @brief Layout specification object used to store state of layout widgets
@@ -112,6 +117,9 @@ namespace yart
 
         /// @brief Issue the application's context window render commands
         void RenderContextWindow();
+
+        /// @brief Issue the side nav inspector window's render commands
+        void RenderInspectorNavBar();
 
         /// @brief Render a YART GUI window 
         /// @param window Window to be rendered

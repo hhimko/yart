@@ -64,8 +64,16 @@ namespace yart
         /// @return The currently active context object
         GuiContext* GetCurrentContext();
 
-        /// @brief Applies the default YART application GUI style and color palette
+        /// @brief Apply the default YART application GUI style and color palette
         void ApplyCustomStyle();
+
+        /// @brief Load the YART application fonts into Dear ImGui
+        /// @note Should only ever be called before uploading font textures to the GPU
+        void LoadFonts();
+
+        /// @brief Push the icons font to the Dear ImGui font stack 
+        /// @note Call `ImGui::PopFont()` to return to the previous font in the stack
+        void PushIconsFont();
 
         /// @brief Get the current position of the render viewport area
         /// @return Position in screen pixel coordinates

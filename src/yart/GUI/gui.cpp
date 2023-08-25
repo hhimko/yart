@@ -6,6 +6,7 @@
 #include "gui.h"
 
 
+#include "font/IconsCodicons.h"
 #include "gui_internal.h"
 
 
@@ -106,6 +107,28 @@ namespace yart
             colors[ImGuiCol_NavWindowingDimBg]      = { YART_GUI_COLOR_BLACK,                  YART_GUI_ALPHA_HIGH };
             colors[ImGuiCol_ModalWindowDimBg]       = { YART_GUI_COLOR_BLACK,                  YART_GUI_ALPHA_HIGH };
         }
+    }
+
+    void GUI::LoadFonts()
+    {
+        GuiContext* ctx = GUI::GetCurrentContext();
+
+        ImGuiIO& io = ImGui::GetIO();
+        static float icon_font_size = 20.0f;
+
+        static const ImWchar icons_ranges[] = { ICON_MIN_CI, ICON_MAX_CI, 0 };
+        ImFontConfig icons_config = { }; 
+        icons_config.PixelSnapH = true; 
+        icons_config.GlyphMinAdvanceX = icon_font_size;
+        ImFont* icons_font = io.Fonts->AddFontFromFileTTF("..\\res\\fonts\\" FONT_ICON_FILE_NAME_CI, icon_font_size, &icons_config, icons_ranges);
+
+        ctx->iconsFont = icons_font;
+    }
+
+    void GUI::PushIconsFont()
+    {
+        GuiContext* ctx = GUI::GetCurrentContext();
+        ImGui::PushFont(ctx->iconsFont);
     }
 
     ImVec2 GUI::GetMainViewportAreaPosition()
