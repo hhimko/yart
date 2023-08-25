@@ -70,7 +70,7 @@ namespace yart
         bool hovered, held;
         ImGui::ButtonBehavior(bb, id, &hovered, &held);
 
-        ImVec4 col = held ? g->Style.Colors[ImGuiCol_SeparatorActive] : (hovered ? g->Style.Colors[ImGuiCol_SeparatorHovered] : g->Style.Colors[ImGuiCol_Separator]);
+        ImVec4 col = held ? g->Style.Colors[ImGuiCol_ResizeGripActive] : (hovered ? g->Style.Colors[ImGuiCol_ResizeGripHovered] : g->Style.Colors[ImGuiCol_ResizeGrip]);
         ImGui::GetWindowDrawList()->AddRectFilled(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(col));
 
         if (hovered || held)
@@ -133,6 +133,43 @@ namespace yart
         // Finalize capturing the previous segment
         ImGui::EndChild();
 
+        ImGui::EndGroup();
+    }
+
+    bool GUI::BeginCustomTabBar(const char* item_name)
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+
+        // The whole tab bar is recorded into a group to act as a single item
+        ImGui::BeginGroup();
+
+        ImVec2 backup_spacing = g->Style.ItemSpacing;
+        g->Style.ItemSpacing = { 0.0f, 0.0f };
+
+        ImGui::ItemSize({ g->Style.ChildRounding , 0.0f });
+        ImGui::SameLine();
+
+        ImVec4 backup_tab_active_color = g->Style.Colors[ImGuiCol_TabActive];
+        ImVec2 backup_frame_padding = g->Style.FramePadding;
+        g->Style.FramePadding = { 16.0f, backup_frame_padding.y };
+        g->Style.Colors[ImGuiCol_TabActive] = { YART_GUI_COLOR_BLACK, YART_GUI_ALPHA_TRANSPARENT };
+        ImGui::BeginTabBar("##TabBar");
+        g->Style.Colors[ImGuiCol_TabActive] = backup_tab_active_color;
+
+        ImVec2 backup_inner_spacing = g->Style.ItemInnerSpacing;
+        g->Style.ItemInnerSpacing = { 0.0f, 0.0f };
+        g->Style.ItemSpacing = { 0.0f, -1.0f };
+        bool open = ImGui::BeginTabItem(item_name, nullptr);
+        g->Style.ItemSpacing = backup_spacing;
+        g->Style.ItemInnerSpacing = backup_inner_spacing;
+        g->Style.FramePadding = backup_frame_padding;
+
+        return open;
+    }
+
+    void GUI::EndCustomTabBar() 
+    {
+        ImGui::EndTabBar();
         ImGui::EndGroup();
     }
 
@@ -219,11 +256,36 @@ namespace yart
         static LayoutState vertical_layout = { };
         vertical_layout.direction = GUI::LayoutDir::VERTICAL;
         vertical_layout.default_size_ratio = 1.0f / 3.0f;
-        vertical_layout.window_flags = ImGuiWindowFlags_AlwaysUseWindowPadding;
+        vertical_layout.window_flags = ImGuiWindowFlags_NoBackground;
 
+        // Scene + Object inspectors section
         GUI::BeginLayout(vertical_layout);
 
+        if (GUI::BeginCustomTabBar("Scene")) {
+            ImGui::BeginChild("##Content");
+
+            ImGui::EndChild();
+            ImGui::EndTabItem();
+        }
+
+        if(ImGui::BeginTabItem("Object")) {
+            ImGui::BeginChild("##Content");
+
+            ImGui::EndChild();
+            ImGui::EndTabItem();
+        }
+        GUI::EndCustomTabBar();
+
+        // Master inspector section
         GUI::LayoutSeparator(vertical_layout);
+
+        if (GUI::BeginCustomTabBar("Inspector")) {
+            ImGui::BeginChild("##Content");
+
+            ImGui::EndChild();
+            ImGui::EndTabItem();
+        }
+        GUI::EndCustomTabBar();
 
         GUI::EndLayout(vertical_layout);
     }

@@ -89,6 +89,15 @@ namespace yart
         /// @param layout Layout state
         void EndLayout(LayoutState& layout);
 
+        /// @brief Begin a custom YART tab bar with a single tab item
+        /// @param item_name First tab item name
+        /// @return Whether the first tab item is currently opened
+        /// @note `ImGui::EndCustomTabBar()` should always be called after calling this method
+        bool BeginCustomTabBar(const char* item_name);
+
+        /// @brief Finalize rendering a custom YART tab bar
+        void EndCustomTabBar();
+
         /// @brief Check whether the mouse cursor lies within a given circle
         /// @param pos Circle position on the screen
         /// @param radius Radius of the circle

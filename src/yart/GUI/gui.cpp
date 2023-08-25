@@ -28,7 +28,7 @@ namespace yart
         style.WindowTitleAlign = { 0.5f, 0.5f };
         style.WindowMenuButtonPosition = ImGuiDir_None;
         style.ChildBorderSize = 1.0f;
-        style.ChildRounding = 10.0f;
+        style.ChildRounding = 5.0f;
         style.FrameBorderSize = 0.0f;
         style.PopupBorderSize = 1.0f;
         style.PopupRounding = 0.0f;
@@ -55,7 +55,7 @@ namespace yart
             colors[ImGuiCol_Text]                   = { YART_GUI_COLOR_WHITE,                YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_TextDisabled]           = { YART_GUI_COLOR_LIGHTER_GRAY,         YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_WindowBg]               = { YART_GUI_COLOR_BLACK,                YART_GUI_ALPHA_OPAQUE };
-            colors[ImGuiCol_ChildBg]                = { YART_GUI_COLOR_BLACK,           YART_GUI_ALPHA_TRANSPARENT };
+            colors[ImGuiCol_ChildBg]                = { YART_GUI_COLOR_DARKER_GRAY,          YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_PopupBg]                = { YART_GUI_COLOR_BLACK,                YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_Border]                 = { YART_GUI_COLOR_GRAY,                 YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_BorderShadow]           = { YART_GUI_COLOR_BLACK,           YART_GUI_ALPHA_TRANSPARENT };
@@ -83,11 +83,11 @@ namespace yart
             colors[ImGuiCol_SeparatorHovered]       = { YART_GUI_COLOR_DARK_TERTIARY,        YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_SeparatorActive]        = { YART_GUI_COLOR_TERTIARY,             YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_ResizeGrip]             = { YART_GUI_COLOR_BLACK,           YART_GUI_ALPHA_TRANSPARENT };
-            colors[ImGuiCol_ResizeGripHovered]      = { YART_GUI_COLOR_BLACK,           YART_GUI_ALPHA_TRANSPARENT };
-            colors[ImGuiCol_ResizeGripActive]       = { YART_GUI_COLOR_BLACK,           YART_GUI_ALPHA_TRANSPARENT };
-            colors[ImGuiCol_Tab]                    = { YART_GUI_COLOR_DARK_SECONDARY,       YART_GUI_ALPHA_OPAQUE };
-            colors[ImGuiCol_TabHovered]             = { YART_GUI_COLOR_LIGHT_SECONDARY,      YART_GUI_ALPHA_OPAQUE };
-            colors[ImGuiCol_TabActive]              = { YART_GUI_COLOR_SECONDARY,            YART_GUI_ALPHA_OPAQUE };
+            colors[ImGuiCol_ResizeGripHovered]      = { YART_GUI_COLOR_DARK_TERTIARY,        YART_GUI_ALPHA_OPAQUE };
+            colors[ImGuiCol_ResizeGripActive]       = { YART_GUI_COLOR_TERTIARY,             YART_GUI_ALPHA_OPAQUE };
+            colors[ImGuiCol_Tab]                    = { YART_GUI_COLOR_DARKEST_GRAY,         YART_GUI_ALPHA_OPAQUE };
+            colors[ImGuiCol_TabHovered]             = { YART_GUI_COLOR_DARK_GRAY,            YART_GUI_ALPHA_OPAQUE };
+            colors[ImGuiCol_TabActive]              = { YART_GUI_COLOR_DARKER_GRAY,          YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_TabUnfocused]           = { YART_GUI_COLOR_LIGHTER_GRAY,         YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_TabUnfocusedActive]     = { YART_GUI_COLOR_LIGHTEST_GRAY,        YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_PlotLines]              = { YART_GUI_COLOR_LIGHTEST_GRAY,        YART_GUI_ALPHA_OPAQUE };
