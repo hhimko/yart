@@ -47,6 +47,9 @@ namespace yart
         /// @return Whether the window has been successfully created 
         bool Init(const char* title, int win_w, int win_h);
 
+        /// @brief Issue Dear ImGui render commands to render the Window object context menu
+        void OnImGui();
+
         /// @brief Submit frame for render and present the next frame-in-flight to the window
         void Render();
 
@@ -122,9 +125,6 @@ namespace yart
         /// @brief Initialize Dear ImGUI for GLFW/Vulkan
         /// @return Whether Dear ImGUI has been successfully initialized
         bool InitImGUI();
-
-        /// @brief Record custom Dear ImGUI render commands
-        void OnImGUI();
 
         /// @brief Create viewport images along with a shared sampler
         /// @return Whether viewports have been successfully created

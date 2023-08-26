@@ -11,6 +11,8 @@
 #include <imgui.h>
 #include <glm/glm.hpp>
 
+#include "font/IconsCodicons.h"
+
 
 // -- YART APPLICATION COLOR PALETTE -- //
 #ifndef DOXYGEN_EXCLUDE // Exclude from documentation
@@ -91,10 +93,12 @@ namespace yart
         /// @param callback Callback function pointer
         void RegisterCallback(imgui_callback_t callback);
 
-        /// @brief Register a custom Dear ImGui window to be rendered every frame 
-        /// @param window_name Name of the window
-        /// @param callback Callback function pointer
-        void RegisterWindow(const char* window_name, imgui_callback_t callback);
+        /// @brief Register a nav bar menu item, visible in the main inspector window
+        /// @param icon Nav bar icon code point from the application's icons font 
+        /// @param color Nav bar icon color
+        /// @param name Name of the nav bar item
+        /// @param callback Callback function pointer to the nav bar item contents
+        void RegisterInspectorWindow(const char* icon, ImU32 color, const char* name, imgui_callback_t callback);
 
         /// @brief Render the view axes context window
         /// @param x_axis View x-axis

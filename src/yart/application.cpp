@@ -9,8 +9,8 @@
 #include <iostream>
 #include <functional>
 
-#include "GUI/gui.h"
 #include "yart/platform/input.h"
+#include "GUI/gui.h"
 
 
 namespace yart
@@ -76,8 +76,10 @@ namespace yart
         yart::GUI::ApplyCustomStyle();
 
         // Register GUI callbacks
+        const ImU32 gray_col = 0xFF6F767D;
         yart::GUI::RegisterCallback(std::bind(&yart::Renderer::OnGuiViewAxes, &m_renderer));
-        yart::GUI::RegisterWindow("Renderer", std::bind(&yart::Renderer::OnGuiWindow, &m_renderer));
+        yart::GUI::RegisterInspectorWindow(ICON_CI_EDIT, gray_col, "Renderer", std::bind(&yart::Renderer::OnImGui, &m_renderer));
+        yart::GUI::RegisterInspectorWindow(ICON_CI_DEVICE_DESKTOP, gray_col, "Window", std::bind(&yart::Window::OnImGui, &window));
 
         return true;
     }

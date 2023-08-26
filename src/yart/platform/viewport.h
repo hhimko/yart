@@ -82,7 +82,8 @@ namespace yart
         /// @brief Apply changes made to the image data and update the underlying viewport image
         void Refresh();
 
-        void OnImGUI();
+        /// @brief Issue Dear ImGui render commands to render the Viewport object context menu
+        void OnImGui();
 
     private:
         yart::Image m_image;

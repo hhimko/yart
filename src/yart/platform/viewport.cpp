@@ -86,7 +86,7 @@ namespace yart
         m_shouldRefresh = false;
     }
 
-    void Viewport::OnImGUI()
+    void Viewport::OnImGui()
     {
         ImGui::SeparatorText("Viewport");
 

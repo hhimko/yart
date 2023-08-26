@@ -6,18 +6,14 @@
 #include "gui.h"
 
 
-#include "font/IconsCodicons.h"
 #include "gui_internal.h"
-
-
-/// @brief Current GUI context
-static yart::GUI::GuiContext s_context;  
 
 
 namespace yart
 {
     GUI::GuiContext* GUI::GetCurrentContext()
     {
+        static yart::GUI::GuiContext s_context = { };  
         return &s_context;
     }
 
@@ -114,7 +110,7 @@ namespace yart
         GuiContext* ctx = GUI::GetCurrentContext();
 
         ImGuiIO& io = ImGui::GetIO();
-        static float icon_font_size = 20.0f;
+        static float icon_font_size = 16.0f;
 
         static const ImWchar icons_ranges[] = { ICON_MIN_CI, ICON_MAX_CI, 0 };
         ImFontConfig icons_config = { }; 
@@ -164,15 +160,18 @@ namespace yart
         ctx->registeredCallbacks.push_back(callback);
     }
 
-    void GUI::RegisterWindow(const char *window_name, imgui_callback_t callback)
+    void GUI::RegisterInspectorWindow(const char *icon, ImU32 color, const char *name, imgui_callback_t callback)
     {
         GuiContext* ctx = GetCurrentContext();
 
-        GuiWindow window;
-        window.name = window_name;
-        window.callback = callback;
+        InspectorWindow item;
+        item.icon = icon;
+        item.color = color;
+        item.name = name;
+        item.callback = callback;
 
-        ctx->registeredWindows.push_back(window);
+        ctx->inspectorWindows.push_back(item);
+        ctx->activeInspectorWindow = &ctx->inspectorWindows.front();
     }
 
     bool GUI::RenderViewAxesWindow(const glm::vec3 &x_axis, const glm::vec3 &y_axis, const glm::vec3 &z_axis, glm::vec3& clicked_axis)
@@ -194,18 +193,13 @@ namespace yart
         ctx->displaySizeDelta = { display_size.x - last_display_size.x, display_size.y - last_display_size.y};
         last_display_size = display_size;
 
-
         // Render the static layout
         GUI::RenderMainMenuBar();
         GUI::RenderMainContentFrame();
 
         // Render registered global callbacks
-        for (auto &&callback : s_context.registeredCallbacks)
+        for (auto callback : ctx->registeredCallbacks)
             callback();
-
-        // Render registered ImGui windows 
-        for (auto &&window : s_context.registeredWindows)
-            RenderWindow(window);
     }   
 
 } // namespace yart

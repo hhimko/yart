@@ -73,6 +73,14 @@ namespace yart
         return true;
     }
 
+    void Window::OnImGui()
+    {
+        ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+        ImGui::Text("Avg. %.3f ms/frame", 1000.0f / ImGui::GetIO().Framerate);
+
+        m_viewport->OnImGui();
+    }
+
     void Window::Render()
     {
         // Begin an ImGui frame
@@ -81,7 +89,8 @@ namespace yart
         ImGui::NewFrame();
 
         // Issue ImGui render commands 
-        OnImGUI();
+        if (m_dearImGuiCallback)
+            m_dearImGuiCallback();
 
         // Render viewport image using ImGui
         ImDrawList* bg_draw_list = ImGui::GetBackgroundDrawList();
@@ -393,7 +402,7 @@ namespace yart
     {
         VkDescriptorPool pool = VK_NULL_HANDLE;
 
-        const uint32_t size = 256;
+        static const uint32_t size = 1024;
         VkDescriptorPoolSize pool_sizes[] =
         {
             { VK_DESCRIPTOR_TYPE_SAMPLER, size },
@@ -756,21 +765,6 @@ namespace yart
         ImGui_ImplVulkan_DestroyFontUploadObjects();
 
         return true;
-    }
-
-    void Window::OnImGUI()
-    {
-        ImGui::Begin("Window");
-
-        ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-        ImGui::Text("Avg. %.3f ms/frame", 1000.0f / ImGui::GetIO().Framerate);
-
-        m_viewport->OnImGUI();
-
-        ImGui::End();
-
-        if (m_dearImGuiCallback)
-            m_dearImGuiCallback();
     }
 
     bool Window::CreateViewports()

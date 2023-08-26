@@ -20,27 +20,27 @@
 
 
 /// @brief Smallest valid value for camera's FOV in degrees
-/// @details Used in Renderer::OnGuiWindow() to adjust the FOV slider range
+/// @details Used in Renderer::OnImGui() to adjust the FOV slider range
 #define FOV_MIN 45.0f
 
 /// @brief Largest valid value for camera's FOV in degrees
-/// @details Used in Renderer::OnGuiWindow() to adjust the FOV slider range
+/// @details Used in Renderer::OnImGui() to adjust the FOV slider range
 #define FOV_MAX 180.0f
 
 /// @brief Smallest valid value for camera's near clipping plane distance
-/// @details Used in Renderer::OnGuiWindow() to adjust the near clip slider range
+/// @details Used in Renderer::OnImGui() to adjust the near clip slider range
 #define NEAR_CLIP_MIN 0.001f
 
 /// @brief Largest valid value for camera's near clipping plane distance
-/// @details Used in Renderer::OnGuiWindow() to adjust the near clip slider range
+/// @details Used in Renderer::OnImGui() to adjust the near clip slider range
 #define NEAR_CLIP_MAX 10.0f
 
 /// @brief Smallest valid value for camera's far clipping plane distance
-/// @details Used in Renderer::OnGuiWindow() to adjust the far clip slider range
+/// @details Used in Renderer::OnImGui() to adjust the far clip slider range
 #define FAR_CLIP_MIN 100.0f
 
 /// @brief Largest valid value for camera's far clipping plane distance
-/// @details Used in Renderer::OnGuiWindow() to adjust the far clip slider range
+/// @details Used in Renderer::OnImGui() to adjust the far clip slider range
 #define FAR_CLIP_MAX 1000.0f
 
 
@@ -80,7 +80,7 @@ namespace yart
         return was_dirty;
     }
     
-    void Renderer::OnGuiWindow()
+    void Renderer::OnImGui()
     {
         // Whether the camera transformation matrix should be recalculated
         bool recalculate = false;

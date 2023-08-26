@@ -23,12 +23,16 @@ namespace yart
             VERTICAL
         };
 
-        /// @brief Structure containing data required to render a YART GUI window
-        struct GuiWindow {
+        /// @brief Structure containing data required to render a inspector nav bar window 
+        struct InspectorWindow {
         public:
-            /// @brief Window title
+            /// @brief Nav bar icon code point from the application's icons font
+            const char* icon;
+            /// @brief Nav bar icon color
+            ImU32 color;
+            /// @brief Nav bar item name
             const char* name; 
-            /// @brief Window contents immediate rendering callback  
+            /// @brief Nav bar item contents immediate rendering callback  
             imgui_callback_t callback;
 
         };
@@ -38,9 +42,10 @@ namespace yart
         public:
             /// @brief Custom Dear ImGui render function callbacks registered by the application
             std::vector<imgui_callback_t> registeredCallbacks;
-            /// @brief GUI windows registered by the application  
-            std::vector<GuiWindow> registeredWindows;
-
+            /// @brief Inspector nav bar items registered by the application 
+            std::vector<InspectorWindow> inspectorWindows;
+            /// @brief Currently open inspector nav bar window
+            InspectorWindow* activeInspectorWindow = nullptr;
 
             /// @brief Amount of pixels the OS window size has changed since last frame
             ImVec2 displaySizeDelta;
@@ -57,9 +62,8 @@ namespace yart
             /// @brief Current visible height of the main menu bar body 
             float mainMenuBarHeight;
 
-
             /// @brief Pointer to a Dear ImGui icon Font object 
-            ImFont* iconsFont; 
+            ImFont* iconsFont = nullptr; 
 
         };
 
@@ -118,12 +122,13 @@ namespace yart
         /// @brief Issue the application's context window render commands
         void RenderContextWindow();
 
-        /// @brief Issue the side nav inspector window's render commands
+        /// @brief Issue the inspector window's side nav bar render commands
         void RenderInspectorNavBar();
 
         /// @brief Render a YART GUI window 
-        /// @param window Window to be rendered
-        void RenderWindow(const GuiWindow& window);
+        /// @param name Name of the window
+        /// @param callback Dear ImGui callback 
+        void RenderWindow(const char* name, imgui_callback_t callback);
 
         /// @brief Render the view axes context window
         /// @param x_axis View x-axis

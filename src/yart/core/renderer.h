@@ -32,8 +32,8 @@ namespace yart
         /// @return Whether the current frame has changed visually from the previous rendered frame (used for conditional viewport refreshing) 
         bool Render(float buffer[], uint32_t width, uint32_t height);
 
-        /// @brief Issue GUI render commands to display the "Renderer" context menu
-        void OnGuiWindow();
+        /// @brief Issue GUI render commands to display the Renderer object context menu
+        void OnImGui();
 
         /// @brief Issue GUI render commands to display the view axes context menu 
         void OnGuiViewAxes();

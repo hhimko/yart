@@ -67,13 +67,13 @@ namespace yart
         const ImRect bb(pos, { pos.x + size.x, pos.y + size.y });
         ImGui::ItemSize(size);
 
-        ImGuiID id = ImGui::GetID("SeparatorHandle");
+        const ImGuiID id = ImGui::GetID("SeparatorHandle");
         ImGui::ItemAdd(bb, id);
 
         bool hovered, held;
         ImGui::ButtonBehavior(bb, id, &hovered, &held);
 
-        ImVec4 col = held ? g->Style.Colors[ImGuiCol_ResizeGripActive] : (hovered ? g->Style.Colors[ImGuiCol_ResizeGripHovered] : g->Style.Colors[ImGuiCol_ResizeGrip]);
+        const ImVec4 col = held ? g->Style.Colors[ImGuiCol_ResizeGripActive] : (hovered ? g->Style.Colors[ImGuiCol_ResizeGripHovered] : g->Style.Colors[ImGuiCol_ResizeGrip]);
         ImGui::GetWindowDrawList()->AddRectFilled(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(col));
 
         if (hovered || held)
@@ -156,13 +156,13 @@ namespace yart
         ImVec2 backup_frame_padding = g->Style.FramePadding;
         g->Style.FramePadding = { 16.0f, backup_frame_padding.y };
         g->Style.Colors[ImGuiCol_TabActive] = { YART_GUI_COLOR_BLACK, YART_GUI_ALPHA_TRANSPARENT };
-        ImGui::BeginTabBar("##TabBar");
+        ImGui::BeginTabBar("##TabBar", ImGuiTabBarFlags_AutoSelectNewTabs);
         g->Style.Colors[ImGuiCol_TabActive] = backup_tab_active_color;
 
         ImVec2 backup_inner_spacing = g->Style.ItemInnerSpacing;
         g->Style.ItemInnerSpacing = { 0.0f, 0.0f };
         g->Style.ItemSpacing = { 0.0f, -1.0f };
-        bool open = ImGui::BeginTabItem(item_name, nullptr);
+        bool open = ImGui::BeginTabItem(item_name, nullptr, ImGuiTabItemFlags_NoPushId);
         g->Style.ItemSpacing = backup_spacing;
         g->Style.ItemInnerSpacing = backup_inner_spacing;
         g->Style.FramePadding = backup_frame_padding;
@@ -255,6 +255,7 @@ namespace yart
 
     void GUI::RenderContextWindow()
     {
+        GuiContext* ctx = GUI::GetCurrentContext();
         ImGuiContext* g = ImGui::GetCurrentContext();
 
         // Render the scene+context menu layout
@@ -269,7 +270,7 @@ namespace yart
         if (GUI::BeginCustomTabBar("Scene")) {
             ImGui::BeginChild("##Content", { 0.0f, 0.0f }, false, ImGuiWindowFlags_AlwaysUseWindowPadding);
 
-            ImGui::Text("Some scene debug text");
+            ImGui::Text("Hello from the Scene tab!");
 
             ImGui::EndChild();
             ImGui::EndTabItem();
@@ -278,7 +279,7 @@ namespace yart
         if(ImGui::BeginTabItem("Object")) {
             ImGui::BeginChild("##Content", { 0.0f, 0.0f }, false, ImGuiWindowFlags_AlwaysUseWindowPadding);
 
-            ImGui::Text("Some object debug text");
+            ImGui::Text("Hello from the Object tab!");
 
             ImGui::EndChild();
             ImGui::EndTabItem();
@@ -289,12 +290,14 @@ namespace yart
         GUI::LayoutSeparator(vertical_layout);
 
         GUI::RenderInspectorNavBar();
+        InspectorWindow* active_item = ctx->activeInspectorWindow;
 
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, { 0.0f, 0.0f });
         ImGui::SameLine();
         ImGui::PopStyleVar();
 
-        if (GUI::BeginCustomTabBar("Inspector")) {
+        bool open = GUI::BeginCustomTabBar(active_item != nullptr ? active_item->name : "Inspector");
+        {
             ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysUseWindowPadding;
             ImGui::BeginChild("##Content", { 0.0f, 0.0f }, false, flags);
 
@@ -305,22 +308,19 @@ namespace yart
             ImVec2 p_max = { p_min.x + child_rounding, p_min.y + window->Size.y };
 
             // Unsafe! The default clip rect has to be bypassed in order to draw over child's rounded edges
-            ImVec4 backup_clip_rect = g->CurrentWindow->DrawList->_ClipRectStack.back();
+            const ImVec4 backup_clip_rect = g->CurrentWindow->DrawList->_ClipRectStack.back();
             g->CurrentWindow->DrawList->PopClipRect();
             static ImU32 bg_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_ChildBg]);
             g->CurrentWindow->DrawList->AddRectFilled(p_min, p_max, bg_col);
-            g->CurrentWindow->DrawList->_ClipRectStack.push_back(backup_clip_rect);
+            g->CurrentWindow->DrawList->PushClipRect({ backup_clip_rect.x, backup_clip_rect.y }, { backup_clip_rect.z, backup_clip_rect.w });
 
-            ImGui::Text("Some debug text");
-            static int i = 1;
-            ImGui::SliderInt("Some slider", &i, 1, 10);
-
-            GUI::PushIconsFont();
-            ImGui::Button("" ICON_CI_ALERT );
-            ImGui::PopFont();
+            // Render the currently active inspector item
+            if (active_item != nullptr)
+                active_item->callback();
 
             ImGui::EndChild();
-            ImGui::EndTabItem();
+            if (open)
+                ImGui::EndTabItem();
         }
         GUI::EndCustomTabBar();
 
@@ -329,29 +329,83 @@ namespace yart
 
     void GUI::RenderInspectorNavBar()
     {
+        GuiContext* ctx = GUI::GetCurrentContext();
         ImGuiContext* g = ImGui::GetCurrentContext();
+
+        static const float window_y_offset = 16.0f;
+        const float icon_button_outer_padding = 3.0f;
+        const float icon_button_inner_padding = 4.0f;
+        const float size = ctx->iconsFont->FontSize;
        
-        ImGui::BeginChild("##SideNavBar", { 30.0f, 0.0f }, false, ImGuiWindowFlags_NoBackground);
+        const float window_width = size + 2.0f * icon_button_outer_padding + 2.0f * icon_button_inner_padding;
+        static const ImGuiWindowFlags flags = ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollWithMouse;
+        ImGui::BeginChild("##SideNavBar", { window_width, 0.0f }, false, flags);
 
         // Draw background without right edge rounding
         ImGuiWindow* window = g->CurrentWindow;
-        float child_rounding = g->Style.ChildRounding;
-        ImVec2 p_min = { window->Pos.x, window->Pos.y + 16.0f };
+        const float child_rounding = g->Style.ChildRounding;
+        ImVec2 p_min = { window->Pos.x, window->Pos.y + window_y_offset };
         ImVec2 p_max = { p_min.x + window->Size.x + child_rounding, p_min.y + window->Size.y };
 
-        static ImU32 bg_col = ImGui::ColorConvertFloat4ToU32({ YART_GUI_COLOR_DARKEST_GRAY, YART_GUI_ALPHA_OPAQUE });
-        g->CurrentWindow->DrawList->AddRectFilled(p_min, p_max, bg_col, child_rounding);
+        static const ImU32 bg_col = ImGui::ColorConvertFloat4ToU32({ YART_GUI_COLOR_DARKEST_GRAY, YART_GUI_ALPHA_OPAQUE });
+        window->DrawList->AddRectFilled(p_min, p_max, bg_col, child_rounding);
+
+        // Render menu item icons
+        static const float item_spacing = 4.0f; 
+        window->DC.CursorPos.y += window_y_offset;
+
+        for (auto&& item : ctx->inspectorWindows) {
+            window->DC.CursorPos.x += icon_button_outer_padding;
+            window->DC.CursorPos.y += item_spacing;
+
+            p_min = window->DC.CursorPos;
+            p_max = { p_min.x + 2.0f * icon_button_inner_padding + icon_button_outer_padding + size + child_rounding, p_min.y + 2.0f * icon_button_inner_padding + size };
+
+            ImGuiID id = ImGui::GetID(item.name);
+            ImGui::ItemAdd({ p_min, p_max }, id);
+
+            bool hovered, held;
+            bool clicked = ImGui::ButtonBehavior({ p_min, p_max }, id, &hovered, &held);
+
+            bool active = &item == ctx->activeInspectorWindow;
+            if (!active && clicked) {
+                ctx->activeInspectorWindow = &item;
+                active = true;
+            }
+
+            if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
+                ImGui::SetTooltip(item.name);
+
+            // Render background
+            const ImU32 normal_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_Tab]);
+            const ImU32 active_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_TabActive]);
+            const ImU32 hovered_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_TabHovered]);
+
+            const ImU32 color = hovered ? hovered_col : active ? active_col : normal_col;
+            window->DrawList->AddRectFilled(p_min, p_max, color, child_rounding);
+
+            // Render the icon
+            window->DC.CursorPos.x += icon_button_inner_padding;
+            window->DC.CursorPos.y += icon_button_inner_padding;
+
+            ImVec4 backup_text_color = g->Style.Colors[ImGuiCol_Text];
+            g->Style.Colors[ImGuiCol_Text] = ImGui::ColorConvertU32ToFloat4(item.color);
+            GUI::PushIconsFont();
+            ImGui::Text(item.icon);
+            ImGui::PopFont();
+            g->Style.Colors[ImGuiCol_Text] = backup_text_color;
+        }
         
         ImGui::EndChild();
     }
 
-    void GUI::RenderWindow(const GuiWindow &window)
+    void GUI::RenderWindow(const char* name, imgui_callback_t callback)
     {
         // Local alpha multiplier for the whole window
         float window_alpha = YART_GUI_ALPHA_OPAQUE;
         
         // Try querying the window state prior to ImGui::Begin() to apply custom style
-        ImGuiWindow* imgui_window = ImGui::FindWindowByName(window.name);
+        ImGuiWindow* imgui_window = ImGui::FindWindowByName(name);
         WITH(imgui_window) {
             auto* active_window = ImGui::GetCurrentContext()->NavWindow;
             if (imgui_window == active_window)
@@ -377,23 +431,20 @@ namespace yart
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 6.0f, 4.0f }); // Window title vertical padding +2 
         
         ImGui::SetNextWindowBgAlpha(window_alpha);
-        ImGui::Begin(window.name);
+        ImGui::Begin(name);
 
         ImGui::PopStyleVar(2);
-        
 
         // Draw window contents 
         ImGuiStyle* style = &ImGui::GetStyle();
-
         float restore_alpha = style->Alpha;
         style->Alpha = window_alpha;
 
         // Call the window's render callback
-        window.callback();
+        callback();
 
         // Restore global alpha value
         style->Alpha = restore_alpha;
-
 
         ImGui::End();
     }
@@ -435,8 +486,8 @@ namespace yart
         ImU32 inner_col = ImGui::ColorConvertFloat4ToU32({ color.x * col_mul * 0.2f, color.y * col_mul * 0.2f, color.z * col_mul * 0.2f, 1.0f });
 
         glm::vec3 handle_pos = win_pos + axis * length;
-        draw_list->AddCircleFilled({handle_pos.x, handle_pos.y}, handle_radius - 0.5f, inner_col, 0);
-        draw_list->AddCircle({handle_pos.x, handle_pos.y}, handle_radius, outer_col, 0, handle_thickness);
+        draw_list->AddCircleFilled({ handle_pos.x, handle_pos.y }, handle_radius - 0.5f, inner_col, 0);
+        draw_list->AddCircle({ handle_pos.x, handle_pos.y }, handle_radius, outer_col, 0, handle_thickness);
     }
 
     /// @brief View axes rendering helper function
@@ -472,7 +523,6 @@ namespace yart
             return false;
         }
 
-
         glm::vec3* axes;
         if (!swap){
             glm::vec3 p_axes[6] = { axis0, axis1, axis2, -axis2, -axis1, -axis0 };
@@ -498,7 +548,6 @@ namespace yart
             else
                 DrawPositiveViewAxisH(draw_list, win_pos, axes[i], axes_colors_LUT[order[i % 3]], length, i == hovered_axis_index);
         }
-
 
         // Return the clicked axis
         if (hovered_axis_index >= 0 && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
@@ -543,7 +592,6 @@ namespace yart
             | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoBackground
         );
 
-
         // Set a constant window size and position
         GuiContext* ctx = GUI::GetCurrentContext();
         ImVec2 viewport_pos = ctx->renderViewportAreaPos;
@@ -555,12 +603,10 @@ namespace yart
         ImGui::SetNextWindowPos(window_center, ImGuiCond_None, { 0.5f, 0.5f });
         ImGui::SetNextWindowSize(window_size);
 
-
         // Open the window
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0.0f, 0.0f });
         ImGui::Begin("View Axes Context", nullptr, window_flags);
         ImGui::PopStyleVar();
-
 
         // Draw window contents
         auto* imgui_window = ImGui::GetCurrentWindow();
@@ -611,7 +657,6 @@ namespace yart
                 }
             }
         }
-
 
         ImGui::End();
         return clicked;
