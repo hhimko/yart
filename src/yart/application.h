@@ -12,22 +12,6 @@
 #include "yart/core/renderer.h"
 
 
-
-#ifdef YART_DEBUG
-    /// @brief YART's application window name
-    #define YART_WINDOW_TITLE "Yet Another Ray Tracer (Debug)" 
-#else
-    /// @brief YART's application window name
-    #define YART_WINDOW_TITLE "Yet Another Ray Tracer" 
-#endif
-
-/// @brief YART's application default window width in pixels
-#define YART_WINDOW_WIDTH 1280 
-
-/// @brief YART's application default window height in pixels
-#define YART_WINDOW_HEIGHT 720 
-
-
 namespace yart
 {
     ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -38,12 +22,12 @@ namespace yart
         Application(const Application&) = delete;
         Application& operator=(Application const&) = delete;
 
-        /// @brief Get the static singleton instance, lazily initialized on first call
+        /// @brief Get the static instance, lazily initialized on first call
         /// @return Static Application instance
         static Application& Get();
 
         /// @brief Run the application mainloop if not already running
-        /// @return Application success code 
+        /// @return Application exit status code 
         int Run();
 
         /// @brief Request application shutdown and cleanup
@@ -53,7 +37,7 @@ namespace yart
         Application() = default;
 
         /// @brief Initialize members and hook up event handlers
-        /// @return Boolean value indicating whether the application has been successfully initialized 
+        /// @return Whether the application has been successfully initialized 
         bool Setup();
 
     private:

@@ -14,34 +14,7 @@
 
 #include "yart/utils/yart_utils.h"
 #include "yart/utils/glm_utils.h"
-#include "yart/platform/input.h"
 #include "yart/application.h"
-#include "yart/GUI/gui.h"
-
-
-/// @brief Smallest valid value for camera's FOV in degrees
-/// @details Used in Renderer::OnImGui() to adjust the FOV slider range
-#define FOV_MIN 45.0f
-
-/// @brief Largest valid value for camera's FOV in degrees
-/// @details Used in Renderer::OnImGui() to adjust the FOV slider range
-#define FOV_MAX 180.0f
-
-/// @brief Smallest valid value for camera's near clipping plane distance
-/// @details Used in Renderer::OnImGui() to adjust the near clip slider range
-#define NEAR_CLIP_MIN 0.001f
-
-/// @brief Largest valid value for camera's near clipping plane distance
-/// @details Used in Renderer::OnImGui() to adjust the near clip slider range
-#define NEAR_CLIP_MAX 10.0f
-
-/// @brief Smallest valid value for camera's far clipping plane distance
-/// @details Used in Renderer::OnImGui() to adjust the far clip slider range
-#define FAR_CLIP_MIN 100.0f
-
-/// @brief Largest valid value for camera's far clipping plane distance
-/// @details Used in Renderer::OnImGui() to adjust the far clip slider range
-#define FAR_CLIP_MAX 1000.0f
 
 
 namespace yart
@@ -59,7 +32,7 @@ namespace yart
         std::for_each(std::execution::par, m_verticalPixelIterator.begin(), m_verticalPixelIterator.end(), [&](uint32_t y) {
             std::for_each(std::execution::par, m_horizontalPixelIterator.begin(), m_horizontalPixelIterator.end(), [&](uint32_t x) {
 
-                glm::vec4 ray_direction = m_inverseViewProjectionMatrix * glm::vec4{ x + 0.5f, y + 0.5f, 1.0f, 1.0f };
+                glm::vec3 ray_direction = m_inverseViewProjectionMatrix * glm::vec4{ x + 0.5f, y + 0.5f, 1.0f, 1.0f };
                 ray_direction = glm::normalize(ray_direction);
 
                 // Trace a ray from the camera's origin into the scene
@@ -78,101 +51,6 @@ namespace yart
         bool was_dirty = m_dirty;
         m_dirty = false;
         return was_dirty;
-    }
-    
-    void Renderer::OnImGui()
-    {
-        // Whether the camera transformation matrix should be recalculated
-        bool recalculate = false;
-
-
-        if (ImGui::SliderFloat("FOV", &m_fieldOfView, FOV_MIN, FOV_MAX)) {
-            recalculate = true;
-        }
-
-        if (ImGui::SliderFloat("Near clipping plane", &m_nearClippingPlane, NEAR_CLIP_MIN, NEAR_CLIP_MAX)) {
-            recalculate = true;
-        }
-
-        if (ImGui::SliderFloat("Far clipping plane", &m_farClippingPlane, FAR_CLIP_MIN, FAR_CLIP_MAX)) {
-            m_dirty = true;
-        }
-
-
-        if (recalculate) {
-            RecalculateCameraTransformationMatrix();
-            m_dirty = true;
-        }
-    }
-
-    void Renderer::OnGuiViewAxes()
-    {
-        const glm::vec3 x_axis = { glm::sin(m_cameraYaw), glm::sin(m_cameraPitch) * glm::cos(m_cameraYaw), -glm::cos(m_cameraYaw) };
-        const glm::vec3 y_axis = { 0, -glm::cos(m_cameraPitch), -glm::sin(m_cameraPitch) };
-        const glm::vec3 z_axis = glm::normalize(glm::cross(x_axis, y_axis));
-
-        glm::vec3 clicked_axis = {0, 0, 0};
-        if (yart::GUI::RenderViewAxesWindow(x_axis, y_axis, z_axis, clicked_axis)) {
-            // Base axis to pitch, yaw rotation transformation magic
-            m_cameraPitch = clicked_axis.y * CAMERA_PITCH_MAX;
-            m_cameraYaw = (clicked_axis.y + clicked_axis.z) * 90.0f * DEG_TO_RAD + (clicked_axis.x == -1.0f) * 180.0f * DEG_TO_RAD;
-            m_cameraLookDirection = yart::utils::SphericalToCartesianUnitVector(m_cameraYaw, m_cameraPitch); // Can't use `clicked_axis` directly here, because of rotation clamping
-
-            RecalculateCameraTransformationMatrix();
-            m_dirty = true;
-        }
-    }
-
-    bool Renderer::UpdateCamera()
-    {
-        // -- TRANSLATION -- //
-        // Forward/backward movement
-        float vertical_speed = yart::Input::GetVerticalAxis();
-        if (vertical_speed != 0) {
-            m_cameraPosition += m_cameraLookDirection * vertical_speed * m_cameraMoveSpeed;
-            m_dirty = true;
-        }
-
-        // Side-to-side movement
-        float horizontal_speed = yart::Input::GetHorizontalAxis();
-        if (horizontal_speed != 0) {
-            const glm::vec3 u = -glm::normalize(glm::cross(m_cameraLookDirection, UP_DIRECTION)); // Camera view horizontal (right) direction vector
-            m_cameraPosition += u * horizontal_speed * m_cameraMoveSpeed;
-            m_dirty = true;
-        }
-
-        // Ascend/descend movement
-        float elevation_speed = static_cast<float>(ImGui::IsKeyDown(ImGuiKey_Space));
-        elevation_speed -= static_cast<float>(ImGui::IsKeyDown(ImGuiKey_LeftCtrl));
-        if (elevation_speed != 0) {
-            m_cameraPosition += UP_DIRECTION * elevation_speed * m_cameraMoveSpeed;
-            m_dirty = true;
-        }
-
-
-        // -- ROTATION -- //
-        static bool currently_rotating = false;
-        if ((currently_rotating || GUI::IsMouseOverRenderViewport()) && ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
-            currently_rotating = true;
-            yart::Input::SetCursorLocked(true); // Lock and hide the cursor
-            const glm::ivec2& mouse = yart::Input::GetMouseMoveDelta();
-
-            if (mouse.x != 0 || mouse.y != 0) {
-                m_cameraYaw += static_cast<float>(mouse.x) * 0.01f;
-                m_cameraPitch += static_cast<float>(mouse.y) * 0.01f;
-                m_cameraPitch = glm::clamp(m_cameraPitch, CAMERA_PITCH_MIN, CAMERA_PITCH_MAX);
-                m_cameraLookDirection = yart::utils::SphericalToCartesianUnitVector(m_cameraYaw, m_cameraPitch);;
-
-                RecalculateCameraTransformationMatrix();
-                m_dirty = true;
-            }
-        } else {
-            yart::Input::SetCursorLocked(false); // Unlock the cursor 
-            currently_rotating = false;
-        }
-
-
-        return false;
     }
 
     void Renderer::Resize(uint32_t width, uint32_t height)
@@ -213,7 +91,15 @@ namespace yart
 
     void Renderer::Miss(const Ray &ray, HitPayload &payload)
     {
-        payload.resultColor = ray.direction;
+        static const glm::vec3 grad[3] = { {0.1, 0.1, 0.2}, {0.05, 0.1, 0.6}, {0.1,0.15,0.9} };
+        static const uint8_t grad_size = 2;
+
+        float g = (ray.direction.y + 1.0f) / 2.0f; 
+
+        const glm::vec3& col_1 = grad[static_cast<size_t>(glm::floor(g * (grad_size - 1)))];
+        const glm::vec3& col_2 = grad[static_cast<size_t>(glm::ceil(g * (grad_size - 1)))];
+        float i = glm::fract(g * (grad_size - 1));
+        payload.resultColor = col_1 * (1.0f - i) + col_2 * i;
     }
 
     void Renderer::RecalculateCameraTransformationMatrix()
@@ -225,7 +111,7 @@ namespace yart
         // Calculate the projection matrix inverse (screen space to camera space)
         float w = static_cast<float>(m_width);
         float h = static_cast<float>(m_height);
-        float fov = m_fieldOfView * DEG_TO_RAD;
+        float fov = m_fieldOfView * yart::utils::DEG_TO_RAD;
         const glm::mat4 projection_matrix_inverse = yart::utils::CreateInverseProjectionMatrix(fov, w, h, m_nearClippingPlane);
 
         m_inverseViewProjectionMatrix = view_matrix_inverse * projection_matrix_inverse;

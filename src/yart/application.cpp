@@ -10,7 +10,23 @@
 #include <functional>
 
 #include "yart/platform/input.h"
-#include "GUI/gui.h"
+#include "yart/GUI/views/renderer_view.h"
+#include "yart/GUI/gui.h"
+
+
+#ifdef YART_DEBUG
+    /// @brief YART's application window name
+    #define YART_WINDOW_TITLE "Yet Another Ray Tracer (Debug)" 
+#else
+    /// @brief YART's application window name
+    #define YART_WINDOW_TITLE "Yet Another Ray Tracer" 
+#endif
+
+/// @brief YART's application default window width in pixels
+#define YART_WINDOW_WIDTH 1280 
+
+/// @brief YART's application default window height in pixels
+#define YART_WINDOW_HEIGHT 720 
 
 
 namespace yart
@@ -38,7 +54,7 @@ namespace yart
 
             // Handle user input
             yart::Input::Update();
-            m_renderer.UpdateCamera();
+            yart::GUI::RendererView::HandleInputs(m_renderer);
 
             // Ray trace the scene on CPU onto the viewport image buffer
             auto viewport = window.GetViewport();
@@ -76,10 +92,16 @@ namespace yart
         yart::GUI::ApplyCustomStyle();
 
         // Register GUI callbacks
-        const ImU32 gray_col = 0xFF6F767D;
-        yart::GUI::RegisterCallback(std::bind(&yart::Renderer::OnGuiViewAxes, &m_renderer));
-        yart::GUI::RegisterInspectorWindow(ICON_CI_EDIT, gray_col, "Renderer", std::bind(&yart::Renderer::OnImGui, &m_renderer));
-        yart::GUI::RegisterInspectorWindow(ICON_CI_DEVICE_DESKTOP, gray_col, "Window", std::bind(&yart::Window::OnImGui, &window));
+        yart::GUI::RegisterCallback(std::bind(&yart::GUI::RendererView::OnRenderViewAxesWindow, std::ref(m_renderer)));
+
+        const ImU32 color_gray = 0xFF6F767D;
+        yart::GUI::RegisterInspectorWindow("Renderer", ICON_CI_EDIT, color_gray, 
+            std::bind(&yart::GUI::RendererView::OnRenderGUI, std::ref(m_renderer))
+        );
+
+        yart::GUI::RegisterInspectorWindow("Window", ICON_CI_DEVICE_DESKTOP, color_gray, 
+            std::bind(&yart::Window::OnImGui, &window)
+        );
 
         return true;
     }

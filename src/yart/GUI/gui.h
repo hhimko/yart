@@ -94,11 +94,11 @@ namespace yart
         void RegisterCallback(imgui_callback_t callback);
 
         /// @brief Register a nav bar menu item, visible in the main inspector window
+        /// @param name Name of the nav bar item
         /// @param icon Nav bar icon code point from the application's icons font 
         /// @param color Nav bar icon color
-        /// @param name Name of the nav bar item
         /// @param callback Callback function pointer to the nav bar item contents
-        void RegisterInspectorWindow(const char* icon, ImU32 color, const char* name, imgui_callback_t callback);
+        void RegisterInspectorWindow(const char* name, const char* icon, ImU32 color, imgui_callback_t callback);
 
         /// @brief Render the view axes context window
         /// @param x_axis View x-axis

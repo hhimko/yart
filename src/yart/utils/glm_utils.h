@@ -13,6 +13,16 @@ namespace yart
 {
     namespace utils 
     {
+        /// @brief Mathematical PI constant
+        static constexpr float PI = 3.14159274f;
+
+        /// @brief Helper epsilon constant
+        static constexpr float EPSILON = 0.0001f; 
+
+        /// @brief Degrees to radians conversion constant
+        static constexpr float DEG_TO_RAD = PI / 180.0f;
+
+
         /// @brief Create a world space to camera space transformation matrix, otherwise known as the view matrix
         /// @param look_dir Camera look direction vector. The vector is assumed to be relative to camera position and normalized
         /// @param up Normalized up vector

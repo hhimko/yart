@@ -11,6 +11,7 @@
 
 #include <glm/glm.hpp>
 
+#include "yart/GUI/views/renderer_view.h"
 #include "ray.h"
 
 
@@ -32,21 +33,10 @@ namespace yart
         /// @return Whether the current frame has changed visually from the previous rendered frame (used for conditional viewport refreshing) 
         bool Render(float buffer[], uint32_t width, uint32_t height);
 
-        /// @brief Issue GUI render commands to display the Renderer object context menu
-        void OnImGui();
-
-        /// @brief Issue GUI render commands to display the view axes context menu 
-        void OnGuiViewAxes();
-
-
-        // -- CAMERA PUBLIC METHODS -- //
-
-        /// @brief Update the camera position based on user input
-        /// @return Whether the camera has been moved
-        bool UpdateCamera();
-
     private:
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
         /// @brief Structure holding data returned as a result of tracing a ray into the scene 
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
         struct HitPayload {
             /// @brief Distance from the ray origin to a registered hit surface, or a negative value on ray miss
             float hitDistance;
@@ -55,7 +45,6 @@ namespace yart
                 glm::vec3 resultColor;
                 glm::vec3 hitPosition;
             };
-            
         };
 
 
@@ -63,9 +52,6 @@ namespace yart
         /// @param width Width of the render output in pixels 
         /// @param height Height of the render output in pixels 
         void Resize(uint32_t width, uint32_t height);
-
-
-        // -- SIMULATED RAY TRACING SHADERS -- //
 
         /// @brief Shoot a ray into the scene and store the results in a HitPayload structure
         /// @param ray Traced ray
@@ -82,9 +68,6 @@ namespace yart
         /// @param payload HitPayload structure, where the ray tracing results will be stored
         void Miss(const yart::Ray& ray, HitPayload& payload);
 
-
-        // -- CAMERA PRIVATE METHODS -- // 
-
         /// @brief Recalculate the inverse view projection matrix, used for transforming screen space coordinates into world space 
         /// @note This method should be called if any of the following camera properties have changed:
         ///        - aspect ratio,  
@@ -93,10 +76,6 @@ namespace yart
         void RecalculateCameraTransformationMatrix();
 
     private:
-        static constexpr float PI = 3.14159274f; 
-        static constexpr float EPSILON = 0.0001f; 
-        static constexpr float DEG_TO_RAD = PI / 180.0f; // Degrees to radians conversion constant
-
         uint32_t m_width = 0; // Width of the render output in pixels 
         uint32_t m_height = 0; // Height of the render output in pixels 
         bool m_dirty = true; // Signals whether the current frame has changed visually from the previous rendered frame (used for conditional viewport refreshing) 
@@ -107,12 +86,10 @@ namespace yart
 
         // -- CAMERA DATA -- // 
         static constexpr glm::vec3 UP_DIRECTION = { .0f, 1.0f, .0f }; // World up vector used for camera positioning
-        static constexpr float CAMERA_PITCH_MIN = -90.0f * DEG_TO_RAD + EPSILON;
-        static constexpr float CAMERA_PITCH_MAX =  90.0f * DEG_TO_RAD - EPSILON;
 
         glm::vec3 m_cameraPosition = { .0f, .0f, -5.0f }; // World space position 
         glm::vec3 m_cameraLookDirection = { .0f, .0f, 1.0f }; // Normalized look-at vector, calculated from camera's yaw and pitch rotations
-        float m_cameraYaw = 90.0f * DEG_TO_RAD; // Horizontal camera rotation in radians (around the y axis)
+        float m_cameraYaw = 90.0f * yart::utils::DEG_TO_RAD; // Horizontal camera rotation in radians (around the y axis)
         float m_cameraPitch = 0.0f; // Vertical camera rotation in radians (around the x axis)
         
         float m_fieldOfView = 90.0f; // Horizontal camera FOV in degrees
@@ -123,6 +100,10 @@ namespace yart
 
         // Cached view projection matrix inverse for transforming screen space coordinates into world space 
         glm::mat4 m_inverseViewProjectionMatrix; 
+
+
+        // -- FRIEND DECLARATIONS -- //
+        friend class yart::GUI::RendererView;
 
     };
 } // namespace yart

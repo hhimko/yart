@@ -160,14 +160,14 @@ namespace yart
         ctx->registeredCallbacks.push_back(callback);
     }
 
-    void GUI::RegisterInspectorWindow(const char *icon, ImU32 color, const char *name, imgui_callback_t callback)
+    void GUI::RegisterInspectorWindow(const char *name, const char *icon, ImU32 color, imgui_callback_t callback)
     {
         GuiContext* ctx = GetCurrentContext();
 
         InspectorWindow item;
+        item.name = name;
         item.icon = icon;
         item.color = color;
-        item.name = name;
         item.callback = callback;
 
         ctx->inspectorWindows.push_back(item);
