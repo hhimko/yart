@@ -113,6 +113,17 @@ namespace yart
         /// @param callback Callback function pointer to the nav bar item contents
         void RegisterInspectorWindow(const char* name, const char* icon, ImU32 color, imgui_callback_t callback);
 
+        /// @brief Add a rectangle filled with a linear gradient to a given ImGui draw list
+        /// @param draw_list Dear ImGui draw list on which to draw the rectangle
+        /// @param p_min Rectangle upper-left corner in screen space coordinates
+        /// @param p_max Rectangle lower-right corner in screen space coordinates
+        /// @param values Array of gradient sampling point color values
+        /// @param locations Array of gradient sampling point locations 
+        ///     Size of the array is expected to be equal to the `values` array size, and each value should be in the [0..1] range
+        /// @param size Size of the `values` and `locations` arrays
+        /// @param border Whether a 1px border should be drawn over the rect
+        void DrawGradientRect(ImDrawList* draw_list, ImVec2 p_min, ImVec2 p_max, glm::vec3 const* values, float const* locations, size_t size, bool border = false);
+
         /// @brief Render a linear gradient editor widget
         /// @param values Vector of the gradient values
         /// @param locations Vector of the gradient value locations

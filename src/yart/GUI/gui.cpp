@@ -82,7 +82,7 @@ namespace yart
             colors[ImGuiCol_WindowBg]               = { YART_GUI_COLOR_BLACK,                YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_ChildBg]                = { YART_GUI_COLOR_DARKER_GRAY,          YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_PopupBg]                = { YART_GUI_COLOR_BLACK,                YART_GUI_ALPHA_OPAQUE };
-            colors[ImGuiCol_Border]                 = { YART_GUI_COLOR_GRAY,                 YART_GUI_ALPHA_OPAQUE };
+            colors[ImGuiCol_Border]                 = { YART_GUI_COLOR_LIGHTER_GRAY,           YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_BorderShadow]           = { YART_GUI_COLOR_BLACK,           YART_GUI_ALPHA_TRANSPARENT };
             colors[ImGuiCol_FrameBg]                = { YART_GUI_COLOR_DARK_GRAY,            YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_FrameBgHovered]         = { YART_GUI_COLOR_GRAY,                 YART_GUI_ALPHA_OPAQUE };
@@ -202,7 +202,43 @@ namespace yart
         ctx->activeInspectorWindow = &ctx->inspectorWindows.front();
     }
 
-    bool GUI::GradientEditor(std::vector<glm::vec3>& values, std::vector<float>& locations)
+    void GUI::DrawGradientRect(ImDrawList* draw_list, ImVec2 p_min, ImVec2 p_max, glm::vec3 const* values, float const* locations, size_t size, bool border)
+    {
+        const ImVec2 rect_size = { p_max.x - p_min.x, p_max.y - p_max.y };
+        p_max.x = p_min.x + rect_size.x * locations[0];
+        const float start_x = p_min.x;
+
+        if (p_min.x != p_max.x) {
+            ImU32 col = ImGui::ColorConvertFloat4ToU32({ values[0].x, values[0].y, values[0].z, 1.0f });
+            draw_list->AddRectFilled(p_min, p_max, col);
+        }
+
+        for (size_t i = 0; i < size - 1; ++i) {
+            p_min.x = p_max.x;
+            p_max.x = p_min.x + rect_size.x * (locations[i + 1] - locations[i]);
+
+            ImU32 col_min = ImGui::ColorConvertFloat4ToU32({ values[i    ].x, values[i    ].y, values[i    ].z, 1.0f });
+            ImU32 col_max = ImGui::ColorConvertFloat4ToU32({ values[i + 1].x, values[i + 1].y, values[i + 1].z, 1.0f });
+            draw_list->AddRectFilledMultiColor(p_min, p_max, col_min, col_max, col_max, col_min);
+        }
+
+        if (p_max.x != p_min.x + rect_size.x) {
+            p_min.x = p_max.x;
+            p_max.x = start_x + rect_size.x;
+            
+            const glm::vec3& last = values[size - 1];
+            ImU32 col = ImGui::ColorConvertFloat4ToU32({ last.x, last.y, last.z, 1.0f });
+            draw_list->AddRectFilled(p_min, p_max, col);
+        }
+
+        if (border) {
+            ImGuiContext* g = ImGui::GetCurrentContext();
+            const ImU32 border_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_Border]);
+            draw_list->AddRect({ start_x - 1.0f, p_min.y }, p_max, border_col);
+        }
+    }
+
+    bool GUI::GradientEditor(std::vector<glm::vec3> &values, std::vector<float> &locations)
     {
         return GUI::GradientEditorEx(values, locations);
     }

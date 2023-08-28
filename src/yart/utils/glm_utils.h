@@ -95,7 +95,7 @@ namespace yart
         }
 
         /// @brief Compute a linearly interpolated gradient from an arbitrarily spaced array of values
-        /// @param values Array of gradient sampling points 
+        /// @param values Array of gradient sampling point color values
         /// @param locations Array of gradient sampling point locations 
         ///     Size of the array is expected to be equal to the `values` array size, and each value should be in the [0..1] range
         /// @param size Size of the `values` and `locations` arrays

@@ -665,71 +665,63 @@ namespace yart
         return clicked;
     }
 
-    bool GUI::GradientEditorEx(std::vector<glm::vec3> &values, std::vector<float> &locations)
+    void GradientSamplingPointHandle(const glm::vec3& color, const ImVec2& pos, const ImVec2& size)
     {
-        ImGuiContext& g = *GImGui;
-        ImGuiWindow* window = g.CurrentWindow;
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        ImDrawList* draw_list = g->CurrentWindow->DrawList;
+
+        const ImU32 col = ImGui::ColorConvertFloat4ToU32({ color.x, color.y, color.z, 1.0f });
+        const ImU32 border_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_Border]);
+
+        ImVec2 p1 = { pos.x - size.x / 2.0f, pos.y - size.y };
+        ImVec2 p2 = { p1.x + size.x, p1.y + size.x };
+
+        draw_list->AddRectFilled({ p1.x + 1.0f, p1.y + 1.0f }, { p2.x - 1.0f, p2.y - 1.0f }, col);
+        draw_list->AddRect(p1, p2, border_col);
+
+        p1.y = p2.y += 1.0f;
+        draw_list->AddTriangleFilled(p1, p2, pos, border_col);
+
+        // static constexpr ImGuiColorEditFlags flags = ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoTooltip;
+        // ImGui::SetNextItemWidth(2.0f);
+        // static_assert(sizeof(glm::vec3) == sizeof(float) * 3U);
+        // ImGui::ColorEdit3(temp_name, (float*)&values[i], flags);
+        
+        // draw_list->AddRectFilled({ pos.x - size.x / 2.0f, pos.y - size.y }, { pos.x + size.x / 2.0f, pos.y }, col);
+    }
+
+    bool GUI::GradientEditorEx(std::vector<glm::vec3>& values, std::vector<float>& locations)
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        ImGuiWindow* window = g->CurrentWindow;
         ImDrawList* draw_list = window->DrawList;
         if (window->SkipItems)
             return false;
 
-        // Render color pickers
-        const float picker_size = ImGui::GetFrameHeight();
-        const ImVec2 gradient_size = { ImGui::GetContentRegionAvail().x - picker_size, ImGui::GetFrameHeight() }; 
-        const ImVec2 origin = window->DC.CursorPos;
+        // Render color picker handles
+        const ImVec2 picker_size =  { 12.0f, 20.0f };
+        const ImVec2 gradient_size = { ImGui::GetContentRegionAvail().x - picker_size.x, ImGui::GetFrameHeight() }; 
+
+        window->DC.CursorPos.y += picker_size.y + 1.0f;
+
         for (size_t i = 0; i < values.size(); ++i) {
-            float center = origin.x + locations[i] * gradient_size.x;
-            window->DC.CursorPos.x = center;
-            window->DC.CursorPos.y = origin.y;
+            const ImVec2 center =  { 
+                window->DC.CursorPos.x + glm::round(locations[i] * gradient_size.x) + picker_size.x / 2.0f, 
+                window->DC.CursorPos.y - 1.0f 
+            };
 
             const char* temp_name;
             ImFormatStringToTempBuffer(&temp_name, nullptr, "##ColorEdit/%d", i);
-            ImGui::ColorEdit3(temp_name, (float*)&values[i], ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+            GradientSamplingPointHandle(values[i], center, picker_size);
         }
 
-
-        // Render the grab handles
-        static constexpr float handle_bar_height = 5.0f;
-        ImVec2 p_min = { window->DC.CursorPos.x + picker_size / 2.0f, window->DC.CursorPos.y };
-        ImVec2 p_max = { p_min.x + gradient_size.x, p_min.y + handle_bar_height };
-        draw_list->AddRectFilled(p_min, p_max, 0xFF000000);
-
-        p_min.y -= g.Style.ItemSpacing.y;
-        for (size_t i = 0; i < values.size(); ++i) {
-            float center = origin.x + picker_size / 2.0f + locations[i] * gradient_size.x;
-            p_min.x = center - 1.0f;
-            p_max.x = center + 1.0f;
-
-            draw_list->AddRectFilled(p_min, p_max, 0xFFFFFFFF);
-        }
-        
         // Render the gradient rect
-        p_min = { window->DC.CursorPos.x + picker_size / 2.0f, window->DC.CursorPos.y + handle_bar_height };
-        p_max = { p_min.x + gradient_size.x * locations[0], p_min.y + gradient_size.y };
+        ImVec2 p_min = { window->DC.CursorPos.x + picker_size.x / 2.0f, window->DC.CursorPos.y };
+        ImVec2 p_max = { p_min.x + gradient_size.x, p_min.y + gradient_size.y };
 
-        if (p_min.x != p_max.x) {
-            ImU32 col = ImGui::ColorConvertFloat4ToU32({ values[0].x, values[0].y, values[0].z, 1.0f });
-            draw_list->AddRectFilled(p_min, p_max, col);
-        }
-
-        for (size_t i = 0; i < values.size() - 1; ++i) {
-            p_min.x = p_max.x;
-            p_max.x = p_min.x + gradient_size.x * (locations[i + 1] - locations[i]);
-
-            ImU32 col_min = ImGui::ColorConvertFloat4ToU32({ values[i    ].x, values[i    ].y, values[i    ].z, 1.0f });
-            ImU32 col_max = ImGui::ColorConvertFloat4ToU32({ values[i + 1].x, values[i + 1].y, values[i + 1].z, 1.0f });
-            draw_list->AddRectFilledMultiColor(p_min, p_max, col_min, col_max, col_max, col_min);
-        }
-
-        if (p_max.x != p_min.x + gradient_size.x) {
-            p_min.x = p_max.x;
-            p_max.x = window->DC.CursorPos.x + picker_size / 2.0f + gradient_size.x;
-            
-            ImU32 col = ImGui::ColorConvertFloat4ToU32({ values.back().x, values.back().y, values.back().z, 1.0f });
-            draw_list->AddRectFilled(p_min, p_max, col);
-        }
-
+        GUI::DrawGradientRect(draw_list, p_min, p_max, values.data(), locations.data(), values.size(), true);
         ImGui::InvisibleButton("##GradientEditor", gradient_size);
+
         return false;
     }
 
