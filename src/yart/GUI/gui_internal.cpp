@@ -296,7 +296,11 @@ namespace yart
         ImGui::SameLine();
         ImGui::PopStyleVar();
 
-        bool open = GUI::BeginCustomTabBar(active_item != nullptr ? active_item->name : "Inspector");
+        const char* name = "Inspector";
+        if (active_item != nullptr)
+            ImFormatStringToTempBuffer(&name, nullptr, "%s###InspectorTabItem", active_item->name);
+
+        bool open = GUI::BeginCustomTabBar(name);
         {
             ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysUseWindowPadding;
             ImGui::BeginChild("##Content", { 0.0f, 0.0f }, false, flags);
