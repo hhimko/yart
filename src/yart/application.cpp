@@ -58,8 +58,8 @@ namespace yart
 
             // Ray trace the scene on CPU onto the viewport image buffer
             auto viewport = window.GetViewport();
-            viewport->Resize(GUI::GetMainViewportAreaSize());
-            viewport->SetPosition(GUI::GetMainViewportAreaPosition());
+            viewport->Resize(GUI::GetRenderViewportAreaSize());
+            viewport->SetPosition(GUI::GetRenderViewportAreaPosition());
 
             uint32_t image_width, image_height;
             viewport->GetImageSize(&image_width, &image_height);

@@ -77,6 +77,55 @@ namespace yart
             return inverse_projection_matrix;
         }
 
+        /// @brief Compute a linearly interpolated gradient from an equally spaced array of values
+        /// @param values Array of gradient sampling points 
+        /// @param size Size of the `values` array
+        /// @param t Interpolation t parameter
+        /// @tparam L Integer between 1 and 4 included that qualify the dimension of the vector
+        /// @tparam T Floating-point scalar types
+        /// @tparam Q Value from qualifier enum
+        /// @return Linearly interpolated gradient
+        template<glm::length_t L, typename T, glm::qualifier Q>
+	    GLM_FUNC_QUALIFIER glm::vec<L, T, Q> LinearGradient(glm::vec<L, T, Q> const* values, size_t size, float t)
+        {
+            const glm::vec<L, T, Q>& v1 = values[static_cast<size_t>(glm::floor(t * (size - 1)))];
+            const glm::vec<L, T, Q>& v2 = values[static_cast<size_t>(glm::ceil(t * (size - 1)))];
+            float i = glm::fract(t * (size - 1));
+            return v1 * (1.0f - i) + v2 * i;
+        }
+
+        /// @brief Compute a linearly interpolated gradient from an arbitrarily spaced array of values
+        /// @param values Array of gradient sampling points 
+        /// @param locations Array of gradient sampling point locations 
+        ///     Size of the array is expected to be equal to the `values` array size, and each value should be in the [0..1] range
+        /// @param size Size of the `values` and `locations` arrays
+        /// @param t Interpolation t parameter
+        /// @tparam L Integer between 1 and 4 included that qualify the dimension of the vector
+        /// @tparam T Floating-point scalar types
+        /// @tparam Q Value from qualifier enum
+        /// @return Linearly interpolated gradient
+        template<glm::length_t L, typename T, glm::qualifier Q>
+	    GLM_FUNC_QUALIFIER glm::vec<L, T, Q> LinearGradient(glm::vec<L, T, Q> const* values, float const* locations, size_t size, float t)
+        {
+            size_t k = size;
+            for (size_t i = 0; i < size; ++i) {
+                if (t <= locations[i]) {
+                    k = i;
+                    break;
+                }
+            }
+            
+            if (k == 0)
+                return values[0];
+            if (k == size)
+                return values[size - 1];
+
+            const glm::vec<L, T, Q>& v1 = values[k - 1];
+            const glm::vec<L, T, Q>& v2 = values[k];
+            float i = (t - locations[k - 1]) / (locations[k] - locations[k - 1]);
+            return v1 * (1.0f - i) + v2 * i;
+        }
+
         /// @brief Convert spherical coordinates `(r, θ, φ)` to cartesian coordinates, where the radial distance `r` is set to `1`
         /// @param yaw Angle (`φ`) of rotation around the `y` axis in radians
         /// @param pitch Angle (`θ`) of rotation around the `x` axis in radians

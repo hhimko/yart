@@ -7,6 +7,7 @@
 
 
 #include <functional>
+#include <vector>
 
 #include <imgui.h>
 #include <glm/glm.hpp>
@@ -66,6 +67,18 @@ namespace yart
         /// @return The currently active context object
         GuiContext* GetCurrentContext();
 
+        /// @brief Issue Dear ImGui render commands for the current GUI context
+        /// @note This method should only be called after calling `ImGui::NewFrame()`
+        void Render();
+
+        /// @brief Render the view axes context window
+        /// @param x_axis View x-axis
+        /// @param y_axis View y-axis
+        /// @param z_axis View z-axis
+        /// @param clicked_axis Output variable set to a base axis clicked by the user
+        /// @return Whether the user has clicked on an axis and the `clicked_axis` output variable has been set 
+        bool RenderViewAxesWindow(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis, glm::vec3& clicked_axis);
+
         /// @brief Apply the default YART application GUI style and color palette
         void ApplyCustomStyle();
 
@@ -79,11 +92,11 @@ namespace yart
 
         /// @brief Get the current position of the render viewport area
         /// @return Position in screen pixel coordinates
-        ImVec2 GetMainViewportAreaPosition();
+        ImVec2 GetRenderViewportAreaPosition();
 
         /// @brief Get the current size of the render viewport area
         /// @return Size in screen pixels
-        ImVec2 GetMainViewportAreaSize();
+        ImVec2 GetRenderViewportAreaSize();
 
         /// @brief Test whether the mouse cursor is currently directly over the render viewport
         /// @return Whether mouse is over viewport
@@ -100,17 +113,19 @@ namespace yart
         /// @param callback Callback function pointer to the nav bar item contents
         void RegisterInspectorWindow(const char* name, const char* icon, ImU32 color, imgui_callback_t callback);
 
-        /// @brief Render the view axes context window
-        /// @param x_axis View x-axis
-        /// @param y_axis View y-axis
-        /// @param z_axis View z-axis
-        /// @param clicked_axis Output variable set to a base axis clicked by the user
-        /// @return Whether the user has clicked on an axis and the `clicked_axis` output variable has been set 
-        bool RenderViewAxesWindow(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis, glm::vec3& clicked_axis);
+        /// @brief Render a linear gradient editor widget
+        /// @param values Vector of the gradient values
+        /// @param locations Vector of the gradient value locations
+        /// @return Whether the gradient has changed since the last frame
+        bool GradientEditor(std::vector<glm::vec3>& values, std::vector<float>& locations);
 
-        /// @brief Issue Dear ImGui render commands for the current GUI context
-        /// @note This method should only be called after calling `ImGui::NewFrame()`
-        void Render();
+        /// @brief Begin a YART GUI style collapsable header
+        /// @param name Name of the section
+        /// @return Whether the section is currently opened and the contents should be rendered
+        bool BeginCollapsableSection(const char* name);
+
+        /// @brief Finish recording a YART GUI style collapsable header
+        void EndCollapsableSection();
         
     } // namespace GUI
 } // namespace yart

@@ -307,7 +307,6 @@ namespace yart
             ImVec2 p_min = { window->Pos.x, window->Pos.y };
             ImVec2 p_max = { p_min.x + child_rounding, p_min.y + window->Size.y };
 
-            // Unsafe! The default clip rect has to be bypassed in order to draw over child's rounded edges
             const ImVec4 backup_clip_rect = g->CurrentWindow->DrawList->_ClipRectStack.back();
             g->CurrentWindow->DrawList->PopClipRect();
             static ImU32 bg_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_ChildBg]);
@@ -332,13 +331,13 @@ namespace yart
         GuiContext* ctx = GUI::GetCurrentContext();
         ImGuiContext* g = ImGui::GetCurrentContext();
 
-        static const float window_y_offset = 16.0f;
-        const float icon_button_outer_padding = 3.0f;
-        const float icon_button_inner_padding = 4.0f;
+        const float window_y_offset = ImGui::GetFrameHeight() - 1.0f;
+        static constexpr float icon_button_outer_padding = 3.0f;
+        static constexpr float icon_button_inner_padding = 4.0f;
         const float size = ctx->iconsFont->FontSize;
        
         const float window_width = size + 2.0f * icon_button_outer_padding + 2.0f * icon_button_inner_padding;
-        static const ImGuiWindowFlags flags = ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollWithMouse;
+        static constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollWithMouse;
         ImGui::BeginChild("##SideNavBar", { window_width, 0.0f }, false, flags);
 
         // Draw background without right edge rounding
@@ -351,7 +350,7 @@ namespace yart
         window->DrawList->AddRectFilled(p_min, p_max, bg_col, child_rounding);
 
         // Render menu item icons
-        static const float item_spacing = 4.0f; 
+        static constexpr float item_spacing = 4.0f; 
         window->DC.CursorPos.y += window_y_offset;
 
         for (auto&& item : ctx->inspectorWindows) {
@@ -361,7 +360,7 @@ namespace yart
             p_min = window->DC.CursorPos;
             p_max = { p_min.x + 2.0f * icon_button_inner_padding + icon_button_outer_padding + size + child_rounding, p_min.y + 2.0f * icon_button_inner_padding + size };
 
-            ImGuiID id = ImGui::GetID(item.name);
+            const ImGuiID id = ImGui::GetID(item.name);
             ImGui::ItemAdd({ p_min, p_max }, id);
 
             bool hovered, held;
@@ -618,7 +617,7 @@ namespace yart
             hovered = IsMouseHoveringCircle(window_center, circle_radius);
 
         // Background
-        static const ImU32 background_color = ImGui::ColorConvertFloat4ToU32({ YART_GUI_COLOR_GRAY, YART_GUI_ALPHA_MEDIUM });
+        static const ImU32 background_color = ImGui::ColorConvertFloat4ToU32({ YART_GUI_COLOR_LIGHTER_GRAY, YART_GUI_ALPHA_MEDIUM });
 
         if (hovered)
             draw_list->AddCircleFilled(window_center, circle_radius, background_color);
@@ -660,6 +659,74 @@ namespace yart
 
         ImGui::End();
         return clicked;
+    }
+
+    bool GUI::GradientEditorEx(std::vector<glm::vec3> &values, std::vector<float> &locations)
+    {
+        ImGuiContext& g = *GImGui;
+        ImGuiWindow* window = g.CurrentWindow;
+        ImDrawList* draw_list = window->DrawList;
+        if (window->SkipItems)
+            return false;
+
+        // Render color pickers
+        const float picker_size = ImGui::GetFrameHeight();
+        const ImVec2 gradient_size = { ImGui::GetContentRegionAvail().x - picker_size, ImGui::GetFrameHeight() }; 
+        const ImVec2 origin = window->DC.CursorPos;
+        for (size_t i = 0; i < values.size(); ++i) {
+            float center = origin.x + locations[i] * gradient_size.x;
+            window->DC.CursorPos.x = center;
+            window->DC.CursorPos.y = origin.y;
+
+            const char* temp_name;
+            ImFormatStringToTempBuffer(&temp_name, nullptr, "##ColorEdit/%d", i);
+            ImGui::ColorEdit3(temp_name, (float*)&values[i], ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+        }
+
+
+        // Render the grab handles
+        static constexpr float handle_bar_height = 5.0f;
+        ImVec2 p_min = { window->DC.CursorPos.x + picker_size / 2.0f, window->DC.CursorPos.y };
+        ImVec2 p_max = { p_min.x + gradient_size.x, p_min.y + handle_bar_height };
+        draw_list->AddRectFilled(p_min, p_max, 0xFF000000);
+
+        p_min.y -= g.Style.ItemSpacing.y;
+        for (size_t i = 0; i < values.size(); ++i) {
+            float center = origin.x + picker_size / 2.0f + locations[i] * gradient_size.x;
+            p_min.x = center - 1.0f;
+            p_max.x = center + 1.0f;
+
+            draw_list->AddRectFilled(p_min, p_max, 0xFFFFFFFF);
+        }
+        
+        // Render the gradient rect
+        p_min = { window->DC.CursorPos.x + picker_size / 2.0f, window->DC.CursorPos.y + handle_bar_height };
+        p_max = { p_min.x + gradient_size.x * locations[0], p_min.y + gradient_size.y };
+
+        if (p_min.x != p_max.x) {
+            ImU32 col = ImGui::ColorConvertFloat4ToU32({ values[0].x, values[0].y, values[0].z, 1.0f });
+            draw_list->AddRectFilled(p_min, p_max, col);
+        }
+
+        for (size_t i = 0; i < values.size() - 1; ++i) {
+            p_min.x = p_max.x;
+            p_max.x = p_min.x + gradient_size.x * (locations[i + 1] - locations[i]);
+
+            ImU32 col_min = ImGui::ColorConvertFloat4ToU32({ values[i    ].x, values[i    ].y, values[i    ].z, 1.0f });
+            ImU32 col_max = ImGui::ColorConvertFloat4ToU32({ values[i + 1].x, values[i + 1].y, values[i + 1].z, 1.0f });
+            draw_list->AddRectFilledMultiColor(p_min, p_max, col_min, col_max, col_max, col_min);
+        }
+
+        if (p_max.x != p_min.x + gradient_size.x) {
+            p_min.x = p_max.x;
+            p_max.x = window->DC.CursorPos.x + picker_size / 2.0f + gradient_size.x;
+            
+            ImU32 col = ImGui::ColorConvertFloat4ToU32({ values.back().x, values.back().y, values.back().z, 1.0f });
+            draw_list->AddRectFilled(p_min, p_max, col);
+        }
+
+        ImGui::InvisibleButton("##GradientEditor", gradient_size);
+        return false;
     }
 
 } // namespace yart

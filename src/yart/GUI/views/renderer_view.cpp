@@ -18,40 +18,16 @@ namespace yart
     {
         void RendererView::OnRenderGUI(yart::Renderer& target)
         {
-            // Whether the camera transformation matrix should be recalculated
-            bool recalculate = false;
-
-
-            if (ImGui::SliderFloat("FOV", &target.m_fieldOfView, FOV_MIN, FOV_MAX)) {
-                recalculate = true;
+            if (GUI::BeginCollapsableSection("Camera")) {
+                RenderCameraSection(target);
             }
+            GUI::EndCollapsableSection();
 
-            if (ImGui::SliderFloat("Near clipping plane", &target.m_nearClippingPlane, NEAR_CLIP_MIN, NEAR_CLIP_MAX)) {
-                recalculate = true;
+            if (GUI::BeginCollapsableSection("World")) {
+                RenderWorldSection(target);
             }
+            GUI::EndCollapsableSection();
 
-            if (ImGui::SliderFloat("Far clipping plane", &target.m_farClippingPlane, FAR_CLIP_MIN, FAR_CLIP_MAX)) {
-                target.m_dirty = true;
-            }
-
-            static const char* items[3] = { "Solid color", "Gradient", "Cubemap texture" }; 
-            static size_t selected_item = 0;
-            if (ImGui::BeginCombo("combo", items[selected_item])) {
-                for (size_t i = 0; i < 3; ++i) {
-                    bool selected = (i == selected_item);
-                    if (ImGui::Selectable(items[i], &selected)) {
-                        selected_item = i;
-                    }
-                }
-                
-                ImGui::EndCombo();
-            }
-
-
-            if (recalculate) {
-                target.RecalculateCameraTransformationMatrix();
-                target.m_dirty = true;
-            }
         }
 
         void RendererView::OnRenderViewAxesWindow(yart::Renderer& target)
@@ -119,6 +95,45 @@ namespace yart
                 yart::Input::SetCursorLocked(false); // Unlock the cursor 
                 currently_rotating = false;
             }
+        }
+
+        void RendererView::RenderCameraSection(yart::Renderer &target)
+        {
+            if (ImGui::SliderFloat("FOV", &target.m_fieldOfView, FOV_MIN, FOV_MAX)) {
+                target.RecalculateCameraTransformationMatrix();
+            }
+
+            if (ImGui::SliderFloat("Near clipping plane", &target.m_nearClippingPlane, NEAR_CLIP_MIN, NEAR_CLIP_MAX)) {
+                target.RecalculateCameraTransformationMatrix();
+            }
+
+            if (ImGui::SliderFloat("Far clipping plane", &target.m_farClippingPlane, FAR_CLIP_MIN, FAR_CLIP_MAX)) {
+                target.m_dirty = true;
+            }
+        }
+
+        void RendererView::RenderWorldSection(yart::Renderer &target)
+        {
+            static const char* items[3] = { "Solid color", "Gradient", "Cubemap texture" }; 
+            static size_t selected_item = 0;
+            if (ImGui::BeginCombo("combo", items[selected_item])) {
+                for (size_t i = 0; i < 3; ++i) {
+                    bool selected = (i == selected_item);
+                    if (ImGui::Selectable(items[i], &selected)) {
+                        selected_item = i;
+                    }
+                }
+                
+                ImGui::EndCombo();
+            }
+
+            ImDrawList* draw_list = ImGui::GetWindowDrawList();
+            ImVec2 size = { ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight() };
+
+            static std::vector<glm::vec3> grad = {{1,0,0}, {0,1,0}, {0,0,1}};
+            static std::vector<float> spacing = {0.2f, 0.3f, 0.9f};
+
+            GUI::GradientEditor(grad, spacing);
         }
 
     } // namespace GUI

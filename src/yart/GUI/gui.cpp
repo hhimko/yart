@@ -17,6 +17,34 @@ namespace yart
         return &s_context;
     }
 
+    void GUI::Render()
+    {
+        // Uncomment to display Dear ImGui's debug window
+        ImGui::ShowDemoWindow();
+
+
+        // Update the display size delta
+        GuiContext* ctx = GUI::GetCurrentContext();
+        static ImVec2 last_display_size = ImGui::GetIO().DisplaySize;
+        ImVec2 display_size = ImGui::GetIO().DisplaySize;
+
+        ctx->displaySizeDelta = { display_size.x - last_display_size.x, display_size.y - last_display_size.y};
+        last_display_size = display_size;
+
+        // Render the static layout
+        GUI::RenderMainMenuBar();
+        GUI::RenderMainContentFrame();
+
+        // Render registered global callbacks
+        for (auto callback : ctx->registeredCallbacks)
+            callback();
+    }   
+
+    bool GUI::RenderViewAxesWindow(const glm::vec3 &x_axis, const glm::vec3 &y_axis, const glm::vec3 &z_axis, glm::vec3& clicked_axis)
+    {
+        return GUI::RenderViewAxesWindowEx(x_axis, y_axis, z_axis, clicked_axis);
+    }
+
     void GUI::ApplyCustomStyle()
     {
         // -- APPLY YART STYLE VARS -- // 
@@ -63,19 +91,19 @@ namespace yart
             colors[ImGuiCol_TitleBgActive]          = { YART_GUI_COLOR_DARK_PRIMARY,         YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_TitleBgCollapsed]       = { YART_GUI_COLOR_DARKER_GRAY,          YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_MenuBarBg]              = { YART_GUI_COLOR_DARKER_GRAY,          YART_GUI_ALPHA_OPAQUE };
-            colors[ImGuiCol_ScrollbarBg]            = { YART_GUI_COLOR_BLACK,           YART_GUI_ALPHA_TRANSPARENT };
-            colors[ImGuiCol_ScrollbarGrab]          = { YART_GUI_COLOR_WHITE,                YART_GUI_ALPHA_OPAQUE };
-            colors[ImGuiCol_ScrollbarGrabHovered]   = { YART_GUI_COLOR_WHITE,                YART_GUI_ALPHA_OPAQUE };
-            colors[ImGuiCol_ScrollbarGrabActive]    = { YART_GUI_COLOR_WHITE,                YART_GUI_ALPHA_OPAQUE };
+            colors[ImGuiCol_ScrollbarBg]            = { YART_GUI_COLOR_DARKEST_GRAY,         YART_GUI_ALPHA_OPAQUE };
+            colors[ImGuiCol_ScrollbarGrab]          = { YART_GUI_COLOR_LIGHTER_GRAY,         YART_GUI_ALPHA_OPAQUE };
+            colors[ImGuiCol_ScrollbarGrabHovered]   = { YART_GUI_COLOR_LIGHTEST_GRAY,        YART_GUI_ALPHA_OPAQUE };
+            colors[ImGuiCol_ScrollbarGrabActive]    = { YART_GUI_COLOR_LIGHTEST_GRAY,        YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_CheckMark]              = { YART_GUI_COLOR_LIGHTEST_GRAY,        YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_SliderGrab]             = { YART_GUI_COLOR_LIGHTER_GRAY,         YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_SliderGrabActive]       = { YART_GUI_COLOR_LIGHTEST_GRAY,        YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_Button]                 = { YART_GUI_COLOR_DARK_PRIMARY,         YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_ButtonHovered]          = { YART_GUI_COLOR_PRIMARY,              YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_ButtonActive]           = { YART_GUI_COLOR_LIGHT_PRIMARY,        YART_GUI_ALPHA_OPAQUE };
-            colors[ImGuiCol_Header]                 = { YART_GUI_COLOR_DARK_PRIMARY,         YART_GUI_ALPHA_OPAQUE };
-            colors[ImGuiCol_HeaderHovered]          = { YART_GUI_COLOR_PRIMARY,              YART_GUI_ALPHA_OPAQUE };
-            colors[ImGuiCol_HeaderActive]           = { YART_GUI_COLOR_LIGHT_PRIMARY,        YART_GUI_ALPHA_OPAQUE };
+            colors[ImGuiCol_Header]                 = { YART_GUI_COLOR_BLACK,           YART_GUI_ALPHA_TRANSPARENT };
+            colors[ImGuiCol_HeaderHovered]          = { YART_GUI_COLOR_GRAY,                 YART_GUI_ALPHA_OPAQUE };
+            colors[ImGuiCol_HeaderActive]           = { YART_GUI_COLOR_GRAY,                 YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_Separator]              = { YART_GUI_COLOR_GRAY,                 YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_SeparatorHovered]       = { YART_GUI_COLOR_DARK_TERTIARY,        YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_SeparatorActive]        = { YART_GUI_COLOR_TERTIARY,             YART_GUI_ALPHA_OPAQUE };
@@ -127,13 +155,13 @@ namespace yart
         ImGui::PushFont(ctx->iconsFont);
     }
 
-    ImVec2 GUI::GetMainViewportAreaPosition()
+    ImVec2 GUI::GetRenderViewportAreaPosition()
     {
         GuiContext* ctx = GetCurrentContext();
         return ctx->renderViewportAreaPos;
     }
 
-    ImVec2 GUI::GetMainViewportAreaSize()
+    ImVec2 GUI::GetRenderViewportAreaSize()
     {
         GuiContext* ctx = GetCurrentContext();
 
@@ -174,32 +202,49 @@ namespace yart
         ctx->activeInspectorWindow = &ctx->inspectorWindows.front();
     }
 
-    bool GUI::RenderViewAxesWindow(const glm::vec3 &x_axis, const glm::vec3 &y_axis, const glm::vec3 &z_axis, glm::vec3& clicked_axis)
+    bool GUI::GradientEditor(std::vector<glm::vec3>& values, std::vector<float>& locations)
     {
-        return GUI::RenderViewAxesWindowEx(x_axis, y_axis, z_axis, clicked_axis);
+        return GUI::GradientEditorEx(values, locations);
     }
 
-    void GUI::Render()
+    bool GUI::BeginCollapsableSection(const char *name)
     {
-        // Uncomment to display Dear ImGui's debug window
-        // ImGui::ShowDemoWindow();
+        ImGuiContext* g = ImGui::GetCurrentContext();
 
+        const ImVec4 backup_text_color = g->Style.Colors[ImGuiCol_Text];
+        g->Style.Colors[ImGuiCol_Text] = { 0.6f, 0.6f, 0.6f, 1.0f };
+        bool open = ImGui::CollapsingHeader(name, ImGuiTreeNodeFlags_SpanFullWidth);
+        g->Style.Colors[ImGuiCol_Text] = backup_text_color;
+        
+        ImGui::Indent();
+        if (open) 
+            ImGui::ItemSize({ 0.0f, 2.0f });
 
-        // Update the display size delta
-        GuiContext* ctx = GUI::GetCurrentContext();
-        static ImVec2 last_display_size = ImGui::GetIO().DisplaySize;
-        ImVec2 display_size = ImGui::GetIO().DisplaySize;
+        return open;
+    }
 
-        ctx->displaySizeDelta = { display_size.x - last_display_size.x, display_size.y - last_display_size.y};
-        last_display_size = display_size;
+    void GUI::EndCollapsableSection()
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        ImGuiWindow* window = g->CurrentWindow;
 
-        // Render the static layout
-        GUI::RenderMainMenuBar();
-        GUI::RenderMainContentFrame();
+        ImGui::Unindent();
 
-        // Render registered global callbacks
-        for (auto callback : ctx->registeredCallbacks)
-            callback();
-    }   
+        const float padding = g->Style.WindowPadding.x;
+        ImVec2 p1 = { window->Pos.x, window->DC.CursorPos.y + 2.0f };
+        ImVec2 p2 = { p1.x + ImGui::GetContentRegionAvail().x + 2.0f * padding, p1.y };
+
+        const ImVec4 backup_clip_rect = g->CurrentWindow->DrawList->_ClipRectStack.back();
+        g->CurrentWindow->DrawList->PopClipRect();
+
+        g->CurrentWindow->DrawList->PushClipRect({ backup_clip_rect.x - padding, backup_clip_rect.y }, { backup_clip_rect.z + padding, backup_clip_rect.w });
+        static const ImU32 col = ImGui::ColorConvertFloat4ToU32({ YART_GUI_COLOR_DARKEST_GRAY, YART_GUI_ALPHA_OPAQUE });
+        g->CurrentWindow->DrawList->AddLine(p1, p2, col, 2.0f);
+        g->CurrentWindow->DrawList->PopClipRect();
+
+        g->CurrentWindow->DrawList->PushClipRect({ backup_clip_rect.x, backup_clip_rect.y }, { backup_clip_rect.z, backup_clip_rect.w });
+
+        ImGui::ItemSize({ 0.0f, 4.0f });
+    }
 
 } // namespace yart

@@ -67,8 +67,6 @@ namespace yart
         m_width = width;
         m_height = height;
 
-        m_dirty = true;
-
         // Change in aspect ratio requires the camera matrix to be recalculated 
         RecalculateCameraTransformationMatrix();
     }
@@ -84,22 +82,19 @@ namespace yart
         return Miss(ray, payload);
     }
 
-    void Renderer::ClosestHit(const Ray &ray, HitPayload &payload)
+    void Renderer::ClosestHit(const Ray& ray, HitPayload& payload)
     {
         payload.resultColor = glm::vec3{0,0,0};
     }
 
-    void Renderer::Miss(const Ray &ray, HitPayload &payload)
+    void Renderer::Miss(const Ray& ray, HitPayload& payload)
     {
-        static const glm::vec3 grad[3] = { {0.1, 0.1, 0.2}, {0.05, 0.1, 0.6}, {0.1,0.15,0.9} };
-        static const uint8_t grad_size = 2;
+        static const size_t grad_size = 3;
+        static const glm::vec3 grad[grad_size] = {{1,0,0}, {0,1,0}, {0,0,1}};
+        static const float pos[grad_size] = {0.2f, 0.3f, 0.9f};
 
-        float g = (ray.direction.y + 1.0f) / 2.0f; 
-
-        const glm::vec3& col_1 = grad[static_cast<size_t>(glm::floor(g * (grad_size - 1)))];
-        const glm::vec3& col_2 = grad[static_cast<size_t>(glm::ceil(g * (grad_size - 1)))];
-        float i = glm::fract(g * (grad_size - 1));
-        payload.resultColor = col_1 * (1.0f - i) + col_2 * i;
+        float t = (ray.direction.y + 1.0f) / 2.0f; 
+        payload.resultColor = yart::utils::LinearGradient(grad, pos, grad_size, t);
     }
 
     void Renderer::RecalculateCameraTransformationMatrix()
@@ -115,6 +110,7 @@ namespace yart
         const glm::mat4 projection_matrix_inverse = yart::utils::CreateInverseProjectionMatrix(fov, w, h, m_nearClippingPlane);
 
         m_inverseViewProjectionMatrix = view_matrix_inverse * projection_matrix_inverse;
+        m_dirty = true;
     }
     
 } // namespace yart

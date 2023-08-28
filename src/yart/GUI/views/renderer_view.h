@@ -39,6 +39,14 @@ namespace yart
         private:
             RendererView() = delete;
 
+            /// @brief Issue "Camera" section GUI render commands
+            /// @param target View target instance
+            static void RenderCameraSection(yart::Renderer& target);
+
+            /// @brief Issue "World" section GUI render commands
+            /// @param target View target instance
+            static void RenderWorldSection(yart::Renderer& target);
+
         private:
             /// @brief Smallest valid value for camera's FOV in degrees
             static constexpr float FOV_MIN = 45.0f;

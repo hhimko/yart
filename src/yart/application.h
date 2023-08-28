@@ -41,9 +41,8 @@ namespace yart
         bool Setup();
 
     private:
-        bool m_running = false;
-
         yart::Renderer m_renderer;
+        bool m_running = false;
 
     };
 } // namespace yart
