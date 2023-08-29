@@ -19,7 +19,7 @@
 #ifndef DOXYGEN_EXCLUDE // Exclude from documentation
     // Shades of gray
     #define YART_GUI_COLOR_WHITE         1.000f, 1.000f, 1.000f
-    #define YART_GUI_COLOR_LIGHTEST_GRAY 0.320f, 0.320f, 0.320f
+    #define YART_GUI_COLOR_LIGHTEST_GRAY 0.360f, 0.360f, 0.360f
     #define YART_GUI_COLOR_LIGHTER_GRAY  0.240f, 0.240f, 0.240f
     #define YART_GUI_COLOR_LIGHT_GRAY    0.160f, 0.160f, 0.160f
     #define YART_GUI_COLOR_GRAY          0.120f, 0.120f, 0.120f
@@ -61,6 +61,15 @@ namespace yart
 
         /// @brief GUI context, holding all state required to render a specific UI layout
         struct GuiContext; // Opaque type without including `gui_internal.h`
+
+        /// @brief Structure used for storing state of the GradientEditor widgets
+        struct GradientEditorContext {
+            /// @brief Internal member, indicating the index of the currently active color picker handle
+            uint8_t selectedItemIndex = std::numeric_limits<uint8_t>::max();
+            /// @brief Internal member, storing identifying IDs of color picker handles
+            std::unique_ptr<ImGuiID[]> ids = nullptr;
+
+        };
 
 
         /// @brief Get the active GUI context
@@ -127,8 +136,9 @@ namespace yart
         /// @brief Render a linear gradient editor widget
         /// @param values Vector of the gradient values
         /// @param locations Vector of the gradient value locations
+        /// @param ctx Object holding the widget's state
         /// @return Whether the gradient has changed since the last frame
-        bool GradientEditor(std::vector<glm::vec3>& values, std::vector<float>& locations);
+        bool GradientEditor(std::vector<glm::vec3>& values, std::vector<float>& locations, GradientEditorContext& ctx);
 
         /// @brief Begin a YART GUI style collapsable header
         /// @param name Name of the section

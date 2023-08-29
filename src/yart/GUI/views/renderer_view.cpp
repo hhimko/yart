@@ -133,7 +133,8 @@ namespace yart
             static std::vector<glm::vec3> grad = {{1,0,0}, {0,1,0}, {0,0,1}};
             static std::vector<float> spacing = {0.2f, 0.3f, 0.9f};
 
-            GUI::GradientEditor(grad, spacing);
+            static GradientEditorContext ge_ctx;
+            GUI::GradientEditor(grad, spacing, ge_ctx);
         }
 
     } // namespace GUI

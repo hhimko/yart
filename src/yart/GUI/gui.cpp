@@ -238,9 +238,9 @@ namespace yart
         }
     }
 
-    bool GUI::GradientEditor(std::vector<glm::vec3> &values, std::vector<float> &locations)
+    bool GUI::GradientEditor(std::vector<glm::vec3> &values, std::vector<float> &locations, GradientEditorContext& ctx)
     {
-        return GUI::GradientEditorEx(values, locations);
+        return GUI::GradientEditorEx(values, locations, ctx);
     }
 
     bool GUI::BeginCollapsableSection(const char *name)

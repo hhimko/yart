@@ -7,6 +7,7 @@
 #include "gui_internal.h"
 
 
+#include "yart/platform/input.h"
 #include "font/IconsCodicons.h"
 
 
@@ -665,32 +666,24 @@ namespace yart
         return clicked;
     }
 
-    void GradientSamplingPointHandle(const glm::vec3& color, const ImVec2& pos, const ImVec2& size)
+    void GradientSamplingPointHandle(const glm::vec3& color, const ImVec2& pos, const ImVec2& size, ImU32 border_col)
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
         ImDrawList* draw_list = g->CurrentWindow->DrawList;
 
         const ImU32 col = ImGui::ColorConvertFloat4ToU32({ color.x, color.y, color.z, 1.0f });
-        const ImU32 border_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_Border]);
 
-        ImVec2 p1 = { pos.x - size.x / 2.0f, pos.y - size.y };
+        ImVec2 p1 = pos;
         ImVec2 p2 = { p1.x + size.x, p1.y + size.x };
 
         draw_list->AddRectFilled({ p1.x + 1.0f, p1.y + 1.0f }, { p2.x - 1.0f, p2.y - 1.0f }, col);
         draw_list->AddRect(p1, p2, border_col);
 
         p1.y = p2.y += 1.0f;
-        draw_list->AddTriangleFilled(p1, p2, pos, border_col);
-
-        // static constexpr ImGuiColorEditFlags flags = ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoTooltip;
-        // ImGui::SetNextItemWidth(2.0f);
-        // static_assert(sizeof(glm::vec3) == sizeof(float) * 3U);
-        // ImGui::ColorEdit3(temp_name, (float*)&values[i], flags);
-        
-        // draw_list->AddRectFilled({ pos.x - size.x / 2.0f, pos.y - size.y }, { pos.x + size.x / 2.0f, pos.y }, col);
+        draw_list->AddTriangleFilled(p1, p2, { pos.x + size.x / 2.0f, pos.y + size.y }, border_col);
     }
 
-    bool GUI::GradientEditorEx(std::vector<glm::vec3>& values, std::vector<float>& locations)
+    bool GUI::GradientEditorEx(std::vector<glm::vec3>& values, std::vector<float>& locations, GradientEditorContext& ctx)
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
         ImGuiWindow* window = g->CurrentWindow;
@@ -698,30 +691,132 @@ namespace yart
         if (window->SkipItems)
             return false;
 
-        // Render color picker handles
-        const ImVec2 picker_size =  { 12.0f, 20.0f };
-        const ImVec2 gradient_size = { ImGui::GetContentRegionAvail().x - picker_size.x, ImGui::GetFrameHeight() }; 
 
-        window->DC.CursorPos.y += picker_size.y + 1.0f;
+        // Compute sizes and bounding boxes
+        static constexpr ImVec2 picker_size = { 10.0f, 16.0f }; // Height of the triangle arrow is `picker_size.y - picker_size.x`
+        const ImVec2 gradient_size = { ImGui::GetContentRegionAvail().x - picker_size.x, ImGui::GetFrameHeight() };
 
-        for (size_t i = 0; i < values.size(); ++i) {
-            const ImVec2 center =  { 
-                window->DC.CursorPos.x + glm::round(locations[i] * gradient_size.x) + picker_size.x / 2.0f, 
-                window->DC.CursorPos.y - 1.0f 
-            };
+        const ImVec2 cursor_pos = window->DC.CursorPos;
+        const ImVec2 gradient_p_min = { 
+            cursor_pos.x + picker_size.x / 2.0f,
+            cursor_pos.y + picker_size.y + 1.0f
+        };
 
-            const char* temp_name;
-            ImFormatStringToTempBuffer(&temp_name, nullptr, "##ColorEdit/%d", i);
-            GradientSamplingPointHandle(values[i], center, picker_size);
+        const ImVec2 gradient_p_max = { 
+            gradient_p_min.x + gradient_size.x, 
+            gradient_p_min.y + gradient_size.y 
+        };
+
+        ImGui::BeginGroup();
+        ImGui::ItemSize({ 0.0f, picker_size.y + gradient_size.y + 1.0f });
+
+        // Generate picker IDs if nonexistant 
+        if (ctx.ids == nullptr) {
+            ctx.ids = std::make_unique<ImGuiID[]>(values.size());
+
+            for (int i = 0; i < values.size(); ++i) {
+                const char* temp_name;
+                ImFormatStringToTempBuffer(&temp_name, nullptr, "##ColorEdit/%d", i);
+                ctx.ids[i] = window->GetID(temp_name);
+            }
         }
 
-        // Render the gradient rect
-        ImVec2 p_min = { window->DC.CursorPos.x + picker_size.x / 2.0f, window->DC.CursorPos.y };
-        ImVec2 p_max = { p_min.x + gradient_size.x, p_min.y + gradient_size.y };
 
-        GUI::DrawGradientRect(draw_list, p_min, p_max, values.data(), locations.data(), values.size(), true);
-        ImGui::InvisibleButton("##GradientEditor", gradient_size);
+        // -- HANDLE COLOR PICKER INPUTS -- //
+        int hovered_idx = -1;
+        for (int i = static_cast<int>(values.size()) - 1; i >= 0; --i) {
+            const ImVec4 bb = { 
+                cursor_pos.x + glm::round(locations[i] * gradient_size.x), cursor_pos.y,
+                cursor_pos.x + glm::round(locations[i] * gradient_size.x) + picker_size.x, cursor_pos.y + picker_size.y
+            };
+            
+            ImGuiID id = ctx.ids[i];
+            ImGui::ItemAdd(bb, id);
 
+            bool hovered, held;
+            bool clicked = ImGui::ButtonBehavior(bb, id, &hovered, &held);
+
+            if (hovered || held) {
+                // Move the handle location
+                if (held) {
+                    float x_pos = ImClamp(g->IO.MousePos.x, cursor_pos.x, gradient_p_min.x + gradient_p_max.x); 
+                    float old_loc = locations[i];
+                    float new_loc = ImClamp((x_pos - gradient_p_min.x) / gradient_size.x, 0.0f, 1.0f);
+                    locations[i] = new_loc;
+
+                    // Values are safe to swap in place here, because the loop being terminated after this iteration
+                    if (new_loc != old_loc) {
+                        if (new_loc < old_loc) {
+                            for (int j = 0; j < i; ++j) {
+                                if (new_loc < locations[j]) {
+                                    glm::vec3 temp_val = values[i];
+                                    ImGuiID temp_id = ctx.ids[i];
+
+                                    // Shift all the remaining values
+                                    for (int k = i; k > j; --k) {
+                                        locations[k] = locations[k - 1];
+                                        ctx.ids[k] = ctx.ids[k - 1];
+                                        values[k] = values[k - 1];
+                                    }
+
+                                    ctx.ids[j] = temp_id;
+                                    values[j] = temp_val;
+                                    i = j;
+                                    break;
+                                }
+                            }
+                        } else {
+                            for (int j = static_cast<int>(locations.size()) - 1; j > i; --j) {
+                                if (new_loc > locations[j]) {
+                                    glm::vec3 temp_val = values[i];
+                                    ImGuiID temp_id = ctx.ids[i];
+
+                                    // Shift all the remaining values
+                                    for (int k = i; k < j; ++k) {
+                                        locations[k] = locations[k + 1];
+                                        ctx.ids[k] = ctx.ids[k + 1];
+                                        values[k] = values[k + 1];
+                                    }
+
+                                    ctx.ids[j] = temp_id;
+                                    values[j] = temp_val;
+                                    i = j;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                hovered_idx = i;
+                if (clicked || held)
+                    ctx.selectedItemIndex = static_cast<uint8_t>(i);
+
+                break;
+            }
+        }
+
+        if (hovered_idx != -1)
+            ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+        else 
+            ImGui::SetMouseCursor(ImGuiMouseCursor_Arrow);
+
+        // -- RENDER COLOR PICKER HANDLES -- //
+        const ImU32 border_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_SliderGrab]);
+        const ImU32 border_col_hovered = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_SliderGrabActive]);
+        const ImU32 border_col_active = 0xFFFFFFFF;
+
+        for (size_t i = 0; i < values.size(); ++i) {
+            const ImVec2 p_min = { cursor_pos.x + glm::round(locations[i] * gradient_size.x), cursor_pos.y };
+
+            const ImU32 col = (i == ctx.selectedItemIndex) ? border_col_active : (i == hovered_idx) ? border_col_hovered : border_col; 
+            GradientSamplingPointHandle(values[i], p_min, picker_size, col);
+        }
+
+        // -- RENDER GRADIENT RECT -- //
+        GUI::DrawGradientRect(draw_list, gradient_p_min, gradient_p_max, values.data(), locations.data(), values.size(), true);
+
+        ImGui::EndGroup();
         return false;
     }
 
