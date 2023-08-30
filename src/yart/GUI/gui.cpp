@@ -20,7 +20,7 @@ namespace yart
     void GUI::Render()
     {
         // Uncomment to display Dear ImGui's debug window
-        ImGui::ShowDemoWindow();
+        // ImGui::ShowDemoWindow();
 
 
         // Update the display size delta
@@ -202,6 +202,108 @@ namespace yart
         ctx->activeInspectorWindow = &ctx->inspectorWindows.front();
     }
 
+    bool GUI::BeginCollapsableSection(const char *name)
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+
+        const ImVec4 backup_text_color = g->Style.Colors[ImGuiCol_Text];
+        g->Style.Colors[ImGuiCol_Text] = { 0.6f, 0.6f, 0.6f, 1.0f };
+        bool open = ImGui::CollapsingHeader(name, ImGuiTreeNodeFlags_SpanFullWidth);
+        g->Style.Colors[ImGuiCol_Text] = backup_text_color;
+        
+        ImGui::Indent();
+        if (open) 
+            ImGui::ItemSize({ 0.0f, 2.0f });
+
+        return open;
+    }
+
+    void GUI::EndCollapsableSection()
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        ImGuiWindow* window = g->CurrentWindow;
+
+        ImGui::Unindent();
+
+        static constexpr float thickness = 1.0f;
+        const float padding = g->Style.WindowPadding.x;
+        ImVec2 p1 = { window->Pos.x, window->DC.CursorPos.y + 2.0f };
+        ImVec2 p2 = { p1.x + ImGui::GetContentRegionAvail().x + 2.0f * padding, p1.y + thickness };
+
+        const ImVec4 backup_clip_rect = g->CurrentWindow->DrawList->_ClipRectStack.back();
+        g->CurrentWindow->DrawList->PopClipRect();
+
+        g->CurrentWindow->DrawList->PushClipRect({ backup_clip_rect.x - padding, backup_clip_rect.y }, { backup_clip_rect.z + padding, backup_clip_rect.w });
+        static const ImU32 col = ImGui::ColorConvertFloat4ToU32({ YART_GUI_COLOR_DARKEST_GRAY, YART_GUI_ALPHA_OPAQUE });
+        g->CurrentWindow->DrawList->AddRectFilled(p1, p2, col);
+        g->CurrentWindow->DrawList->PopClipRect();
+
+        g->CurrentWindow->DrawList->PushClipRect({ backup_clip_rect.x, backup_clip_rect.y }, { backup_clip_rect.z, backup_clip_rect.w });
+
+        ImGui::ItemSize({ 0.0f, 4.0f });
+    }
+
+    void GUI::BeginFrame(const char* name, uint32_t rows)
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        ImGuiWindow* window = g->CurrentWindow;
+        if (window->SkipItems)
+            return;
+
+
+        // -- RENDER CHILD FRAME -- //
+        ImVec4 backup_border = g->Style.Colors[ImGuiCol_Border];
+        float backup_rounding = g->Style.ChildRounding;
+        g->Style.Colors[ImGuiCol_Border] = { YART_GUI_COLOR_DARKEST_GRAY, YART_GUI_ALPHA_OPAQUE };
+        g->Style.ChildRounding = 0.0f;
+
+        const float header_height = ImGui::GetTextLineHeight();
+        float frame_height = rows * ImGui::GetFrameHeightWithSpacing() + g->Style.WindowPadding.y * 2.0f - g->Style.ItemSpacing.y;
+        frame_height += header_height / 2.0f - g->Style.WindowPadding.y + g->Style.ItemSpacing.y;
+        window->DC.CursorPos.y += header_height / 2.0f;
+
+        static constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
+        ImGui::BeginChild(name, { 0.0f, frame_height }, true, flags);
+        window = g->CurrentWindow;
+
+        g->Style.ChildRounding = backup_rounding;
+        g->Style.Colors[ImGuiCol_Border] = backup_border;
+
+        // -- RENDER HEADER TITLE -- //
+        const ImVec4 backup_clip_rect = window->DrawList->_ClipRectStack.back();
+        window->DrawList->PopClipRect();
+        window->DrawList->PushClipRect({ backup_clip_rect.x, 0 }, { backup_clip_rect.z, backup_clip_rect.w });
+        window->DC.CursorPos.y -= g->Style.WindowPadding.y + header_height / 2.0f;
+
+        const ImU32 bg_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_ChildBg]);
+        const ImU32 text_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_Text]);
+        const float text_width = ImGui::CalcTextSize(name).x;
+        const float frame_padding = g->Style.FramePadding.x;
+        const ImVec2 p_min = { window->DC.CursorPos.x, window->DC.CursorPos.y };
+        const ImVec2 p_max = { p_min.x + 2.0f * frame_padding + text_width, p_min.y + header_height };
+        const ImVec2 text_pos = { p_min.x + frame_padding, p_min.y };
+
+        // The title is rendered twice, first in the parent window to avoid clipping issues
+        window->ParentWindow->DrawList->PushClipRect({ backup_clip_rect.x, 0 }, { backup_clip_rect.z, backup_clip_rect.w });
+        window->ParentWindow->DrawList->AddRectFilled(p_min, p_max, bg_col);
+        window->ParentWindow->DrawList->AddText(text_pos, text_col, name);
+        window->ParentWindow->DrawList->PopClipRect();
+        
+        window->DrawList->AddRectFilled(p_min, p_max, bg_col);
+        window->DrawList->AddText(text_pos, text_col, name);
+        
+        ImGui::ItemSize({ 0.0f, header_height });
+
+        window->DrawList->PopClipRect();
+        window->DrawList->PushClipRect({ backup_clip_rect.x, backup_clip_rect.y }, { backup_clip_rect.z, backup_clip_rect.w });
+
+    }
+
+    void GUI::EndFrame()
+    {
+        ImGui::EndChild();
+    }
+
     void GUI::DrawGradientRect(ImDrawList* draw_list, ImVec2 p_min, ImVec2 p_max, glm::vec3 const* values, float const* locations, size_t size, bool border)
     {
         const ImVec2 rect_size = { p_max.x - p_min.x, p_max.y - p_max.y };
@@ -241,46 +343,6 @@ namespace yart
     bool GUI::GradientEditor(std::vector<glm::vec3> &values, std::vector<float> &locations, GradientEditorContext& ctx)
     {
         return GUI::GradientEditorEx(values, locations, ctx);
-    }
-
-    bool GUI::BeginCollapsableSection(const char *name)
-    {
-        ImGuiContext* g = ImGui::GetCurrentContext();
-
-        const ImVec4 backup_text_color = g->Style.Colors[ImGuiCol_Text];
-        g->Style.Colors[ImGuiCol_Text] = { 0.6f, 0.6f, 0.6f, 1.0f };
-        bool open = ImGui::CollapsingHeader(name, ImGuiTreeNodeFlags_SpanFullWidth);
-        g->Style.Colors[ImGuiCol_Text] = backup_text_color;
-        
-        ImGui::Indent();
-        if (open) 
-            ImGui::ItemSize({ 0.0f, 2.0f });
-
-        return open;
-    }
-
-    void GUI::EndCollapsableSection()
-    {
-        ImGuiContext* g = ImGui::GetCurrentContext();
-        ImGuiWindow* window = g->CurrentWindow;
-
-        ImGui::Unindent();
-
-        const float padding = g->Style.WindowPadding.x;
-        ImVec2 p1 = { window->Pos.x, window->DC.CursorPos.y + 2.0f };
-        ImVec2 p2 = { p1.x + ImGui::GetContentRegionAvail().x + 2.0f * padding, p1.y };
-
-        const ImVec4 backup_clip_rect = g->CurrentWindow->DrawList->_ClipRectStack.back();
-        g->CurrentWindow->DrawList->PopClipRect();
-
-        g->CurrentWindow->DrawList->PushClipRect({ backup_clip_rect.x - padding, backup_clip_rect.y }, { backup_clip_rect.z + padding, backup_clip_rect.w });
-        static const ImU32 col = ImGui::ColorConvertFloat4ToU32({ YART_GUI_COLOR_DARKEST_GRAY, YART_GUI_ALPHA_OPAQUE });
-        g->CurrentWindow->DrawList->AddLine(p1, p2, col, 2.0f);
-        g->CurrentWindow->DrawList->PopClipRect();
-
-        g->CurrentWindow->DrawList->PushClipRect({ backup_clip_rect.x, backup_clip_rect.y }, { backup_clip_rect.z, backup_clip_rect.w });
-
-        ImGui::ItemSize({ 0.0f, 4.0f });
     }
 
 } // namespace yart

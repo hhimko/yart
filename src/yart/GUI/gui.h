@@ -64,6 +64,23 @@ namespace yart
 
         /// @brief Structure used for storing state of the GradientEditor widgets
         struct GradientEditorContext {
+        public:
+            /// @brief Type of the gradient values collection
+            typedef std::vector<glm::vec3> values_t;
+            /// @brief Type of the gradient locations collection
+            typedef std::vector<float> locations_t;
+
+            /// @brief GradientEditorContext Constructor
+            /// @param values Vector of the gradient values
+            /// @param locations  Vector of the gradient value locations
+            GradientEditorContext(values_t& values, locations_t& locations)
+                : values(values), locations(locations) {}
+
+        public:
+            /// @param values Vector of the gradient values
+            values_t& values;
+            /// @param locations Vector of the gradient value locations
+            locations_t& locations;
             /// @brief Internal member, indicating the index of the currently active color picker handle
             uint8_t selectedItemIndex = std::numeric_limits<uint8_t>::max();
             /// @brief Internal member, storing identifying IDs of color picker handles
@@ -122,6 +139,22 @@ namespace yart
         /// @param callback Callback function pointer to the nav bar item contents
         void RegisterInspectorWindow(const char* name, const char* icon, ImU32 color, imgui_callback_t callback);
 
+        /// @brief Begin a YART GUI style collapsable header
+        /// @param name Name of the section
+        /// @return Whether the section is currently opened and the contents should be rendered
+        bool BeginCollapsableSection(const char* name);
+
+        /// @brief Finish recording a YART GUI style collapsable header
+        void EndCollapsableSection();
+
+        /// @brief Begin a new named frame window  
+        /// @param name Name of the frame, displayed as the header
+        /// @param rows Number of rows to be displayed inside the frame. Used for determining the frame height
+        void BeginFrame(const char* name, uint32_t rows);
+
+        /// @brief Finish recording a frame window
+        void EndFrame();
+
         /// @brief Add a rectangle filled with a linear gradient to a given ImGui draw list
         /// @param draw_list Dear ImGui draw list on which to draw the rectangle
         /// @param p_min Rectangle upper-left corner in screen space coordinates
@@ -134,19 +167,9 @@ namespace yart
         void DrawGradientRect(ImDrawList* draw_list, ImVec2 p_min, ImVec2 p_max, glm::vec3 const* values, float const* locations, size_t size, bool border = false);
 
         /// @brief Render a linear gradient editor widget
-        /// @param values Vector of the gradient values
-        /// @param locations Vector of the gradient value locations
         /// @param ctx Object holding the widget's state
         /// @return Whether the gradient has changed since the last frame
-        bool GradientEditor(std::vector<glm::vec3>& values, std::vector<float>& locations, GradientEditorContext& ctx);
-
-        /// @brief Begin a YART GUI style collapsable header
-        /// @param name Name of the section
-        /// @return Whether the section is currently opened and the contents should be rendered
-        bool BeginCollapsableSection(const char* name);
-
-        /// @brief Finish recording a YART GUI style collapsable header
-        void EndCollapsableSection();
+        bool GradientEditor(GradientEditorContext& ctx);
         
     } // namespace GUI
 } // namespace yart
