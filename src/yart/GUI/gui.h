@@ -19,11 +19,11 @@
 #ifndef DOXYGEN_EXCLUDE // Exclude from documentation
     // Shades of gray
     #define YART_GUI_COLOR_WHITE         1.000f, 1.000f, 1.000f
-    #define YART_GUI_COLOR_LIGHTEST_GRAY 0.360f, 0.360f, 0.360f
-    #define YART_GUI_COLOR_LIGHTER_GRAY  0.240f, 0.240f, 0.240f
-    #define YART_GUI_COLOR_LIGHT_GRAY    0.160f, 0.160f, 0.160f
-    #define YART_GUI_COLOR_GRAY          0.120f, 0.120f, 0.120f
-    #define YART_GUI_COLOR_DARK_GRAY     0.100f, 0.100f, 0.100f
+    #define YART_GUI_COLOR_LIGHTEST_GRAY 0.380f, 0.380f, 0.380f
+    #define YART_GUI_COLOR_LIGHTER_GRAY  0.260f, 0.260f, 0.260f
+    #define YART_GUI_COLOR_LIGHT_GRAY    0.140f, 0.140f, 0.140f
+    #define YART_GUI_COLOR_GRAY          0.100f, 0.100f, 0.100f
+    #define YART_GUI_COLOR_DARK_GRAY     0.060f, 0.060f, 0.060f
     #define YART_GUI_COLOR_DARKER_GRAY   0.031f, 0.031f, 0.031f
     #define YART_GUI_COLOR_DARKEST_GRAY  0.010f, 0.010f, 0.010f
     #define YART_GUI_COLOR_BLACK         0.000f, 0.000f, 0.000f
@@ -49,6 +49,10 @@
     #define YART_GUI_ALPHA_MEDIUM      0.50f
     #define YART_GUI_ALPHA_LOW         0.25f
     #define YART_GUI_ALPHA_TRANSPARENT 0.00f
+
+    // Text colors
+    #define YART_GUI_TEXT_COLOR_LIGHT 0.800f, 0.800f, 0.800f
+    #define YART_GUI_TEXT_COLOR_DARK  0.500f, 0.500f, 0.500f
 #endif // ifndef DOXYGEN_EXCLUDE 
 
 
@@ -145,7 +149,8 @@ namespace yart
         bool BeginCollapsableSection(const char* name);
 
         /// @brief Finish recording a YART GUI style collapsable header
-        void EndCollapsableSection();
+        /// @param was_open The value returned by GUI::BeginCollapsableSection()
+        void EndCollapsableSection(bool was_open);
 
         /// @brief Begin a new named frame window  
         /// @param name Name of the frame, displayed as the header
@@ -170,6 +175,10 @@ namespace yart
         /// @param ctx Object holding the widget's state
         /// @return Whether the gradient has changed since the last frame
         bool GradientEditor(GradientEditorContext& ctx);
+
+        /// @brief Render a horizontal separator line over the full window width
+        /// @param thickness Separator line thickness
+        void FullWidthSeparator(float thickness);
         
     } // namespace GUI
 } // namespace yart

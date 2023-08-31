@@ -20,7 +20,7 @@ namespace yart
     void GUI::Render()
     {
         // Uncomment to display Dear ImGui's debug window
-        // ImGui::ShowDemoWindow();
+        ImGui::ShowDemoWindow();
 
 
         // Update the display size delta
@@ -53,7 +53,7 @@ namespace yart
         style.WindowTitleAlign = { 0.5f, 0.5f };
         style.WindowMenuButtonPosition = ImGuiDir_None;
         style.ChildBorderSize = 1.0f;
-        style.ChildRounding = 5.0f;
+        style.ChildRounding = 4.0f;
         style.FrameBorderSize = 0.0f;
         style.PopupBorderSize = 1.0f;
         style.PopupRounding = 0.0f;
@@ -77,16 +77,16 @@ namespace yart
         // | |  Dear ImGui style identifier        | |  Color value                  | |              Alpha value  | |
         // +-+-------------------------------------+-+-------------------------------+-+---------------------------+-+
         {
-            colors[ImGuiCol_Text]                   = { YART_GUI_COLOR_WHITE,                YART_GUI_ALPHA_OPAQUE };
-            colors[ImGuiCol_TextDisabled]           = { YART_GUI_COLOR_LIGHTER_GRAY,         YART_GUI_ALPHA_OPAQUE };
+            colors[ImGuiCol_Text]                   = { YART_GUI_TEXT_COLOR_LIGHT,           YART_GUI_ALPHA_OPAQUE };
+            colors[ImGuiCol_TextDisabled]           = { YART_GUI_TEXT_COLOR_DARK,            YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_WindowBg]               = { YART_GUI_COLOR_BLACK,                YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_ChildBg]                = { YART_GUI_COLOR_DARKER_GRAY,          YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_PopupBg]                = { YART_GUI_COLOR_BLACK,                YART_GUI_ALPHA_OPAQUE };
-            colors[ImGuiCol_Border]                 = { YART_GUI_COLOR_LIGHTER_GRAY,           YART_GUI_ALPHA_OPAQUE };
+            colors[ImGuiCol_Border]                 = { YART_GUI_COLOR_LIGHT_GRAY,           YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_BorderShadow]           = { YART_GUI_COLOR_BLACK,           YART_GUI_ALPHA_TRANSPARENT };
-            colors[ImGuiCol_FrameBg]                = { YART_GUI_COLOR_DARK_GRAY,            YART_GUI_ALPHA_OPAQUE };
-            colors[ImGuiCol_FrameBgHovered]         = { YART_GUI_COLOR_GRAY,                 YART_GUI_ALPHA_OPAQUE };
-            colors[ImGuiCol_FrameBgActive]          = { YART_GUI_COLOR_LIGHT_GRAY,           YART_GUI_ALPHA_OPAQUE };
+            colors[ImGuiCol_FrameBg]                = { YART_GUI_COLOR_GRAY,                 YART_GUI_ALPHA_OPAQUE };
+            colors[ImGuiCol_FrameBgHovered]         = { YART_GUI_COLOR_LIGHT_GRAY,           YART_GUI_ALPHA_OPAQUE };
+            colors[ImGuiCol_FrameBgActive]          = { YART_GUI_COLOR_LIGHTER_GRAY,         YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_TitleBg]                = { YART_GUI_COLOR_BLACK,                YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_TitleBgActive]          = { YART_GUI_COLOR_DARK_PRIMARY,         YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_TitleBgCollapsed]       = { YART_GUI_COLOR_DARKER_GRAY,          YART_GUI_ALPHA_OPAQUE };
@@ -104,7 +104,7 @@ namespace yart
             colors[ImGuiCol_Header]                 = { YART_GUI_COLOR_BLACK,           YART_GUI_ALPHA_TRANSPARENT };
             colors[ImGuiCol_HeaderHovered]          = { YART_GUI_COLOR_GRAY,                 YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_HeaderActive]           = { YART_GUI_COLOR_GRAY,                 YART_GUI_ALPHA_OPAQUE };
-            colors[ImGuiCol_Separator]              = { YART_GUI_COLOR_GRAY,                 YART_GUI_ALPHA_OPAQUE };
+            colors[ImGuiCol_Separator]              = { YART_GUI_COLOR_LIGHT_GRAY,           YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_SeparatorHovered]       = { YART_GUI_COLOR_DARK_TERTIARY,        YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_SeparatorActive]        = { YART_GUI_COLOR_TERTIARY,             YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_ResizeGrip]             = { YART_GUI_COLOR_BLACK,           YART_GUI_ALPHA_TRANSPARENT };
@@ -120,7 +120,7 @@ namespace yart
             colors[ImGuiCol_PlotHistogram]          = { YART_GUI_COLOR_DARK_TERTIARY,        YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_PlotHistogramHovered]   = { YART_GUI_COLOR_TERTIARY,             YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_TableHeaderBg]          = { YART_GUI_COLOR_DARK_PRIMARY,         YART_GUI_ALPHA_OPAQUE };
-            colors[ImGuiCol_TableBorderStrong]      = { YART_GUI_COLOR_DARK_GRAY,            YART_GUI_ALPHA_OPAQUE };
+            colors[ImGuiCol_TableBorderStrong]      = { YART_GUI_COLOR_GRAY,                 YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_TableBorderLight]       = { YART_GUI_COLOR_DARKER_GRAY,          YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_TableRowBg]             = { YART_GUI_COLOR_BLACK,           YART_GUI_ALPHA_TRANSPARENT };
             colors[ImGuiCol_TableRowBgAlt]          = { YART_GUI_COLOR_DARKER_GRAY,          YART_GUI_ALPHA_MEDIUM };
@@ -205,42 +205,70 @@ namespace yart
     bool GUI::BeginCollapsableSection(const char *name)
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
+        ImGuiWindow* window = g->CurrentWindow;
 
-        const ImVec4 backup_text_color = g->Style.Colors[ImGuiCol_Text];
-        g->Style.Colors[ImGuiCol_Text] = { 0.6f, 0.6f, 0.6f, 1.0f };
-        bool open = ImGui::CollapsingHeader(name, ImGuiTreeNodeFlags_SpanFullWidth);
-        g->Style.Colors[ImGuiCol_Text] = backup_text_color;
+        static const ImU32 fg_col = ImGui::ColorConvertFloat4ToU32({ YART_GUI_COLOR_DARK_GRAY, YART_GUI_ALPHA_OPAQUE });
+        const float rounding = g->Style.ChildRounding;
+
+        const ImVec2 p_min = window->DC.CursorPos;
+        const ImVec2 p_max = { window->WorkRect.Max.x, p_min.y + window->ContentSize.y };
+        window->DrawList->AddRectFilled(p_min, p_max, fg_col, rounding);
+
+        const ImVec2 backup_frame_padding = g->Style.FramePadding;
+        const float backup_frame_rounding = g->Style.FrameRounding;
+        g->Style.FramePadding = { backup_frame_padding.x, rounding };
+        g->Style.FrameRounding = rounding;
         
-        ImGui::Indent();
-        if (open) 
-            ImGui::ItemSize({ 0.0f, 2.0f });
+        window->DC.CursorPos.x += ImFloor(g->Style.WindowPadding.x / 2.0f) - 1.0f;
+        window->WorkRect.Max.x -= ImFloor(g->Style.WindowPadding.x / 2.0f);
+        bool open = ImGui::CollapsingHeader(name, ImGuiTreeNodeFlags_SpanAvailWidth);
+        window->WorkRect.Max.x += ImFloor(g->Style.WindowPadding.x / 2.0f);
+        window->DC.CursorPos.x -= ImFloor(g->Style.WindowPadding.x / 2.0f) - 1.0f;
 
+        g->Style.FrameRounding = backup_frame_rounding;
+        g->Style.FramePadding = backup_frame_padding;
+
+        
+        if (open) {
+            // Draw the header separator line
+            static const ImU32 bg_col = ImGui::ColorConvertFloat4ToU32({ YART_GUI_COLOR_DARKER_GRAY, YART_GUI_ALPHA_OPAQUE });
+            const ImVec2 p1 = { window->DC.CursorPos.x, window->DC.CursorPos.y - g->Style.ItemSpacing.y };
+            const ImVec2 p2 = { p1.x + window->SizeFull.x, p1.y };
+            window->DrawList->AddLine(p1, p2, bg_col);
+
+            window->ContentRegionRect.TranslateX(-g->Style.WindowPadding.x);
+
+            ImVec4 clip_rect = window->DrawList->_ClipRectStack.back();
+            window->DrawList->PushClipRect({ clip_rect.x, clip_rect.y }, { window->ContentRegionRect.Max.x, clip_rect.w });
+
+            window->DC.CursorPos.y += g->Style.ItemSpacing.y;
+        }
+
+        ImGui::Indent(g->Style.WindowPadding.x);
+        
         return open;
     }
 
-    void GUI::EndCollapsableSection()
+    void GUI::EndCollapsableSection(bool was_open)
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
         ImGuiWindow* window = g->CurrentWindow;
 
-        ImGui::Unindent();
+        ImGui::Unindent(g->Style.WindowPadding.x);
 
-        static constexpr float thickness = 1.0f;
-        const float padding = g->Style.WindowPadding.x;
-        ImVec2 p1 = { window->Pos.x, window->DC.CursorPos.y + 2.0f };
-        ImVec2 p2 = { p1.x + ImGui::GetContentRegionAvail().x + 2.0f * padding, p1.y + thickness };
+        if (was_open) {
+            window->ContentRegionRect.TranslateX(g->Style.WindowPadding.x);
+            window->DrawList->PopClipRect();
 
-        const ImVec4 backup_clip_rect = g->CurrentWindow->DrawList->_ClipRectStack.back();
-        g->CurrentWindow->DrawList->PopClipRect();
+            const float rounding = g->Style.ChildRounding;
+            ImGui::ItemSize({ 0.0f, rounding });
+        }
 
-        g->CurrentWindow->DrawList->PushClipRect({ backup_clip_rect.x - padding, backup_clip_rect.y }, { backup_clip_rect.z + padding, backup_clip_rect.w });
-        static const ImU32 col = ImGui::ColorConvertFloat4ToU32({ YART_GUI_COLOR_DARKEST_GRAY, YART_GUI_ALPHA_OPAQUE });
-        g->CurrentWindow->DrawList->AddRectFilled(p1, p2, col);
-        g->CurrentWindow->DrawList->PopClipRect();
-
-        g->CurrentWindow->DrawList->PushClipRect({ backup_clip_rect.x, backup_clip_rect.y }, { backup_clip_rect.z, backup_clip_rect.w });
-
-        ImGui::ItemSize({ 0.0f, 4.0f });
+        // Draw the background rect
+        static const ImU32 bg_col = ImGui::ColorConvertFloat4ToU32({ YART_GUI_COLOR_DARKER_GRAY, YART_GUI_ALPHA_OPAQUE });
+        ImVec2 p_min = { window->DC.CursorPos.x, window->DC.CursorPos.y - g->Style.ItemSpacing.y };
+        ImVec2 p_max = { window->WorkRect.Max.x, p_min.y + window->ContentSize.y };
+        window->DrawList->AddRectFilled(p_min, p_max, bg_col, 0);
     }
 
     void GUI::BeginFrame(const char* name, uint32_t rows)
@@ -252,22 +280,23 @@ namespace yart
 
 
         // -- RENDER CHILD FRAME -- //
-        ImVec4 backup_border = g->Style.Colors[ImGuiCol_Border];
-        float backup_rounding = g->Style.ChildRounding;
-        g->Style.Colors[ImGuiCol_Border] = { YART_GUI_COLOR_DARKEST_GRAY, YART_GUI_ALPHA_OPAQUE };
-        g->Style.ChildRounding = 0.0f;
+        const ImVec4 backup_child_bg = g->Style.Colors[ImGuiCol_ChildBg];
+        g->Style.Colors[ImGuiCol_ChildBg] = { YART_GUI_COLOR_DARK_GRAY, YART_GUI_ALPHA_OPAQUE };
 
         const float header_height = ImGui::GetTextLineHeight();
         float frame_height = rows * ImGui::GetFrameHeightWithSpacing() + g->Style.WindowPadding.y * 2.0f - g->Style.ItemSpacing.y;
         frame_height += header_height / 2.0f - g->Style.WindowPadding.y + g->Style.ItemSpacing.y;
         window->DC.CursorPos.y += header_height / 2.0f;
+        
+        static constexpr ImGuiWindowFlags flags = (
+            ImGuiWindowFlags_NavFlattened | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_AlwaysUseWindowPadding
+        );
 
-        static constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
         ImGui::BeginChild(name, { 0.0f, frame_height }, true, flags);
         window = g->CurrentWindow;
 
-        g->Style.ChildRounding = backup_rounding;
-        g->Style.Colors[ImGuiCol_Border] = backup_border;
+        g->Style.Colors[ImGuiCol_ChildBg] = backup_child_bg;
+
 
         // -- RENDER HEADER TITLE -- //
         const ImVec4 backup_clip_rect = window->DrawList->_ClipRectStack.back();
@@ -275,7 +304,7 @@ namespace yart
         window->DrawList->PushClipRect({ backup_clip_rect.x, 0 }, { backup_clip_rect.z, backup_clip_rect.w });
         window->DC.CursorPos.y -= g->Style.WindowPadding.y + header_height / 2.0f;
 
-        const ImU32 bg_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_ChildBg]);
+        static const ImU32 bg_col = ImGui::ColorConvertFloat4ToU32({ YART_GUI_COLOR_DARK_GRAY, YART_GUI_ALPHA_OPAQUE });
         const ImU32 text_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_Text]);
         const float text_width = ImGui::CalcTextSize(name).x;
         const float frame_padding = g->Style.FramePadding.x;
@@ -340,9 +369,31 @@ namespace yart
         }
     }
 
-    bool GUI::GradientEditor(std::vector<glm::vec3> &values, std::vector<float> &locations, GradientEditorContext& ctx)
+    bool GUI::GradientEditor(GradientEditorContext& ctx)
     {
-        return GUI::GradientEditorEx(values, locations, ctx);
+        return GUI::GradientEditorEx(ctx);
+    }
+
+    void GUI::FullWidthSeparator(float thickness)
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        ImGuiWindow* window = g->CurrentWindow;
+
+        const float padding = g->Style.WindowPadding.x;
+        ImVec2 p1 = { window->Pos.x, window->DC.CursorPos.y + 2.0f };
+        ImVec2 p2 = { p1.x + ImGui::GetContentRegionAvail().x + 2.0f * padding, p1.y + thickness };
+
+        const ImVec4 backup_clip_rect = g->CurrentWindow->DrawList->_ClipRectStack.back();
+        g->CurrentWindow->DrawList->PopClipRect();
+
+        g->CurrentWindow->DrawList->PushClipRect({ backup_clip_rect.x - padding, backup_clip_rect.y }, { backup_clip_rect.z + padding, backup_clip_rect.w });
+        static const ImU32 col = ImGui::ColorConvertFloat4ToU32({ YART_GUI_COLOR_DARKEST_GRAY, YART_GUI_ALPHA_OPAQUE });
+        g->CurrentWindow->DrawList->AddRectFilled(p1, p2, col);
+        g->CurrentWindow->DrawList->PopClipRect();
+
+        g->CurrentWindow->DrawList->PushClipRect({ backup_clip_rect.x, backup_clip_rect.y }, { backup_clip_rect.z, backup_clip_rect.w });
+
+        ImGui::ItemSize({ 0.0f, thickness });
     }
 
 } // namespace yart
