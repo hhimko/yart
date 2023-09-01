@@ -8,6 +8,7 @@
 
 #include <functional>
 #include <vector>
+#include <memory>
 
 #include <imgui.h>
 #include <glm/glm.hpp>
@@ -120,6 +121,11 @@ namespace yart
         /// @note Call `ImGui::PopFont()` to return to the previous font in the stack
         void PushIconsFont();
 
+        /// @brief Helper function for getting a Dear ImGui ID from a formatted string
+        /// @param fmt Format of the string
+        /// @return Dear ImGui ID
+        ImGuiID GetIDFormatted(const char* fmt, ...);
+
         /// @brief Get the current position of the render viewport area
         /// @return Position in screen pixel coordinates
         ImVec2 GetRenderViewportAreaPosition();
@@ -160,6 +166,15 @@ namespace yart
         /// @brief Finish recording a frame window
         void EndFrame();
 
+        /// @brief Draw width aware text to a given ImGui draw list
+        /// @param draw_list  Dear ImGui draw list on which to draw the text
+        /// @param p_min Text rectangle upper-left corner in screen space coordinates
+        /// @param p_max Text rectangle lower-right corner in screen space coordinates
+        /// @param align Y-axis text alignment. Expected to be in the [0..1] range
+        /// @param text String to render
+        /// @return Whether the text had been clipped. Useful for showing tooltips
+        bool DrawText(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, float align, const char* text);
+
         /// @brief Add a rectangle filled with a linear gradient to a given ImGui draw list
         /// @param draw_list Dear ImGui draw list on which to draw the rectangle
         /// @param p_min Rectangle upper-left corner in screen space coordinates
@@ -170,6 +185,13 @@ namespace yart
         /// @param size Size of the `values` and `locations` arrays
         /// @param border Whether a 1px border should be drawn over the rect
         void DrawGradientRect(ImDrawList* draw_list, ImVec2 p_min, ImVec2 p_max, glm::vec3 const* values, float const* locations, size_t size, bool border = false);
+
+        /// @brief Render a YART GUI style combo header widget
+        /// @param name Identifying name of the widget
+        /// @param items Array of combo items
+        /// @param items_size Size of the `items` array
+        /// @param selected_item The currently selected combo item index
+        void ComboHeader(const char* name, const char* items[], size_t items_size, int* selected_item); 
 
         /// @brief Render a linear gradient editor widget
         /// @param ctx Object holding the widget's state

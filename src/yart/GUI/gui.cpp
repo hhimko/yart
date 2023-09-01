@@ -155,6 +155,19 @@ namespace yart
         ImGui::PushFont(ctx->iconsFont);
     }
 
+    ImGuiID GUI::GetIDFormatted(const char* fmt, ...)
+    {
+        ImGuiWindow* window = ImGui::GetCurrentWindow();
+        va_list args;
+        va_start(args, fmt);
+
+        const char* str;
+        ImFormatStringToTempBufferV(&str, nullptr, fmt, args);
+
+        va_end(args);
+        return window->GetID(str);
+    }
+
     ImVec2 GUI::GetRenderViewportAreaPosition()
     {
         GuiContext* ctx = GetCurrentContext();
@@ -238,9 +251,10 @@ namespace yart
             window->DrawList->AddRectFilled(p1, p2, bg_col);
 
             window->ContentRegionRect.TranslateX(-g->Style.WindowPadding.x);
+            window->WorkRect.TranslateX(-g->Style.WindowPadding.x);
 
             ImVec4 clip_rect = window->DrawList->_ClipRectStack.back();
-            window->DrawList->PushClipRect({ clip_rect.x, clip_rect.y }, { window->ContentRegionRect.Max.x, clip_rect.w });
+            window->DrawList->PushClipRect({ clip_rect.x, clip_rect.y }, { window->ContentRegionRect.Max.x + 4.0f, clip_rect.w });
 
             window->DC.CursorPos.y += g->Style.ItemSpacing.y + separator_thickness;
         }
@@ -255,13 +269,14 @@ namespace yart
         ImGuiContext* g = ImGui::GetCurrentContext();
         ImGuiWindow* window = g->CurrentWindow;
 
-        ImGui::Unindent(g->Style.WindowPadding.x);
+        const float rounding = g->Style.ChildRounding;
 
+        ImGui::Unindent(g->Style.WindowPadding.x);
         if (was_open) {
             window->ContentRegionRect.TranslateX(g->Style.WindowPadding.x);
+            window->WorkRect.TranslateX(g->Style.WindowPadding.x);
             window->DrawList->PopClipRect();
 
-            const float rounding = g->Style.ChildRounding;
             ImGui::ItemSize({ 0.0f, rounding });
         }
 
@@ -271,7 +286,15 @@ namespace yart
         ImVec2 p_max = { window->WorkRect.Max.x, p_min.y + window->ContentSize.y };
         window->DrawList->AddRectFilled(p_min, p_max, bg_col, 0);
 
-        window->DC.CursorPos.y += 2.0f;
+        // Crude way to simulate rounded edges on the section foreground
+        // This currently only works for ChildRounding value of 4
+        ImVec2 p1 = { p_min.x, p_min.y - 3.0f };
+        ImVec2 p2 = { p_min.x + 3.0f, p_min.y };
+        window->DrawList->AddBezierQuadratic(p1, p_min, p2, bg_col, 1.0f);
+
+        p1.x = p_max.x;
+        p2.x = p_max.x - 3.0f;
+        window->DrawList->AddBezierQuadratic(p1, { p_max.x, p_min.y }, p2, bg_col, 1.0f);
     }
 
     void GUI::BeginFrame(const char* name, uint32_t rows)
@@ -328,12 +351,25 @@ namespace yart
 
         window->DrawList->PopClipRect();
         window->DrawList->PushClipRect({ backup_clip_rect.x, backup_clip_rect.y }, { backup_clip_rect.z, backup_clip_rect.w });
-
     }
 
     void GUI::EndFrame()
     {
         ImGui::EndChild();
+    }
+
+    bool GUI::DrawText(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, float align, const char* text)
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+
+        const ImVec2 text_size = ImGui::CalcTextSize(text);
+        const float offset_x = ImMax(0.0f, (p_max.x - p_min.x) * align - text_size.x * align);
+        const float offset_y = (p_max.y - p_min.y - g->FontSize) / 2.0f;
+
+        const ImVec2 p0 = { p_min.x + offset_x, p_min.y + offset_y }; 
+        ImGui::RenderTextEllipsis(draw_list, p0, p_max, p_max.x, p_max.x, text, nullptr, &text_size);
+
+        return text_size.x > (p_max.x - p_min.x);
     }
 
     void GUI::DrawGradientRect(ImDrawList* draw_list, ImVec2 p_min, ImVec2 p_max, glm::vec3 const* values, float const* locations, size_t size, bool border)
@@ -369,6 +405,68 @@ namespace yart
             ImGuiContext* g = ImGui::GetCurrentContext();
             const ImU32 border_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_Border]);
             draw_list->AddRect({ start_x - 1.0f, p_min.y }, p_max, border_col);
+        }
+    }
+
+    void GUI::ComboHeader(const char* name, const char* items[], size_t items_size, int* selected_item)
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        ImGuiWindow* window = g->CurrentWindow;
+        if (window->SkipItems)
+            return;
+
+        ImVec2 p_min = window->DC.CursorPos;
+        ImVec2 p_max = { window->WorkRect.Max.x, window->DC.CursorPos.y + ImGui::GetFrameHeight() };
+        const ImRect total_bb = { p_min, p_max };
+
+        ImGuiID id = GUI::GetIDFormatted("##ComboHeader/%s", name);
+        ImGui::ItemSize(total_bb);
+        if (!ImGui::ItemAdd(total_bb, id, nullptr)) 
+            return;
+
+        // When navigating with keyboard/gamepad, cycle over all the items
+        // We disable the mouse hover momentarily here, to disable mouse inputs over the invisible button 
+        bool backup_nav_disable = g->NavDisableMouseHover;
+        g->NavDisableMouseHover = true;
+        bool total_bb_hovered, total_bb_held;
+        if (ImGui::ButtonBehavior(total_bb, id, &total_bb_hovered, &total_bb_held)) {
+            *selected_item = (*selected_item + 1) % items_size;
+        };
+        g->NavDisableMouseHover = backup_nav_disable;
+        ImGui::RenderNavHighlight(total_bb, id);
+
+        // Render the individual header items
+        const ImU32 frame_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_FrameBg]);
+        const ImU32 frame_hovered_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_FrameBgHovered]);
+        const ImU32 frame_active_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_FrameBgActive]);
+        const float rounding = g->Style.FrameRounding;
+
+        for (int i = 0; i < items_size; ++i) {
+            p_min.x = total_bb.Min.x + total_bb.GetWidth() * (i / static_cast<float>(items_size));
+            p_max.x = total_bb.Min.x + total_bb.GetWidth() * ((i + 1) / static_cast<float>(items_size));
+
+            ImGuiID button_id = GUI::GetIDFormatted("##ComboHeader/%s/%d", name, i);
+            ImGui::ItemAdd({ p_min, p_max }, button_id, nullptr, ImGuiItemFlags_NoNav);
+            if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) 
+                *selected_item = i;
+
+            const ImU32 col = i == *selected_item ? frame_active_col : ImGui::IsItemHovered() ? frame_hovered_col : frame_col;
+            const ImDrawFlags flags = i == 0 ? ImDrawFlags_RoundCornersLeft : i == items_size - 1 ? ImDrawFlags_RoundCornersRight : ImDrawFlags_RoundCornersNone;
+            window->DrawList->AddRectFilled(p_min, p_max, col, rounding, flags);
+
+            // Render header text
+            if (GUI::DrawText(window->DrawList, { p_min.x + 2.0f, p_min.y }, { p_max.x - 2.0f, p_max.y }, 0.5f, items[i]) && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
+                ImGui::SetTooltip(items[i]);
+        }
+
+
+        // Render header items separators
+        const ImU32 separator_col = ImGui::ColorConvertFloat4ToU32({ YART_GUI_COLOR_DARK_GRAY, YART_GUI_ALPHA_OPAQUE });
+        for (int i =0; i < items_size - 1; ++i) {
+            p_min.x = total_bb.Min.x + total_bb.GetWidth() * ((i + 1) / static_cast<float>(items_size)) - 1.0f;
+            p_max.x = p_min.x + 2.0f;
+
+            window->DrawList->AddRectFilled(p_min, p_max, separator_col);
         }
     }
 

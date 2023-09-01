@@ -121,26 +121,29 @@ namespace yart
 
         void RendererView::RenderWorldSection(yart::Renderer &target)
         {
-            static const char* items[3] = { "Solid color", "Gradient", "Cubemap texture" }; 
-            static size_t selected_item = 0;
-            if (ImGui::BeginCombo("combo", items[selected_item])) {
-                for (size_t i = 0; i < 3; ++i) {
-                    bool selected = (i == selected_item);
-                    if (ImGui::Selectable(items[i], &selected)) {
-                        selected_item = i;
-                    }
-                }
-                
-                ImGui::EndCombo();
+            static const char* items[3] = { "Solid color", "Gradient", "Cubemap" }; 
+            static int selected_item = 0;
+            GUI::ComboHeader("Skybox type", items, 3, &selected_item);
+
+            switch (selected_item) {
+            case 0: {
+                break;
             }
+            case 1: {
+                static GradientEditorContext ge_ctx { 
+                    target.m_worldSkyGradientValues, 
+                    target.m_worldSkyGradientLocations 
+                };
 
-            static GradientEditorContext ge_ctx { 
-                target.m_worldSkyGradientValues, 
-                target.m_worldSkyGradientLocations 
-            };
+                if (GUI::GradientEditor(ge_ctx))
+                    target.m_dirty = true;
 
-            if (GUI::GradientEditor(ge_ctx))
-                target.m_dirty = true;
+                break;
+            }
+            case 2: {
+                break;
+            }
+            }
         }
 
     } // namespace GUI
