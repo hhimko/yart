@@ -139,11 +139,9 @@ namespace yart
         bool RenderViewAxesWindowEx(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis, glm::vec3& clicked_axis);
 
         /// @brief Render a linear gradient editor widget
-        /// @param values Vector of the gradient values
-        /// @param locations Vector of the gradient value locations
         /// @param ctx Object holding the widget's state
         /// @return Whether the gradient has changed since the last frame
-        bool GradientEditorEx(std::vector<glm::vec3>& values, std::vector<float>& locations, GradientEditorContext& ctx);
+        bool GradientEditorEx(GradientEditorContext& ctx);
 
     } // namespace GUI
 } // namespace yart

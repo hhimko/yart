@@ -231,21 +231,22 @@ namespace yart
         
         if (open) {
             // Draw the header separator line
+            static const float separator_thickness = 1.0f;
             static const ImU32 bg_col = ImGui::ColorConvertFloat4ToU32({ YART_GUI_COLOR_DARKER_GRAY, YART_GUI_ALPHA_OPAQUE });
             const ImVec2 p1 = { window->DC.CursorPos.x, window->DC.CursorPos.y - g->Style.ItemSpacing.y };
-            const ImVec2 p2 = { p1.x + window->SizeFull.x, p1.y };
-            window->DrawList->AddLine(p1, p2, bg_col);
+            const ImVec2 p2 = { p1.x + window->SizeFull.x, p1.y + separator_thickness };
+            window->DrawList->AddRectFilled(p1, p2, bg_col);
 
             window->ContentRegionRect.TranslateX(-g->Style.WindowPadding.x);
 
             ImVec4 clip_rect = window->DrawList->_ClipRectStack.back();
             window->DrawList->PushClipRect({ clip_rect.x, clip_rect.y }, { window->ContentRegionRect.Max.x, clip_rect.w });
 
-            window->DC.CursorPos.y += g->Style.ItemSpacing.y;
+            window->DC.CursorPos.y += g->Style.ItemSpacing.y + separator_thickness;
         }
 
         ImGui::Indent(g->Style.WindowPadding.x);
-        
+
         return open;
     }
 
@@ -269,6 +270,8 @@ namespace yart
         ImVec2 p_min = { window->DC.CursorPos.x, window->DC.CursorPos.y - g->Style.ItemSpacing.y };
         ImVec2 p_max = { window->WorkRect.Max.x, p_min.y + window->ContentSize.y };
         window->DrawList->AddRectFilled(p_min, p_max, bg_col, 0);
+
+        window->DC.CursorPos.y += 2.0f;
     }
 
     void GUI::BeginFrame(const char* name, uint32_t rows)

@@ -89,12 +89,11 @@ namespace yart
 
     void Renderer::Miss(const Ray& ray, HitPayload& payload)
     {
-        static const size_t grad_size = 3;
-        static const glm::vec3 grad[grad_size] = {{1,0,0}, {0,1,0}, {0,0,1}};
-        static const float pos[grad_size] = {0.2f, 0.3f, 0.9f};
-
         float t = (ray.direction.y + 1.0f) / 2.0f; 
-        payload.resultColor = yart::utils::LinearGradient(grad, pos, grad_size, t);
+        
+        payload.resultColor = yart::utils::LinearGradient(
+            m_worldSkyGradientValues.data(), m_worldSkyGradientLocations.data(), m_worldSkyGradientValues.size(), t
+        );
     }
 
     void Renderer::RecalculateCameraTransformationMatrix()

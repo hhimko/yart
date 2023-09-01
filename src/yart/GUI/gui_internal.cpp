@@ -303,7 +303,7 @@ namespace yart
 
         bool open = GUI::BeginCustomTabBar(name);
         {
-            ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysUseWindowPadding;
+            static constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysUseWindowPadding;
             ImGui::BeginChild("##Content", { 0.0f, 0.0f }, false, flags);
 
             // Draw background without left edge rounding
@@ -362,8 +362,8 @@ namespace yart
             window->DC.CursorPos.x += icon_button_outer_padding;
             window->DC.CursorPos.y += item_spacing;
 
-            p_min = window->DC.CursorPos;
-            p_max = { p_min.x + 2.0f * icon_button_inner_padding + icon_button_outer_padding + size + child_rounding, p_min.y + 2.0f * icon_button_inner_padding + size };
+            p_min = { window->DC.CursorPos.x, window->DC.CursorPos.y + 1.0f };
+            p_max = { p_min.x + 2.0f * icon_button_inner_padding + icon_button_outer_padding + size, p_min.y + 2.0f * icon_button_inner_padding + size };
 
             const ImGuiID id = ImGui::GetID(item.name);
             ImGui::ItemAdd({ p_min, p_max }, id);
@@ -386,7 +386,7 @@ namespace yart
             const ImU32 hovered_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_TabHovered]);
 
             const ImU32 color = hovered ? hovered_col : active ? active_col : normal_col;
-            window->DrawList->AddRectFilled(p_min, p_max, color, child_rounding);
+            window->DrawList->AddRectFilled(p_min, p_max, color, child_rounding, ImDrawFlags_RoundCornersLeft);
 
             // Render the icon
             window->DC.CursorPos.x += icon_button_inner_padding;
@@ -683,13 +683,78 @@ namespace yart
         draw_list->AddTriangleFilled(p1, p2, { pos.x + size.x / 2.0f, pos.y + size.y }, border_col);
     }
 
-    bool GUI::GradientEditorEx(std::vector<glm::vec3>& values, std::vector<float>& locations, GradientEditorContext& ctx)
+    bool UpdateGradientEditorLocations(GUI::GradientEditorContext& ctx, int i, float new_loc)
+    {
+        float old_loc = ctx.locations[i];
+        ctx.locations[i] = new_loc;
+
+        if (new_loc == old_loc)
+            return false;
+
+        if (new_loc < old_loc) {
+            for (int j = 0; j < i; ++j) {
+                if (new_loc < ctx.locations[j]) {
+                    glm::vec3 temp_val = ctx.values[i];
+                    ImGuiID temp_id = ctx.ids[i];
+
+                    // Shift all the remaining values
+                    for (int k = i; k > j; --k) {
+                        ctx.locations[k] = ctx.locations[k - 1];
+                        ctx.values[k] = ctx.values[k - 1];
+                        ctx.ids[k] = ctx.ids[k - 1];
+                    }
+
+                    ctx.values[j] = temp_val;
+                    ctx.ids[j] = temp_id;
+                    i = j;
+                    break;
+                }
+            }
+        } else {
+            for (int j = static_cast<int>(ctx.locations.size()) - 1; j > i; --j) {
+                if (new_loc > ctx.locations[j]) {
+                    glm::vec3 temp_val = ctx.values[i];
+                    ImGuiID temp_id = ctx.ids[i];
+
+                    // Shift all the remaining values
+                    for (int k = i; k < j; ++k) {
+                        ctx.locations[k] = ctx.locations[k + 1];
+                        ctx.values[k] = ctx.values[k + 1];
+                        ctx.ids[k] = ctx.ids[k + 1];
+                    }
+
+                    ctx.values[j] = temp_val;
+                    ctx.ids[j] = temp_id;
+                    i = j;
+                    break;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    bool GUI::GradientEditorEx(GradientEditorContext& ctx)
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
         ImGuiWindow* window = g->CurrentWindow;
         ImDrawList* draw_list = window->DrawList;
+
+        bool state_updated = false; // Whether the gradient has changed since last frame 
         if (window->SkipItems)
-            return false;
+            return state_updated;
+
+
+        // Generate picker IDs if nonexistant 
+        if (ctx.ids == nullptr) {
+            ctx.ids = std::make_unique<ImGuiID[]>(ctx.values.size());
+
+            for (int i = 0; i < ctx.values.size(); ++i) {
+                const char* temp_name;
+                ImFormatStringToTempBuffer(&temp_name, nullptr, "##ColorEdit/%d", i);
+                ctx.ids[i] = window->GetID(temp_name);
+            }
+        }
 
 
         // Compute sizes and bounding boxes
@@ -710,24 +775,13 @@ namespace yart
         ImGui::BeginGroup();
         ImGui::ItemSize({ 0.0f, picker_size.y + gradient_size.y + 1.0f });
 
-        // Generate picker IDs if nonexistant 
-        if (ctx.ids == nullptr) {
-            ctx.ids = std::make_unique<ImGuiID[]>(values.size());
-
-            for (int i = 0; i < values.size(); ++i) {
-                const char* temp_name;
-                ImFormatStringToTempBuffer(&temp_name, nullptr, "##ColorEdit/%d", i);
-                ctx.ids[i] = window->GetID(temp_name);
-            }
-        }
-
 
         // -- HANDLE COLOR PICKER INPUTS -- //
         int hovered_idx = -1;
-        for (int i = static_cast<int>(values.size()) - 1; i >= 0; --i) {
+        for (int i = static_cast<int>(ctx.values.size()) - 1; i >= 0; --i) {
             const ImVec4 bb = { 
-                cursor_pos.x + glm::round(locations[i] * gradient_size.x), cursor_pos.y,
-                cursor_pos.x + glm::round(locations[i] * gradient_size.x) + picker_size.x, cursor_pos.y + picker_size.y
+                cursor_pos.x + glm::round(ctx.locations[i] * gradient_size.x), cursor_pos.y,
+                cursor_pos.x + glm::round(ctx.locations[i] * gradient_size.x) + picker_size.x, cursor_pos.y + picker_size.y
             };
             
             ImGuiID id = ctx.ids[i];
@@ -740,84 +794,50 @@ namespace yart
                 // Move the handle location
                 if (held) {
                     float x_pos = ImClamp(g->IO.MousePos.x, cursor_pos.x, gradient_p_min.x + gradient_p_max.x); 
-                    float old_loc = locations[i];
                     float new_loc = ImClamp((x_pos - gradient_p_min.x) / gradient_size.x, 0.0f, 1.0f);
-                    locations[i] = new_loc;
 
-                    // Values are safe to swap in place here, because the loop being terminated after this iteration
-                    if (new_loc != old_loc) {
-                        if (new_loc < old_loc) {
-                            for (int j = 0; j < i; ++j) {
-                                if (new_loc < locations[j]) {
-                                    glm::vec3 temp_val = values[i];
-                                    ImGuiID temp_id = ctx.ids[i];
-
-                                    // Shift all the remaining values
-                                    for (int k = i; k > j; --k) {
-                                        locations[k] = locations[k - 1];
-                                        ctx.ids[k] = ctx.ids[k - 1];
-                                        values[k] = values[k - 1];
-                                    }
-
-                                    ctx.ids[j] = temp_id;
-                                    values[j] = temp_val;
-                                    i = j;
-                                    break;
-                                }
-                            }
-                        } else {
-                            for (int j = static_cast<int>(locations.size()) - 1; j > i; --j) {
-                                if (new_loc > locations[j]) {
-                                    glm::vec3 temp_val = values[i];
-                                    ImGuiID temp_id = ctx.ids[i];
-
-                                    // Shift all the remaining values
-                                    for (int k = i; k < j; ++k) {
-                                        locations[k] = locations[k + 1];
-                                        ctx.ids[k] = ctx.ids[k + 1];
-                                        values[k] = values[k + 1];
-                                    }
-
-                                    ctx.ids[j] = temp_id;
-                                    values[j] = temp_val;
-                                    i = j;
-                                    break;
-                                }
-                            }
-                        }
-                    }
+                    // Update the gradient locations state and sort the data if necessary
+                    if (UpdateGradientEditorLocations(ctx, i, new_loc))
+                        state_updated = true;
                 }
 
                 hovered_idx = i;
+                ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+
                 if (clicked || held)
                     ctx.selectedItemIndex = static_cast<uint8_t>(i);
 
                 break;
             }
         }
+        
 
-        if (hovered_idx != -1)
-            ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
-        else 
-            ImGui::SetMouseCursor(ImGuiMouseCursor_Arrow);
-
-        // -- RENDER COLOR PICKER HANDLES -- //
+        // -- RENDER GRADIENT RECT AND COLOR PICKER HANDLES -- //
         const ImU32 border_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_SliderGrab]);
         const ImU32 border_col_hovered = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_SliderGrabActive]);
-        const ImU32 border_col_active = 0xFFFFFFFF;
+        static constexpr ImU32 border_col_active = 0xFFFFFFFF;
 
-        for (size_t i = 0; i < values.size(); ++i) {
-            const ImVec2 p_min = { cursor_pos.x + glm::round(locations[i] * gradient_size.x), cursor_pos.y };
+        for (size_t i = 0; i < ctx.values.size(); ++i) {
+            const ImVec2 p_min = { cursor_pos.x + glm::round(ctx.locations[i] * gradient_size.x), cursor_pos.y };
 
             const ImU32 col = (i == ctx.selectedItemIndex) ? border_col_active : (i == hovered_idx) ? border_col_hovered : border_col; 
-            GradientSamplingPointHandle(values[i], p_min, picker_size, col);
+            GradientSamplingPointHandle(ctx.values[i], p_min, picker_size, col);
         }
 
-        // -- RENDER GRADIENT RECT -- //
-        GUI::DrawGradientRect(draw_list, gradient_p_min, gradient_p_max, values.data(), locations.data(), values.size(), true);
+        GUI::DrawGradientRect(draw_list, gradient_p_min, gradient_p_max, ctx.values.data(), ctx.locations.data(), ctx.values.size(), true);
 
+
+        // -- RENDER HANDLE STATE CONTROLS -- //
+        GUI::BeginFrame("Stop 1", 1);
+        {
+            static float f;
+            ImGui::DragFloat("idk1", &f);
+        }
+        GUI::EndFrame();
+
+        
         ImGui::EndGroup();
-        return false;
+        return state_updated;
     }
 
 } // namespace yart

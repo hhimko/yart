@@ -12,21 +12,28 @@
 #include "yart/GUI/gui.h"
 
 
+/// @brief The speed multiplier for camera's movements
+static float s_cameraMoveSpeed = 0.01f;
+
+
 namespace yart
 {
     namespace GUI
     {
         void RendererView::OnRenderGUI(yart::Renderer& target)
         {
-            if (GUI::BeginCollapsableSection("Camera")) {
+            bool section_open;
+            section_open = GUI::BeginCollapsableSection("Camera");
+            if (section_open) {
                 RenderCameraSection(target);
             }
-            GUI::EndCollapsableSection();
+            GUI::EndCollapsableSection(section_open);
 
-            if (GUI::BeginCollapsableSection("World")) {
+            section_open = GUI::BeginCollapsableSection("World");
+            if (section_open) {
                 RenderWorldSection(target);
             }
-            GUI::EndCollapsableSection();
+            GUI::EndCollapsableSection(section_open);
 
         }
 
@@ -54,7 +61,7 @@ namespace yart
             // Forward/backward movement
             float vertical_speed = yart::Input::GetVerticalAxis();
             if (vertical_speed != 0) {
-                target.m_cameraPosition += target.m_cameraLookDirection * vertical_speed * target.m_cameraMoveSpeed;
+                target.m_cameraPosition += target.m_cameraLookDirection * vertical_speed * s_cameraMoveSpeed;
                 target.m_dirty = true;
             }
 
@@ -62,7 +69,7 @@ namespace yart
             float horizontal_speed = yart::Input::GetHorizontalAxis();
             if (horizontal_speed != 0) {
                 const glm::vec3 u = -glm::normalize(glm::cross(target.m_cameraLookDirection, target.UP_DIRECTION)); // Camera view horizontal (right) direction vector
-                target.m_cameraPosition += u * horizontal_speed * target.m_cameraMoveSpeed;
+                target.m_cameraPosition += u * horizontal_speed * s_cameraMoveSpeed;
                 target.m_dirty = true;
             }
 
@@ -70,7 +77,7 @@ namespace yart
             float elevation_speed = static_cast<float>(ImGui::IsKeyDown(ImGuiKey_Space));
             elevation_speed -= static_cast<float>(ImGui::IsKeyDown(ImGuiKey_LeftCtrl));
             if (elevation_speed != 0) {
-                target.m_cameraPosition += target.UP_DIRECTION * elevation_speed * target.m_cameraMoveSpeed;
+                target.m_cameraPosition += target.UP_DIRECTION * elevation_speed * s_cameraMoveSpeed;
                 target.m_dirty = true;
             }
 
@@ -127,14 +134,13 @@ namespace yart
                 ImGui::EndCombo();
             }
 
-            ImDrawList* draw_list = ImGui::GetWindowDrawList();
-            ImVec2 size = { ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight() };
+            static GradientEditorContext ge_ctx { 
+                target.m_worldSkyGradientValues, 
+                target.m_worldSkyGradientLocations 
+            };
 
-            static std::vector<glm::vec3> grad = {{1,0,0}, {0,1,0}, {0,0,1}};
-            static std::vector<float> spacing = {0.2f, 0.3f, 0.9f};
-
-            static GradientEditorContext ge_ctx;
-            GUI::GradientEditor(grad, spacing, ge_ctx);
+            if (GUI::GradientEditor(ge_ctx))
+                target.m_dirty = true;
         }
 
     } // namespace GUI

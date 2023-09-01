@@ -96,10 +96,13 @@ namespace yart
         float m_nearClippingPlane = 0.1f;
         float m_farClippingPlane = 1000.0f;
 
-        float m_cameraMoveSpeed = 0.01f;
-
         // Cached view projection matrix inverse for transforming screen space coordinates into world space 
         glm::mat4 m_inverseViewProjectionMatrix; 
+
+
+        // -- WORLD DATA -- //
+        std::vector<glm::vec3> m_worldSkyGradientValues = { {1,0,0}, {0,1,0}, {0,0,1} };
+        std::vector<float> m_worldSkyGradientLocations = { 0.0f, 0.5f, 1.0f };
 
 
         // -- FRIEND DECLARATIONS -- //
