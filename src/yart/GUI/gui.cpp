@@ -67,6 +67,7 @@ namespace yart
         style.TabRounding = 5.0f;
         style.WindowPadding = { 6.0f, 6.0f };
         style.FramePadding = { 6.0f, 2.0f };
+        style.ItemInnerSpacing = { 6.0f, 4.0f };
         style.SeparatorTextBorderSize = 1.0f;
         style.SeparatorTextPadding = { 18.0f, 2.0f };
 
@@ -362,6 +363,7 @@ namespace yart
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
 
+        // Calculate offset based on the alignment value
         const ImVec2 text_size = ImGui::CalcTextSize(text);
         const float offset_x = ImMax(0.0f, (p_max.x - p_min.x) * align - text_size.x * align);
         const float offset_y = (p_max.y - p_min.y - g->FontSize) / 2.0f;
@@ -378,34 +380,109 @@ namespace yart
         p_max.x = p_min.x + rect_size.x * locations[0];
         const float start_x = p_min.x;
 
+        // If the first stops location is not 0.0f we draw a solid color at the beginning 
         if (p_min.x != p_max.x) {
-            ImU32 col = ImGui::ColorConvertFloat4ToU32({ values[0].x, values[0].y, values[0].z, 1.0f });
+            const ImU32 col = ImGui::ColorConvertFloat4ToU32({ values[0].x, values[0].y, values[0].z, 1.0f });
             draw_list->AddRectFilled(p_min, p_max, col);
         }
 
+        // Draw the individual segments as color interpolated rects
         for (size_t i = 0; i < size - 1; ++i) {
             p_min.x = p_max.x;
             p_max.x = p_min.x + rect_size.x * (locations[i + 1] - locations[i]);
 
-            ImU32 col_min = ImGui::ColorConvertFloat4ToU32({ values[i    ].x, values[i    ].y, values[i    ].z, 1.0f });
-            ImU32 col_max = ImGui::ColorConvertFloat4ToU32({ values[i + 1].x, values[i + 1].y, values[i + 1].z, 1.0f });
+            const ImU32 col_min = ImGui::ColorConvertFloat4ToU32({ values[i    ].x, values[i    ].y, values[i    ].z, 1.0f });
+            const ImU32 col_max = ImGui::ColorConvertFloat4ToU32({ values[i + 1].x, values[i + 1].y, values[i + 1].z, 1.0f });
             draw_list->AddRectFilledMultiColor(p_min, p_max, col_min, col_max, col_max, col_min);
         }
 
+        // If the last stops location is not 1.0f we draw a solid color at the end
         if (p_max.x != p_min.x + rect_size.x) {
             p_min.x = p_max.x;
             p_max.x = start_x + rect_size.x;
             
             const glm::vec3& last = values[size - 1];
-            ImU32 col = ImGui::ColorConvertFloat4ToU32({ last.x, last.y, last.z, 1.0f });
+            const ImU32 col = ImGui::ColorConvertFloat4ToU32({ last.x, last.y, last.z, 1.0f });
             draw_list->AddRectFilled(p_min, p_max, col);
         }
 
+        // Draw an optional border
         if (border) {
             ImGuiContext* g = ImGui::GetCurrentContext();
             const ImU32 border_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_Border]);
             draw_list->AddRect({ start_x - 1.0f, p_min.y }, p_max, border_col);
         }
+    }
+
+    bool GUI::DragFloat(const char* name, float* val, const char* format)
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        ImGuiWindow* window = g->CurrentWindow;
+        if (window->SkipItems)
+            return false;
+
+        static const float text_width_percent = 0.4f;
+        static const ImGuiDataType data_type = ImGuiDataType_Float;
+
+        const ImGuiID id = window->GetID(name);
+        const float item_spacing = g->Style.ItemInnerSpacing.x;
+        const ImRect total_bb = { window->DC.CursorPos, { window->WorkRect.Max.x, window->DC.CursorPos.y + ImGui::GetFrameHeight() }};
+        const ImRect text_bb  = { total_bb.Min, { total_bb.Min.x + total_bb.GetWidth() * text_width_percent - item_spacing, total_bb.Max.y }};
+        const ImRect frame_bb = { { text_bb.Max.x + item_spacing, text_bb.Min.y }, total_bb.Max };
+
+        ImGui::ItemSize(total_bb);
+        if (!ImGui::ItemAdd(total_bb, id))
+            return false;
+
+        const bool total_hovered = ImGui::ItemHoverable(total_bb, id);
+        const bool text_hovered = total_hovered && ImGui::IsMouseHoveringRect(text_bb.Min, text_bb.Max);
+        const bool frame_hovered = total_hovered && ImGui::IsMouseHoveringRect(frame_bb.Min, frame_bb.Max);
+
+        bool temp_input_is_active = ImGui::TempInputIsActive(id);
+        if (!temp_input_is_active) {
+            // Tabbing / CTRL-clicking / double-clicking turns the widget into an InputText
+            const bool input_requested_by_tabbing = (g->LastItemData.StatusFlags & ImGuiItemStatusFlags_FocusedByTabbing) != 0;
+            const bool clicked = frame_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left, id);
+            const bool make_active = (input_requested_by_tabbing || clicked || g->NavActivateId == id);
+
+            if (make_active) {
+                if (clicked)
+                    ImGui::SetKeyOwner(ImGuiKey_MouseLeft, id);
+
+                const bool double_clicked = (frame_hovered && g->IO.MouseClickedCount[0] == 2 && ImGui::TestKeyOwner(ImGuiKey_MouseLeft, id));
+                if (input_requested_by_tabbing || (clicked && g->IO.KeyCtrl) || double_clicked || (g->NavActivateId == id && (g->NavActivateFlags & ImGuiActivateFlags_PreferInput)))
+                    temp_input_is_active = true;
+
+                if (!temp_input_is_active) {
+                    ImGui::SetActiveID(id, window);
+                    ImGui::SetFocusID(id, window);
+                    ImGui::FocusWindow(window);
+                    g->ActiveIdUsingNavDirMask = (1 << ImGuiDir_Left) | (1 << ImGuiDir_Right);
+                }
+            }
+        }
+
+        if (temp_input_is_active) {
+            return ImGui::TempInputScalar(frame_bb, id, name, data_type, val, format, nullptr, nullptr);
+        }
+
+        // Render the label text
+        if (GUI::DrawText(window->DrawList, text_bb.Min, text_bb.Max, 0.0f, name) && text_hovered)
+            ImGui::SetTooltip(name);
+
+        // Render the item frame
+        const ImU32 frame_bg_col = ImGui::GetColorU32(g->ActiveId == id ? ImGuiCol_FrameBgActive : frame_hovered ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg);
+        const float frame_rounding = g->Style.FrameRounding;
+        window->DrawList->AddRectFilled(frame_bb.Min, frame_bb.Max, frame_bg_col, frame_rounding);
+        ImGui::RenderNavHighlight(frame_bb, id);
+
+        ImGui::DragBehavior(id, data_type, val, 1.0f, nullptr, nullptr, format, 0);
+
+        // Display value using user-provided display format
+        char value_buf[64];
+        const char* value_buf_end = value_buf + ImFormatString(value_buf, IM_ARRAYSIZE(value_buf), format, *val);
+        ImGui::RenderTextClipped(frame_bb.Min, frame_bb.Max, value_buf, value_buf_end, nullptr, { 0.5f, 0.5f });
+        return false;
     }
 
     void GUI::ComboHeader(const char* name, const char* items[], size_t items_size, int* selected_item)
@@ -462,7 +539,7 @@ namespace yart
 
         // Render header items separators
         const ImU32 separator_col = ImGui::ColorConvertFloat4ToU32({ YART_GUI_COLOR_DARK_GRAY, YART_GUI_ALPHA_OPAQUE });
-        for (int i =0; i < items_size - 1; ++i) {
+        for (int i = 0; i < items_size - 1; ++i) {
             p_min.x = total_bb.Min.x + total_bb.GetWidth() * ((i + 1) / static_cast<float>(items_size)) - 1.0f;
             p_max.x = p_min.x + 2.0f;
 
@@ -481,8 +558,8 @@ namespace yart
         ImGuiWindow* window = g->CurrentWindow;
 
         const float padding = g->Style.WindowPadding.x;
-        ImVec2 p1 = { window->Pos.x, window->DC.CursorPos.y + 2.0f };
-        ImVec2 p2 = { p1.x + ImGui::GetContentRegionAvail().x + 2.0f * padding, p1.y + thickness };
+        const ImVec2 p1 = { window->Pos.x, window->DC.CursorPos.y + 2.0f };
+        const ImVec2 p2 = { p1.x + ImGui::GetContentRegionAvail().x + 2.0f * padding, p1.y + thickness };
 
         const ImVec4 backup_clip_rect = g->CurrentWindow->DrawList->_ClipRectStack.back();
         g->CurrentWindow->DrawList->PopClipRect();

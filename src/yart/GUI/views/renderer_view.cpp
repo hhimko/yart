@@ -144,6 +144,9 @@ namespace yart
                 break;
             }
             }
+
+            static float f = 6.99f;
+            GUI::DragFloat("Near clipping", &f);
         }
 
     } // namespace GUI

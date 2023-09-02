@@ -186,6 +186,13 @@ namespace yart
         /// @param border Whether a 1px border should be drawn over the rect
         void DrawGradientRect(ImDrawList* draw_list, ImVec2 p_min, ImVec2 p_max, glm::vec3 const* values, float const* locations, size_t size, bool border = false);
 
+        /// @brief Render a YART GUI style DragFloat widget
+        /// @param name Label text displayed next to the drag slider
+        /// @param val Pointer to the controlled value
+        /// @param format Format in which to display the value
+        /// @return Whether the input value has changed
+        bool DragFloat(const char* name, float* val, const char* format = "%.2f");
+
         /// @brief Render a YART GUI style combo header widget
         /// @param name Identifying name of the widget
         /// @param items Array of combo items
