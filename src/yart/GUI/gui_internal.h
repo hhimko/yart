@@ -80,6 +80,8 @@ namespace yart
             float default_size_ratio = 0.5f;
             /// @brief Separator handle position state
             float size;
+            /// @brief The minimum possible size 
+            float min_size = 100.0f;
             
         };
 

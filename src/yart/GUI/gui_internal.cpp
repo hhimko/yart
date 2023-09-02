@@ -18,7 +18,6 @@
     #define TEMP_BUFFER_SIZE 5
 
     #define HOVER_RECT_PADDING 2.0f
-    #define LAYOUT_SEGMENT_MIN_SIZE 85.0f
     #define SEPARATOR_HANDLE_THICKNESS 2.0f
 
     #define AXIS_POSITIVE_X 0
@@ -36,7 +35,7 @@ namespace yart
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
         if (layout.size <= 0.0f) {
-            float min_size = ImMax(g->Style.ChildRounding * 2.0f + 2.0f, LAYOUT_SEGMENT_MIN_SIZE);
+            float min_size = ImMax(g->Style.ChildRounding * 2.0f + 2.0f, layout.min_size);
             float content_avail = layout.direction == GUI::LayoutDir::HORIZONTAL ? ImGui::GetContentRegionAvail().x : ImGui::GetContentRegionAvail().y;
             layout.size = ImMax((content_avail - SEPARATOR_HANDLE_THICKNESS) * layout.default_size_ratio, min_size);
         }
@@ -113,7 +112,7 @@ namespace yart
             layout.size += layout.direction == GUI::LayoutDir::HORIZONTAL ? ctx->displaySizeDelta.x : ctx->displaySizeDelta.y;
 
 
-        float min_size = ImMax(g->Style.ChildRounding * 2.0f + 2.0f, LAYOUT_SEGMENT_MIN_SIZE);
+        float min_size = ImMax(g->Style.ChildRounding * 2.0f + 2.0f, layout.min_size);
         if (layout.size < min_size) 
             layout.size = min_size;
 
@@ -264,6 +263,7 @@ namespace yart
         vertical_layout.direction = GUI::LayoutDir::VERTICAL;
         vertical_layout.default_size_ratio = 1.0f / 3.0f;
         vertical_layout.window_flags = ImGuiWindowFlags_NoBackground;
+        vertical_layout.min_size = 50.0f;
 
         // Scene + Object inspectors section
         GUI::BeginLayout(vertical_layout);

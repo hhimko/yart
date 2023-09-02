@@ -175,6 +175,9 @@ namespace yart
         /// @return Whether the text had been clipped. Useful for showing tooltips
         bool DrawText(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, float align, const char* text);
 
+        void DrawLeftArrow(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, const ImVec2& padding, ImU32 col);
+        void DrawRightArrow(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, const ImVec2& padding, ImU32 col);
+
         /// @brief Add a rectangle filled with a linear gradient to a given ImGui draw list
         /// @param draw_list Dear ImGui draw list on which to draw the rectangle
         /// @param p_min Rectangle upper-left corner in screen space coordinates
