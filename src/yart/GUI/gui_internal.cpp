@@ -666,6 +666,11 @@ namespace yart
         return clicked;
     }
 
+    /// @brief Draw the GradientEditor sampling point handle
+    /// @param color Color of the sampling point
+    /// @param pos Top-left corner position of where to draw the handle
+    /// @param size Sie of the handle
+    /// @param border_col Color of the handle border
     void GradientSamplingPointHandle(const glm::vec3& color, const ImVec2& pos, const ImVec2& size, ImU32 border_col)
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
@@ -683,6 +688,11 @@ namespace yart
         draw_list->AddTriangleFilled(p1, p2, { pos.x + size.x / 2.0f, pos.y + size.y }, border_col);
     }
 
+    /// @brief Update a single location of the gradient editor stops and sort the data if necessary
+    /// @param ctx GradientEditor widget context object
+    /// @param i Index of the changed location
+    /// @param new_loc New location value
+    /// @return Whether the location value has changed
     bool UpdateGradientEditorLocations(GUI::GradientEditorContext& ctx, int i, float new_loc)
     {
         float old_loc = ctx.locations[i];

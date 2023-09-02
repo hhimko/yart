@@ -18,6 +18,7 @@ namespace yart
 {
     namespace GUI
     {
+        /// @brief Layout direction enum
         enum class LayoutDir : uint8_t {
             HORIZONTAL,
             VERTICAL
