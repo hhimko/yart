@@ -494,7 +494,6 @@ namespace yart
         // Render the individual header items
         const ImU32 frame_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_FrameBg]);
         const ImU32 frame_hovered_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_FrameBgHovered]);
-        const ImU32 frame_active_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_FrameBgActive]);
         const float rounding = g->Style.FrameRounding;
 
         for (int i = 0; i < items_size; ++i) {
@@ -504,16 +503,23 @@ namespace yart
             ImGuiID button_id = GUI::GetIDFormatted("##ComboHeader/%s/%d", name, i);
             ImGui::ItemAdd({ p_min, p_max }, button_id, nullptr, ImGuiItemFlags_NoNav);
             if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
-                ImGui::SetFocusID(id, window);
                 ImGui::ClearActiveID();
+                ImGui::SetFocusID(id, window);
+                ImGui::FocusWindow(window);
 
                 *selected_item = i;
             }
 
-            const bool hovered_or_nav = (ImGui::IsItemHovered() || (g->NavId != 0 && g->NavId == id && g->NavDisableMouseHover));
-            const ImU32 col = i == *selected_item ? frame_active_col : hovered_or_nav ? frame_hovered_col : frame_col;
+            const bool hovered = ImGui::IsItemHovered();
+            const bool hovered_or_nav = (hovered || (g->NavId != 0 && g->NavId == id && g->NavDisableMouseHover));
             const ImDrawFlags flags = i == 0 ? ImDrawFlags_RoundCornersLeft : i == items_size - 1 ? ImDrawFlags_RoundCornersRight : ImDrawFlags_RoundCornersNone;
-            window->DrawList->AddRectFilled(p_min, p_max, col, rounding, flags);
+            if (i == *selected_item) {
+                bool held = hovered && ImGui::IsMouseDown(ImGuiMouseButton_Left);
+                GUI::DrawHighlightRect(window->DrawList, p_min, p_max, 1.0f, hovered_or_nav, held, rounding, flags);
+            } else {
+                const ImU32 col = hovered_or_nav ? frame_hovered_col : frame_col;
+                window->DrawList->AddRectFilled(p_min, p_max, col, rounding, flags);
+            }
 
             // Render header text
             if (GUI::DrawText(window->DrawList, { p_min.x + 2.0f, p_min.y }, { p_max.x - 2.0f, p_max.y }, 0.5f, items[i]) && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))

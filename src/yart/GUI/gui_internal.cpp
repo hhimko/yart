@@ -7,6 +7,7 @@
 #include "gui_internal.h"
 
 
+#include "yart/utils/glm_utils.h"
 #include "yart/utils/yart_utils.h"
 #include "yart/platform/input.h"
 #include "font/IconsCodicons.h"
@@ -667,15 +668,55 @@ namespace yart
         return clicked;
     }
 
-    void GUI::DrawHighlightRect(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, bool hovered, bool active)
+    void GUI::DrawHighlightRect(ImDrawList* draw_list, ImVec2 p_min, ImVec2 p_max, float t, bool hovered, bool active, float rounding, ImDrawFlags flags)
     {
-        const ImU32 start_col = ImGui::ColorConvertFloat4ToU32(
-            active ? ImVec4(YART_GUI_COLOR_LIGHT_PRIMARY, YART_GUI_ALPHA_OPAQUE) :
-            hovered ? ImVec4(YART_GUI_COLOR_PRIMARY, YART_GUI_ALPHA_OPAQUE) :
-            ImVec4(YART_GUI_COLOR_DARK_PRIMARY, YART_GUI_ALPHA_OPAQUE)
-        );
+        if (p_min.x >= p_max.x || p_min.y >= p_max.y)
+            return;
 
-        draw_list->AddRectFilledMultiColor(p_min, p_max, start_col, start_col, start_col, start_col);
+
+        // Compute the color values for each side
+        glm::vec3 colors[2] = {
+            // Start color
+            active ? glm::vec3(YART_GUI_COLOR_LIGHT_PRIMARY) :
+            hovered ? glm::vec3(YART_GUI_COLOR_PRIMARY) :
+            glm::vec3(YART_GUI_COLOR_DARK_PRIMARY),
+
+            // End color
+            active ? glm::vec3(YART_GUI_COLOR_LIGHT_SECONDARY) :
+            hovered ? glm::vec3(YART_GUI_COLOR_SECONDARY) :
+            glm::vec3(YART_GUI_COLOR_DARK_SECONDARY)
+        };
+
+        // Interpolate the end color by the t value
+        if (t != 1.0f)
+            colors[1] = yart::utils::LinearGradient(colors, 2, t);
+
+        const ImU32 start_col = ImGui::ColorConvertFloat4ToU32({ colors[0].x, colors[0].y, colors[0].z, YART_GUI_ALPHA_OPAQUE });
+        const ImU32 end_col = ImGui::ColorConvertFloat4ToU32({ colors[1].x, colors[1].y, colors[1].z, YART_GUI_ALPHA_OPAQUE });
+
+
+        if (rounding >= 0.5f && !((flags & ImDrawFlags_RoundCornersMask_) == ImDrawFlags_RoundCornersNone)) {
+            if ((flags & ImDrawFlags_RoundCornersMask_) == 0)
+                flags |= ImDrawFlags_RoundCornersAll;
+
+            if (flags & ImDrawFlags_RoundCornersLeft) {
+                p_min.x += rounding;
+
+                const ImVec2 p1 = { p_min.x - rounding, p_min.y };
+                const ImVec2 p2 = { p_min.x + 1.0f, p_max.y };
+                draw_list->AddRectFilled(p1, p2, start_col, rounding, flags & ImDrawFlags_RoundCornersLeft);
+            }
+
+            if (flags & ImDrawFlags_RoundCornersRight) {
+                p_max.x -= rounding;
+
+                const ImVec2 p1 = { p_max.x - 1.0f, p_min.y };
+                const ImVec2 p2 = { p_max.x + rounding, p_max.y };
+                draw_list->AddRectFilled(p1, p2, end_col, rounding, flags & ImDrawFlags_RoundCornersRight);
+            }
+        }
+
+        draw_list->AddRectFilledMultiColor(p_min, p_max, start_col, end_col, end_col, start_col);
     }
 
     /// @brief Internal generic function for rendering a YART GUI style slider widget
@@ -814,7 +855,7 @@ namespace yart
             const ImVec2 highlight_p_min = frame_drag_bb.Min;
             const ImVec2 highlight_p_max = { highlight_p_min.x + t * frame_drag_bb.GetWidth(), frame_drag_bb.Max.y };
 
-            GUI::DrawHighlightRect(window->DrawList, highlight_p_min, highlight_p_max, (frame_drag_hovered || frame_drag_nav), g->ActiveId == id);
+            GUI::DrawHighlightRect(window->DrawList, highlight_p_min, highlight_p_max, t, (frame_drag_hovered || frame_drag_nav), g->ActiveId == id);
         }
 
         // - Right arrow frame

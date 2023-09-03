@@ -145,9 +145,12 @@ namespace yart
         /// @param draw_list Dear ImGui's draw list on which to render
         /// @param p_min Highlight rectangle upper-left corner 
         /// @param p_max Highlight rectangle lower-right corner
+        /// @param t Max gradient color interpolation value. Expected to be in the [0..1] range
         /// @param hovered Whether the highlight is currently hovered
         /// @param active Whether the highlight is currently active 
-        void DrawHighlightRect(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, bool hovered, bool active);
+        /// @param rounding Optional edge rounding value 
+        /// @param flags Additional Dear ImGui draw flags 
+        void DrawHighlightRect(ImDrawList* draw_list, ImVec2 p_min, ImVec2 p_max, float t, bool hovered, bool active, float rounding = 0.0f, ImDrawFlags flags = (ImDrawFlags)0);
 
         /// @brief Internal function for rendering a YART GUI style slider widget
         /// @param name Label text displayed next to the slider
