@@ -444,106 +444,17 @@ namespace yart
         }
     }
 
-    bool GUI::DragFloat(const char* name, float* val, const char* format)
+    bool GUI::SliderFloat(const char* name, float* p_val, const char* format, float arrow_step)
     {
-        ImGuiContext* g = ImGui::GetCurrentContext();
-        ImGuiWindow* window = g->CurrentWindow;
-        if (window->SkipItems)
-            return false;
-
-        static const ImGuiDataType data_type = ImGuiDataType_Float;
-        static const float text_width_percent = 0.4f;
-        static const float arrow_frame_width = 12.0f;
-
-        const ImGuiID id = window->GetID(name);
-        const float item_spacing = g->Style.ItemInnerSpacing.x;
-        const ImRect total_bb = { window->DC.CursorPos, { window->WorkRect.Max.x, window->DC.CursorPos.y + ImGui::GetFrameHeight() }};
-        const ImRect text_bb = { total_bb.Min, { total_bb.Min.x + total_bb.GetWidth() * text_width_percent - item_spacing, total_bb.Max.y }};
-        const ImRect frame_total_bb = { { text_bb.Max.x + item_spacing, text_bb.Min.y }, total_bb.Max };
-        const ImRect frame_drag_bb = { { frame_total_bb.Min.x + arrow_frame_width, frame_total_bb.Min.y }, { frame_total_bb.Max.x - arrow_frame_width, frame_total_bb.Max.y } };
-
-        ImGui::ItemSize(total_bb);
-        if (!ImGui::ItemAdd(total_bb, id))
-            return false;
-
-        const bool total_hovered = ImGui::ItemHoverable(total_bb, id);
-        const bool text_hovered = total_hovered && ImGui::IsMouseHoveringRect(text_bb.Min, text_bb.Max);
-        const bool frame_grab_hovered = total_hovered && ImGui::IsMouseHoveringRect(frame_drag_bb.Min, frame_drag_bb.Max);
-
-        bool temp_input_is_active = ImGui::TempInputIsActive(id);
-        if (!temp_input_is_active) {
-            // Tabbing / CTRL-clicking / double-clicking turns the widget into an InputText
-            const bool input_requested_by_tabbing = (g->LastItemData.StatusFlags & ImGuiItemStatusFlags_FocusedByTabbing) != 0;
-            const bool clicked = frame_grab_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left, id);
-            const bool make_active = (input_requested_by_tabbing || clicked || g->NavActivateId == id);
-
-            if (make_active) {
-                if (clicked)
-                    ImGui::SetKeyOwner(ImGuiKey_MouseLeft, id);
-
-                const bool double_clicked = (frame_grab_hovered && g->IO.MouseClickedCount[0] == 2 && ImGui::TestKeyOwner(ImGuiKey_MouseLeft, id));
-                if (input_requested_by_tabbing || (clicked && g->IO.KeyCtrl) || double_clicked || (g->NavActivateId == id && (g->NavActivateFlags & ImGuiActivateFlags_PreferInput)))
-                    temp_input_is_active = true;
-
-                if (!temp_input_is_active) {
-                    ImGui::SetActiveID(id, window);
-                    ImGui::SetFocusID(id, window);
-                    ImGui::FocusWindow(window);
-                    g->ActiveIdUsingNavDirMask = (1 << ImGuiDir_Left) | (1 << ImGuiDir_Right);
-                }
-            }
-        }
-
-        // Render the label text
-        if (GUI::DrawText(window->DrawList, text_bb.Min, text_bb.Max, 0.0f, name) && text_hovered)
-            ImGui::SetTooltip(name);
-
-        // During temp input, skip drawing the custom frame 
-        if (temp_input_is_active)
-            return ImGui::TempInputScalar(frame_total_bb, id, name, data_type, val, format, nullptr, nullptr);
-
-        // Render the item frame with arrows
-        static const float frame_separator_thickness = 1.0f;
-        const float frame_rounding = g->Style.FrameRounding;
-
-        const ImRect left_arrow_bb = { frame_total_bb.Min, { frame_drag_bb.Min.x - frame_separator_thickness, frame_total_bb.Max.y } };
-        const ImRect right_arrow_bb = { { frame_drag_bb.Max.x + frame_separator_thickness, frame_total_bb.Min.y }, frame_total_bb.Max };
-
-        const bool left_arrow_hovered = total_hovered && !frame_grab_hovered && ImGui::IsMouseHoveringRect(left_arrow_bb.Min, left_arrow_bb.Max);
-        const bool left_arrow_clicked = left_arrow_hovered && ImGui::IsMouseDown(ImGuiMouseButton_Left);
-        const bool right_arrow_hovered = total_hovered && !frame_grab_hovered && ImGui::IsMouseHoveringRect(right_arrow_bb.Min, right_arrow_bb.Max);
-        const bool right_arrow_clicked = right_arrow_hovered && ImGui::IsMouseDown(ImGuiMouseButton_Left);
-
-        // Left arrow frame
-        const ImU32 text_col = ImGui::GetColorU32(ImGuiCol_Text);
-        const ImVec2 arrow_padding = { 4.0f, g->Style.FramePadding.y + 3.0f };
-
-        ImU32 col = ImGui::GetColorU32(left_arrow_clicked ? ImGuiCol_FrameBgActive : left_arrow_hovered ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg);
-        window->DrawList->AddRectFilled(left_arrow_bb.Min, left_arrow_bb.Max, col, frame_rounding, ImDrawFlags_RoundCornersLeft);
-        GUI::DrawLeftArrow(window->DrawList, left_arrow_bb.Min, left_arrow_bb.Max, arrow_padding, text_col);
-
-        // Grab frame
-        col = ImGui::GetColorU32(g->ActiveId == id ? ImGuiCol_FrameBgActive : frame_grab_hovered ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg);
-        window->DrawList->AddRectFilled(frame_drag_bb.Min, frame_drag_bb.Max, col);
-
-        // Right arrow frame
-        col = ImGui::GetColorU32(right_arrow_clicked ? ImGuiCol_FrameBgActive : right_arrow_hovered ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg);
-        window->DrawList->AddRectFilled(right_arrow_bb.Min, right_arrow_bb.Max, col, frame_rounding, ImDrawFlags_RoundCornersRight);
-        GUI::DrawRightArrow(window->DrawList, right_arrow_bb.Min, right_arrow_bb.Max, arrow_padding, text_col);
-
-
-        // Display value using user-provided display format
-        char value_buf[64];
-        const char* value_buf_end = value_buf + ImFormatString(value_buf, IM_ARRAYSIZE(value_buf), format, *val);
-        ImGui::RenderTextClipped(frame_drag_bb.Min, frame_drag_bb.Max, value_buf, value_buf_end, nullptr, { 0.5f, 0.5f });
-
-        ImGui::RenderNavHighlight(frame_total_bb, id);
-        bool made_changes = ImGui::DragBehavior(id, data_type, val, 1.0f, nullptr, nullptr, format, 0);
-
-        return made_changes;
+        return GUI::SliderEx(name, ImGuiDataType_Float, (void*)p_val, nullptr, nullptr, format, (void*)&arrow_step);
     }
 
-    void GUI::ComboHeader(const char* name, const char* items[], size_t items_size, int* selected_item)
+    bool GUI::SliderFloat(const char *name, float *p_val, float min, float max, const char *format, float arrow_step)
+    {
+        return GUI::SliderEx(name, ImGuiDataType_Float, (void*)p_val, (float*)&min, (float*)&max, format, (void*)&arrow_step);
+    }
+
+    void GUI::ComboHeader(const char *name, const char *items[], size_t items_size, int *selected_item)
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
         ImGuiWindow* window = g->CurrentWindow;

@@ -7,6 +7,7 @@
 #include "gui_internal.h"
 
 
+#include "yart/utils/yart_utils.h"
 #include "yart/platform/input.h"
 #include "font/IconsCodicons.h"
 
@@ -664,6 +665,171 @@ namespace yart
 
         ImGui::End();
         return clicked;
+    }
+
+    /// @brief Internal generic function for rendering a YART GUI style slider widget
+    /// @param name Label text displayed next to the slider
+    /// @param data_type Type of the slider variable. Should always match the generic `T` param
+    /// @param p_val Pointer to the controlled value
+    /// @param p_min Pointer to the minimal value. Can be `NULL`
+    /// @param p_max Pointer to the maximal value. Can be `NULL`
+    /// @param format Format in which to display the value
+    /// @param arrow_step The step of change in value when using the frame arrows
+    /// @tparam T Type of the slider variable. Should always match the `data_type` param
+    /// @tparam SignedT Signed version of the generic `T` param    
+    /// @return Whether the input value has changed  
+    template<typename T, typename SignedT>
+    bool SliderExT(const char* name, ImGuiDataType data_type, T* p_val, const T* p_min, const T* p_max, const char *format, T arrow_step) 
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        ImGuiWindow* window = g->CurrentWindow;
+        if (window->SkipItems)
+            return false;
+
+        // Calculate the total bounding box of the widget
+        const ImGuiID id = window->GetID(name);
+        const ImRect total_bb = { window->DC.CursorPos, { window->WorkRect.Max.x, window->DC.CursorPos.y + ImGui::GetFrameHeight() }};
+
+        ImGui::ItemSize(total_bb);
+        if (!ImGui::ItemAdd(total_bb, id))
+            return false;
+
+
+        const float item_spacing = g->Style.ItemInnerSpacing.x;
+        static constexpr float arrow_frame_width = 14.0f;
+        static const float text_width_percent = 0.4f; // TODO: This value should be calculated based on the current indent at some point
+
+        const ImRect text_bb = { total_bb.Min, { total_bb.Min.x + total_bb.GetWidth() * text_width_percent - item_spacing, total_bb.Max.y }};
+        const ImRect frame_total_bb = { { text_bb.Max.x + item_spacing, text_bb.Min.y }, total_bb.Max };
+        const ImRect frame_drag_bb = { { frame_total_bb.Min.x + arrow_frame_width, frame_total_bb.Min.y }, { frame_total_bb.Max.x - arrow_frame_width, frame_total_bb.Max.y } };
+
+
+        const bool total_hovered = ImGui::ItemHoverable(total_bb, id);
+        const bool text_hovered = total_hovered && ImGui::IsMouseHoveringRect(text_bb.Min, text_bb.Max);
+        const bool frame_grab_hovered = total_hovered && ImGui::IsMouseHoveringRect(frame_drag_bb.Min, frame_drag_bb.Max);
+
+        bool temp_input_is_active = ImGui::TempInputIsActive(id);
+        if (!temp_input_is_active) {
+            // Tabbing / Ctrl-clicking / double-clicking turns the widget into an InputText
+            const bool input_requested_by_tabbing = (g->LastItemData.StatusFlags & ImGuiItemStatusFlags_FocusedByTabbing) != 0;
+            const bool clicked = frame_grab_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left, id);
+            const bool make_active = (input_requested_by_tabbing || clicked || g->NavActivateId == id);
+
+            if (make_active) {
+                if (clicked)
+                    ImGui::SetKeyOwner(ImGuiKey_MouseLeft, id);
+
+                const bool double_clicked = (frame_grab_hovered && g->IO.MouseClickedCount[0] == 2 && ImGui::TestKeyOwner(ImGuiKey_MouseLeft, id));
+                if (input_requested_by_tabbing || (clicked && g->IO.KeyCtrl) || double_clicked || (g->NavActivateId == id && (g->NavActivateFlags & ImGuiActivateFlags_PreferInput)))
+                    temp_input_is_active = true;
+
+                if (!temp_input_is_active) {
+                    ImGui::SetActiveID(id, window);
+                    ImGui::SetFocusID(id, window);
+                    ImGui::FocusWindow(window);
+                    g->ActiveIdUsingNavDirMask = (1 << ImGuiDir_Left) | (1 << ImGuiDir_Right);
+                }
+            }
+        }
+
+        // Render the label text
+        if (GUI::DrawText(window->DrawList, text_bb.Min, text_bb.Max, 0.0f, name) && text_hovered)
+            ImGui::SetTooltip(name);
+
+        // During temp input, skip drawing the custom frame 
+        if (temp_input_is_active)
+            return ImGui::TempInputScalar(frame_total_bb, id, name, data_type, p_val, format, p_min, p_max);
+
+        
+        static constexpr float frame_separator_thickness = 1.0f;
+        const float frame_rounding = g->Style.FrameRounding;
+
+        const ImRect left_arrow_bb = { frame_total_bb.Min, { frame_drag_bb.Min.x - frame_separator_thickness, frame_total_bb.Max.y } };
+        const ImRect right_arrow_bb = { { frame_drag_bb.Max.x + frame_separator_thickness, frame_total_bb.Min.y }, frame_total_bb.Max };
+
+        const bool left_arrow_hovered = total_hovered && !frame_grab_hovered && ImGui::IsMouseHoveringRect(left_arrow_bb.Min, left_arrow_bb.Max);
+        const bool left_arrow_active = left_arrow_hovered && ImGui::IsMouseDown(ImGuiMouseButton_Left);
+        const bool right_arrow_hovered = total_hovered && !frame_grab_hovered && ImGui::IsMouseHoveringRect(right_arrow_bb.Min, right_arrow_bb.Max);
+        const bool right_arrow_active = right_arrow_hovered && ImGui::IsMouseDown(ImGuiMouseButton_Left);
+
+        // Handle frame arrows 
+        if (left_arrow_active || right_arrow_active) {
+            const bool left_arrow_clicked = left_arrow_active && ImGui::IsMouseClicked(ImGuiMouseButton_Left, true);
+            const bool right_arrow_clicked = right_arrow_active && ImGui::IsMouseClicked(ImGuiMouseButton_Left, true);
+
+            T step = left_arrow_clicked ? -static_cast<SignedT>(arrow_step) : right_arrow_clicked ? arrow_step : static_cast<T>(0.0);
+            if (step != static_cast<T>(0.0)) {
+                if (g->IO.KeyShift) {
+                    // Shift-clicking multiplies the step 10x
+                    step *= static_cast<T>(10.0);
+                } else if(g->IO.KeyAlt) {
+                    // Alt-clicking divides the step 10x, this might not work for ints, so the value is clamped
+                    T alt_step = step / static_cast<T>(10.0);
+                    if (alt_step == static_cast<T>(0.0))
+                        alt_step = step;
+
+                    step = alt_step;
+                }
+
+                *p_val += step;
+                if (p_min != nullptr && *p_val < *p_min)
+                    *p_val = *p_min;
+                if (p_max != nullptr && *p_val > *p_max)
+                    *p_val = *p_max;
+            }
+        }
+
+        // Render the item frame with arrows
+        // - Left arrow frame
+        const ImU32 text_col = ImGui::GetColorU32(ImGuiCol_Text);
+        const ImVec2 arrow_padding = { 5.0f, g->Style.FramePadding.y + 3.0f };
+
+        ImU32 col = ImGui::GetColorU32(left_arrow_active ? ImGuiCol_FrameBgActive : left_arrow_hovered ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg);
+        window->DrawList->AddRectFilled(left_arrow_bb.Min, left_arrow_bb.Max, col, frame_rounding, ImDrawFlags_RoundCornersLeft);
+        GUI::DrawLeftArrow(window->DrawList, left_arrow_bb.Min, left_arrow_bb.Max, arrow_padding, text_col);
+
+        // - Grab frame
+        col = ImGui::GetColorU32(g->ActiveId == id ? ImGuiCol_FrameBgActive : frame_grab_hovered ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg);
+        window->DrawList->AddRectFilled(frame_drag_bb.Min, frame_drag_bb.Max, col);
+
+        // - Right arrow frame
+        col = ImGui::GetColorU32(right_arrow_active ? ImGuiCol_FrameBgActive : right_arrow_hovered ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg);
+        window->DrawList->AddRectFilled(right_arrow_bb.Min, right_arrow_bb.Max, col, frame_rounding, ImDrawFlags_RoundCornersRight);
+        GUI::DrawRightArrow(window->DrawList, right_arrow_bb.Min, right_arrow_bb.Max, arrow_padding, text_col);
+
+
+        // Display value using user-provided display format
+        char value_buf[64];
+        const char* value_buf_end = value_buf + ImFormatString(value_buf, IM_ARRAYSIZE(value_buf), format, *p_val);
+        ImGui::RenderTextClipped(frame_drag_bb.Min, frame_drag_bb.Max, value_buf, value_buf_end, nullptr, { 0.5f, 0.5f });
+
+        ImGui::RenderNavHighlight(frame_total_bb, id);
+        bool made_changes = ImGui::DragBehavior(id, data_type, p_val, 1.0f, p_min, p_max, format, 0);
+
+        return made_changes;
+    }
+
+    bool GUI::SliderEx(const char* name, ImGuiDataType data_type, void* p_val, const void* p_min, const void* p_max, const char* format, const void* p_arrow_step)
+    {
+        YART_ASSERT(p_arrow_step != nullptr);
+
+        switch (data_type) {
+            case ImGuiDataType_S8:     return SliderExT<ImS8, ImS8>(name, data_type, (ImS8*)p_val, (ImS8*)p_min, (ImS8*)p_max, format, *(ImS8*)p_arrow_step);
+            case ImGuiDataType_U8:     return SliderExT<ImU8, ImS8>(name, data_type, (ImU8*)p_val, (ImU8*)p_min, (ImU8*)p_max, format, *(ImU8*)p_arrow_step);
+            case ImGuiDataType_S16:    return SliderExT<ImS16, ImS16>(name, data_type, (ImS16*)p_val, (ImS16*)p_min, (ImS16*)p_max, format, *(ImS16*)p_arrow_step);
+            case ImGuiDataType_U16:    return SliderExT<ImU16, ImS16>(name, data_type, (ImU16*)p_val, (ImU16*)p_min, (ImU16*)p_max, format, *(ImU16*)p_arrow_step);
+            case ImGuiDataType_S32:    return SliderExT<ImS32, ImS32>(name, data_type, (ImS32*)p_val, (ImS32*)p_min, (ImS32*)p_max, format, *(ImS32*)p_arrow_step);
+            case ImGuiDataType_U32:    return SliderExT<ImU32, ImS32>(name, data_type, (ImU32*)p_val, (ImU32*)p_min, (ImU32*)p_max, format, *(ImU32*)p_arrow_step);
+            case ImGuiDataType_S64:    return SliderExT<ImS64, ImS64>(name, data_type, (ImS64*)p_val, (ImS64*)p_min, (ImS64*)p_max, format, *(ImS64*)p_arrow_step);
+            case ImGuiDataType_U64:    return SliderExT<ImU64, ImS64>(name, data_type, (ImU64*)p_val, (ImU64*)p_min, (ImU64*)p_max, format, *(ImU64*)p_arrow_step);
+            case ImGuiDataType_Float:  return SliderExT<float, float>(name, data_type, (float*)p_val, (float*)p_min, (float*)p_max, format, *(float*)p_arrow_step);
+            case ImGuiDataType_Double: return SliderExT<double, double>(name, data_type, (double*)p_val, (double*)p_min, (double*)p_max, format, *(double*)p_arrow_step);
+            case ImGuiDataType_COUNT:  
+                break;
+        }
+
+        YART_UNREACHABLE();
+        return false;
     }
 
     /// @brief Draw the GradientEditor sampling point handle

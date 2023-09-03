@@ -141,6 +141,17 @@ namespace yart
         /// @return Whether the user has clicked on an axis and the `clicked_axis` output variable has been set 
         bool RenderViewAxesWindowEx(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis, glm::vec3& clicked_axis);
 
+        /// @brief Internal function for rendering a YART GUI style slider widget
+        /// @param name Label text displayed next to the slider
+        /// @param data_type Type of the slider variable
+        /// @param p_val Pointer to the controlled value
+        /// @param p_min Pointer to the minimal value. Can be `NULL`
+        /// @param p_max Pointer to the maximal value. Can be `NULL`
+        /// @param format Format in which to display the value
+        /// @param p_arrow_step Pointer to the step of change in value when using the frame arrows. Should never be `NULL`
+        /// @return Whether the input value has changed  
+        bool SliderEx(const char* name, ImGuiDataType data_type, void* p_val, const void* p_min, const void* p_max, const char* format, const void* p_arrow_step);
+
         /// @brief Render a linear gradient editor widget
         /// @param ctx Object holding the widget's state
         /// @return Whether the gradient has changed since the last frame

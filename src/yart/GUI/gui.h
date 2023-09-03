@@ -202,12 +202,23 @@ namespace yart
         /// @param border Whether a 1px border should be drawn over the rect
         void DrawGradientRect(ImDrawList* draw_list, ImVec2 p_min, ImVec2 p_max, glm::vec3 const* values, float const* locations, size_t size, bool border = false);
 
-        /// @brief Render a YART GUI style DragFloat widget
-        /// @param name Label text displayed next to the drag slider
-        /// @param val Pointer to the controlled value
+        /// @brief Render a YART GUI style slider widget for a float variable 
+        /// @param name Label text displayed next to the slider
+        /// @param p_val Pointer to the controlled value
         /// @param format Format in which to display the value
+        /// @param arrow_step The step of change in value when using the frame arrows
         /// @return Whether the input value has changed
-        bool DragFloat(const char* name, float* val, const char* format = "%.2f");
+        bool SliderFloat(const char* name, float* p_val, const char* format = "%.2f", float arrow_step = 1.0f);
+
+        /// @brief Render a YART GUI style slider widget for a float variable with value clamping
+        /// @param name Label text displayed next to the slider
+        /// @param p_val Pointer to the controlled value
+        /// @param min The minimal (inclusive) valid value
+        /// @param min The maximal (inclusive) valid value
+        /// @param format Format in which to display the value
+        /// @param arrow_step The step of change in value when using the frame arrows
+        /// @return Whether the input value has changed
+        bool SliderFloat(const char* name, float* p_val, float min, float max, const char* format = "%.2f", float arrow_step = 1.0f);
 
         /// @brief Render a YART GUI style combo header widget
         /// @param name Identifying name of the widget

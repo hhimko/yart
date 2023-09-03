@@ -145,8 +145,8 @@ namespace yart
             }
             }
 
-            static float f = 6.99f;
-            GUI::DragFloat("Near clipping", &f);
+            static float f = 16.99f;
+            GUI::SliderFloat("Near clipping", &f, 0.0f, 10.0f);
         }
 
     } // namespace GUI
