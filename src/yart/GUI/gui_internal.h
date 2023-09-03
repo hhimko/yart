@@ -141,6 +141,14 @@ namespace yart
         /// @return Whether the user has clicked on an axis and the `clicked_axis` output variable has been set 
         bool RenderViewAxesWindowEx(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis, glm::vec3& clicked_axis);
 
+        /// @brief Render a YART GUI style highlight rect to a given Dear ImGui draw list
+        /// @param draw_list Dear ImGui's draw list on which to render
+        /// @param p_min Highlight rectangle upper-left corner 
+        /// @param p_max Highlight rectangle lower-right corner
+        /// @param hovered Whether the highlight is currently hovered
+        /// @param active Whether the highlight is currently active 
+        void DrawHighlightRect(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, bool hovered, bool active);
+
         /// @brief Internal function for rendering a YART GUI style slider widget
         /// @param name Label text displayed next to the slider
         /// @param data_type Type of the slider variable

@@ -214,7 +214,7 @@ namespace yart
         /// @param name Label text displayed next to the slider
         /// @param p_val Pointer to the controlled value
         /// @param min The minimal (inclusive) valid value
-        /// @param min The maximal (inclusive) valid value
+        /// @param max The maximal (inclusive) valid value
         /// @param format Format in which to display the value
         /// @param arrow_step The step of change in value when using the frame arrows
         /// @return Whether the input value has changed

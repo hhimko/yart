@@ -470,16 +470,26 @@ namespace yart
         if (!ImGui::ItemAdd(total_bb, id, nullptr)) 
             return;
 
+
         // When navigating with keyboard/gamepad, cycle over all the items
-        // We disable the mouse hover momentarily here, to disable mouse inputs over the invisible button 
-        bool backup_nav_disable = g->NavDisableMouseHover;
-        g->NavDisableMouseHover = true;
-        bool total_bb_hovered, total_bb_held;
-        if (ImGui::ButtonBehavior(total_bb, id, &total_bb_hovered, &total_bb_held)) {
+        bool nav_activated_by_code = (g->NavActivateId == id);
+        bool nav_activated_by_inputs = (g->NavActivatePressedId == id);
+        if (nav_activated_by_code || nav_activated_by_inputs) {
             *selected_item = (*selected_item + 1) % items_size;
-        };
-        g->NavDisableMouseHover = backup_nav_disable;
-        ImGui::RenderNavHighlight(total_bb, id);
+        }
+
+        // During nav, the items can be cycled over with arrow keys
+        if (g->NavId == id && ImGui::NavMoveRequestButNoResultYet()) {
+            if (g->NavMoveDir == ImGuiDir_Left) {
+                *selected_item = --(*selected_item) < 0 ? static_cast<int>(items_size - 1) : *selected_item;
+                ImGui::NavMoveRequestCancel();
+            }
+            else if (g->NavMoveDir == ImGuiDir_Right) {
+                *selected_item = (*selected_item + 1) % items_size;
+                ImGui::NavMoveRequestCancel();
+            }
+        }
+
 
         // Render the individual header items
         const ImU32 frame_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_FrameBg]);
@@ -493,10 +503,15 @@ namespace yart
 
             ImGuiID button_id = GUI::GetIDFormatted("##ComboHeader/%s/%d", name, i);
             ImGui::ItemAdd({ p_min, p_max }, button_id, nullptr, ImGuiItemFlags_NoNav);
-            if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) 
-                *selected_item = i;
+            if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+                ImGui::SetFocusID(id, window);
+                ImGui::ClearActiveID();
 
-            const ImU32 col = i == *selected_item ? frame_active_col : ImGui::IsItemHovered() ? frame_hovered_col : frame_col;
+                *selected_item = i;
+            }
+
+            const bool hovered_or_nav = (ImGui::IsItemHovered() || (g->NavId != 0 && g->NavId == id && g->NavDisableMouseHover));
+            const ImU32 col = i == *selected_item ? frame_active_col : hovered_or_nav ? frame_hovered_col : frame_col;
             const ImDrawFlags flags = i == 0 ? ImDrawFlags_RoundCornersLeft : i == items_size - 1 ? ImDrawFlags_RoundCornersRight : ImDrawFlags_RoundCornersNone;
             window->DrawList->AddRectFilled(p_min, p_max, col, rounding, flags);
 
@@ -514,6 +529,8 @@ namespace yart
 
             window->DrawList->AddRectFilled(p_min, p_max, separator_col);
         }
+
+        ImGui::RenderNavHighlight(total_bb, id);
     }
 
     bool GUI::GradientEditor(GradientEditorContext& ctx)

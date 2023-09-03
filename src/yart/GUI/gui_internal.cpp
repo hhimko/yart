@@ -667,6 +667,17 @@ namespace yart
         return clicked;
     }
 
+    void GUI::DrawHighlightRect(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, bool hovered, bool active)
+    {
+        const ImU32 start_col = ImGui::ColorConvertFloat4ToU32(
+            active ? ImVec4(YART_GUI_COLOR_LIGHT_PRIMARY, YART_GUI_ALPHA_OPAQUE) :
+            hovered ? ImVec4(YART_GUI_COLOR_PRIMARY, YART_GUI_ALPHA_OPAQUE) :
+            ImVec4(YART_GUI_COLOR_DARK_PRIMARY, YART_GUI_ALPHA_OPAQUE)
+        );
+
+        draw_list->AddRectFilledMultiColor(p_min, p_max, start_col, start_col, start_col, start_col);
+    }
+
     /// @brief Internal generic function for rendering a YART GUI style slider widget
     /// @param name Label text displayed next to the slider
     /// @param data_type Type of the slider variable. Should always match the generic `T` param
@@ -704,22 +715,22 @@ namespace yart
         const ImRect frame_drag_bb = { { frame_total_bb.Min.x + arrow_frame_width, frame_total_bb.Min.y }, { frame_total_bb.Max.x - arrow_frame_width, frame_total_bb.Max.y } };
 
 
-        const bool total_hovered = ImGui::ItemHoverable(total_bb, id);
+        const bool total_hovered = ImGui::ItemHoverable(total_bb, id) || g->NavId == id;
         const bool text_hovered = total_hovered && ImGui::IsMouseHoveringRect(text_bb.Min, text_bb.Max);
-        const bool frame_grab_hovered = total_hovered && ImGui::IsMouseHoveringRect(frame_drag_bb.Min, frame_drag_bb.Max);
+        const bool frame_drag_hovered = total_hovered && ImGui::IsMouseHoveringRect(frame_drag_bb.Min, frame_drag_bb.Max);
 
         bool temp_input_is_active = ImGui::TempInputIsActive(id);
         if (!temp_input_is_active) {
             // Tabbing / Ctrl-clicking / double-clicking turns the widget into an InputText
             const bool input_requested_by_tabbing = (g->LastItemData.StatusFlags & ImGuiItemStatusFlags_FocusedByTabbing) != 0;
-            const bool clicked = frame_grab_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left, id);
+            const bool clicked = frame_drag_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left, id);
             const bool make_active = (input_requested_by_tabbing || clicked || g->NavActivateId == id);
 
             if (make_active) {
                 if (clicked)
                     ImGui::SetKeyOwner(ImGuiKey_MouseLeft, id);
 
-                const bool double_clicked = (frame_grab_hovered && g->IO.MouseClickedCount[0] == 2 && ImGui::TestKeyOwner(ImGuiKey_MouseLeft, id));
+                const bool double_clicked = (frame_drag_hovered && g->IO.MouseClickedCount[0] == 2 && ImGui::TestKeyOwner(ImGuiKey_MouseLeft, id));
                 if (input_requested_by_tabbing || (clicked && g->IO.KeyCtrl) || double_clicked || (g->NavActivateId == id && (g->NavActivateFlags & ImGuiActivateFlags_PreferInput)))
                     temp_input_is_active = true;
 
@@ -747,10 +758,10 @@ namespace yart
         const ImRect left_arrow_bb = { frame_total_bb.Min, { frame_drag_bb.Min.x - frame_separator_thickness, frame_total_bb.Max.y } };
         const ImRect right_arrow_bb = { { frame_drag_bb.Max.x + frame_separator_thickness, frame_total_bb.Min.y }, frame_total_bb.Max };
 
-        const bool left_arrow_hovered = total_hovered && !frame_grab_hovered && ImGui::IsMouseHoveringRect(left_arrow_bb.Min, left_arrow_bb.Max);
-        const bool left_arrow_active = left_arrow_hovered && ImGui::IsMouseDown(ImGuiMouseButton_Left);
-        const bool right_arrow_hovered = total_hovered && !frame_grab_hovered && ImGui::IsMouseHoveringRect(right_arrow_bb.Min, right_arrow_bb.Max);
-        const bool right_arrow_active = right_arrow_hovered && ImGui::IsMouseDown(ImGuiMouseButton_Left);
+        const bool left_arrow_hovered = total_hovered && !frame_drag_hovered && ImGui::IsMouseHoveringRect(left_arrow_bb.Min, left_arrow_bb.Max);
+        const bool left_arrow_active = g->ActiveId != id && left_arrow_hovered && ImGui::IsMouseDown(ImGuiMouseButton_Left);
+        const bool right_arrow_hovered = total_hovered && !frame_drag_hovered && ImGui::IsMouseHoveringRect(right_arrow_bb.Min, right_arrow_bb.Max);
+        const bool right_arrow_active = g->ActiveId != id && right_arrow_hovered && ImGui::IsMouseDown(ImGuiMouseButton_Left);
 
         // Handle frame arrows 
         if (left_arrow_active || right_arrow_active) {
@@ -759,6 +770,10 @@ namespace yart
 
             T step = left_arrow_clicked ? -static_cast<SignedT>(arrow_step) : right_arrow_clicked ? arrow_step : static_cast<T>(0.0);
             if (step != static_cast<T>(0.0)) {
+                ImGui::ClearActiveID();
+                ImGui::SetFocusID(id, window);
+                ImGui::FocusWindow(window);
+
                 if (g->IO.KeyShift) {
                     // Shift-clicking multiplies the step 10x
                     step *= static_cast<T>(10.0);
@@ -783,17 +798,27 @@ namespace yart
         // - Left arrow frame
         const ImU32 text_col = ImGui::GetColorU32(ImGuiCol_Text);
         const ImVec2 arrow_padding = { 5.0f, g->Style.FramePadding.y + 3.0f };
+        const bool frame_drag_nav = (g->NavId != 0 && g->NavId == id && g->NavDisableMouseHover);
 
-        ImU32 col = ImGui::GetColorU32(left_arrow_active ? ImGuiCol_FrameBgActive : left_arrow_hovered ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg);
+        ImU32 col = ImGui::GetColorU32(left_arrow_active ? ImGuiCol_FrameBgActive : (left_arrow_hovered || frame_drag_nav) ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg);
         window->DrawList->AddRectFilled(left_arrow_bb.Min, left_arrow_bb.Max, col, frame_rounding, ImDrawFlags_RoundCornersLeft);
         GUI::DrawLeftArrow(window->DrawList, left_arrow_bb.Min, left_arrow_bb.Max, arrow_padding, text_col);
 
-        // - Grab frame
-        col = ImGui::GetColorU32(g->ActiveId == id ? ImGuiCol_FrameBgActive : frame_grab_hovered ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg);
+        // - Drag frame
+        col = ImGui::GetColorU32(g->ActiveId == id ? ImGuiCol_FrameBgActive : (frame_drag_hovered || frame_drag_nav) ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg);
         window->DrawList->AddRectFilled(frame_drag_bb.Min, frame_drag_bb.Max, col);
 
+        // - Drag frame slider highlight (only if clamped)
+        if (p_min != nullptr && p_max != nullptr) {
+            float t = (static_cast<float>(*p_val) - static_cast<float>(*p_min) + 1.0f) / (static_cast<float>(*p_max) - static_cast<float>(*p_min) + 1.0f);
+            const ImVec2 highlight_p_min = frame_drag_bb.Min;
+            const ImVec2 highlight_p_max = { highlight_p_min.x + t * frame_drag_bb.GetWidth(), frame_drag_bb.Max.y };
+
+            GUI::DrawHighlightRect(window->DrawList, highlight_p_min, highlight_p_max, (frame_drag_hovered || frame_drag_nav), g->ActiveId == id);
+        }
+
         // - Right arrow frame
-        col = ImGui::GetColorU32(right_arrow_active ? ImGuiCol_FrameBgActive : right_arrow_hovered ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg);
+        col = ImGui::GetColorU32(right_arrow_active ? ImGuiCol_FrameBgActive : (right_arrow_hovered || frame_drag_nav) ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg);
         window->DrawList->AddRectFilled(right_arrow_bb.Min, right_arrow_bb.Max, col, frame_rounding, ImDrawFlags_RoundCornersRight);
         GUI::DrawRightArrow(window->DrawList, right_arrow_bb.Min, right_arrow_bb.Max, arrow_padding, text_col);
 
