@@ -106,15 +106,15 @@ namespace yart
 
         void RendererView::RenderCameraSection(yart::Renderer &target)
         {
-            if (ImGui::SliderFloat("FOV", &target.m_fieldOfView, FOV_MIN, FOV_MAX)) {
+            if (GUI::SliderFloat("FOV", &target.m_fieldOfView, FOV_MIN, FOV_MAX)) {
                 target.RecalculateCameraTransformationMatrix();
             }
 
-            if (ImGui::SliderFloat("Near clipping plane", &target.m_nearClippingPlane, NEAR_CLIP_MIN, NEAR_CLIP_MAX)) {
+            if (GUI::SliderFloat("Near clipping plane", &target.m_nearClippingPlane, NEAR_CLIP_MIN, NEAR_CLIP_MAX)) {
                 target.RecalculateCameraTransformationMatrix();
             }
 
-            if (ImGui::SliderFloat("Far clipping plane", &target.m_farClippingPlane, FAR_CLIP_MIN, FAR_CLIP_MAX)) {
+            if (GUI::SliderFloat("Far clipping plane", &target.m_farClippingPlane, FAR_CLIP_MIN, FAR_CLIP_MAX)) {
                 target.m_dirty = true;
             }
         }
@@ -144,9 +144,6 @@ namespace yart
                 break;
             }
             }
-
-            static float f = 5.0f;
-            GUI::SliderFloat("Near clipping", &f, 0.0f, 10.0f);
         }
 
     } // namespace GUI

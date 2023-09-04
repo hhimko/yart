@@ -6,6 +6,7 @@
 #include "viewport.h"
 
 
+#include "yart/GUI/gui.h"
 #include "window.h"
 
 
@@ -92,7 +93,7 @@ namespace yart
 
         // Range slider for controlling the viewport scale 
         int scale = m_imageScale;
-        bool scale_changed = ImGui::SliderInt("Scale", &scale, 1, 10);
+        bool scale_changed = GUI::SliderInt("Scale", &scale, 1, 10);
         if (scale_changed)
             SetScale(scale);
 

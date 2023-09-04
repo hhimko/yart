@@ -805,6 +805,7 @@ namespace yart
         const bool right_arrow_active = g->ActiveId != id && right_arrow_hovered && ImGui::IsMouseDown(ImGuiMouseButton_Left);
 
         // Handle frame arrows 
+        bool made_changes = false;
         if (left_arrow_active || right_arrow_active) {
             const bool left_arrow_clicked = left_arrow_active && ImGui::IsMouseClicked(ImGuiMouseButton_Left, true);
             const bool right_arrow_clicked = right_arrow_active && ImGui::IsMouseClicked(ImGuiMouseButton_Left, true);
@@ -827,11 +828,14 @@ namespace yart
                     step = alt_step;
                 }
 
+                T old_val = *p_val;
                 *p_val += step;
                 if (p_min != nullptr && *p_val < *p_min)
                     *p_val = *p_min;
                 if (p_max != nullptr && *p_val > *p_max)
                     *p_val = *p_max;
+
+                made_changes |= (*p_val != old_val);
             }
         }
 
@@ -870,7 +874,7 @@ namespace yart
         ImGui::RenderTextClipped(frame_drag_bb.Min, frame_drag_bb.Max, value_buf, value_buf_end, nullptr, { 0.5f, 0.5f });
 
         ImGui::RenderNavHighlight(frame_total_bb, id);
-        bool made_changes = ImGui::DragBehavior(id, data_type, p_val, 1.0f, p_min, p_max, format, 0);
+        made_changes |= ImGui::DragBehavior(id, data_type, p_val, 1.0f, p_min, p_max, format, 0);
 
         return made_changes;
     }

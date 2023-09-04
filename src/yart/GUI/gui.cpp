@@ -90,7 +90,7 @@ namespace yart
             colors[ImGuiCol_FrameBgActive]          = { YART_GUI_COLOR_LIGHTER_GRAY,         YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_TitleBg]                = { YART_GUI_COLOR_BLACK,                YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_TitleBgActive]          = { YART_GUI_COLOR_DARK_PRIMARY,         YART_GUI_ALPHA_OPAQUE };
-            colors[ImGuiCol_TitleBgCollapsed]       = { YART_GUI_COLOR_DARKER_GRAY,          YART_GUI_ALPHA_OPAQUE };
+            colors[ImGuiCol_TitleBgCollapsed]       = { YART_GUI_COLOR_DARKEST_GRAY,         YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_MenuBarBg]              = { YART_GUI_COLOR_DARKER_GRAY,          YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_ScrollbarBg]            = { YART_GUI_COLOR_DARKEST_GRAY,         YART_GUI_ALPHA_OPAQUE };
             colors[ImGuiCol_ScrollbarGrab]          = { YART_GUI_COLOR_LIGHTER_GRAY,         YART_GUI_ALPHA_OPAQUE };
@@ -442,6 +442,16 @@ namespace yart
             const ImU32 border_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_Border]);
             draw_list->AddRect({ start_x - 1.0f, p_min.y }, p_max, border_col);
         }
+    }
+
+    bool GUI::SliderInt(const char* name, int* p_val, const char* format, int arrow_step)
+    {
+        return GUI::SliderEx(name, ImGuiDataType_S32, (void*)p_val, nullptr, nullptr, format, (void*)&arrow_step);
+    }
+
+    bool GUI::SliderInt(const char* name, int* p_val, int min, int max, const char* format, int arrow_step)
+    {
+        return GUI::SliderEx(name, ImGuiDataType_S32, (void*)p_val, (void*)&min, (void*)&max, format, (void*)&arrow_step);
     }
 
     bool GUI::SliderFloat(const char* name, float* p_val, const char* format, float arrow_step)

@@ -30,14 +30,14 @@
     #define YART_GUI_COLOR_BLACK         0.000f, 0.000f, 0.000f
 
     // Shades of primary 
-    #define YART_GUI_COLOR_DARK_PRIMARY  0.06f, 0.00f, 0.45f
-    #define YART_GUI_COLOR_PRIMARY       0.12f, 0.01f, 0.82f
-    #define YART_GUI_COLOR_LIGHT_PRIMARY 0.16f, 0.04f, 0.90f
+    #define YART_GUI_COLOR_DARK_PRIMARY  0.066f, 0.179f, 0.344f
+    #define YART_GUI_COLOR_PRIMARY       0.054f, 0.206f, 0.427f
+    #define YART_GUI_COLOR_LIGHT_PRIMARY 0.072f, 0.243f, 0.535f
 
     // Shades of secondary 
-    #define YART_GUI_COLOR_DARK_SECONDARY  0.34f, 0.01f, 0.44f
-    #define YART_GUI_COLOR_SECONDARY       0.34f, 0.01f, 0.44f
-    #define YART_GUI_COLOR_LIGHT_SECONDARY 0.54f, 0.02f, 0.62f
+    #define YART_GUI_COLOR_DARK_SECONDARY  0.073f, 0.329f, 0.382f
+    #define YART_GUI_COLOR_SECONDARY       0.057f, 0.421f, 0.497f
+    #define YART_GUI_COLOR_LIGHT_SECONDARY 0.045f, 0.493f, 0.586f
 
     // Shades of tertiary 
     #define YART_GUI_COLOR_DARK_TERTIARY  0.02f, 0.72f, 0.55f
@@ -201,6 +201,24 @@ namespace yart
         /// @param size Size of the `values` and `locations` arrays
         /// @param border Whether a 1px border should be drawn over the rect
         void DrawGradientRect(ImDrawList* draw_list, ImVec2 p_min, ImVec2 p_max, glm::vec3 const* values, float const* locations, size_t size, bool border = false);
+
+        /// @brief Render a YART GUI style slider widget for an int variable 
+        /// @param name Label text displayed next to the slider
+        /// @param p_val Pointer to the controlled value
+        /// @param format Format in which to display the value
+        /// @param arrow_step The step of change in value when using the frame arrows
+        /// @return Whether the input value has changed
+        bool SliderInt(const char* name, int* p_val, const char* format = "%d", int arrow_step = 1);
+
+        /// @brief Render a YART GUI style slider widget for an int variable with value clamping
+        /// @param name Label text displayed next to the slider
+        /// @param p_val Pointer to the controlled value
+        /// @param min The minimal (inclusive) valid value
+        /// @param max The maximal (inclusive) valid value
+        /// @param format Format in which to display the value
+        /// @param arrow_step The step of change in value when using the frame arrows
+        /// @return Whether the input value has changed
+        bool SliderInt(const char* name, int* p_val, int min, int max, const char* format = "%d", int arrow_step = 1);
 
         /// @brief Render a YART GUI style slider widget for a float variable 
         /// @param name Label text displayed next to the slider
