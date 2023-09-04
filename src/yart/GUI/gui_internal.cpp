@@ -756,7 +756,7 @@ namespace yart
         const ImRect frame_drag_bb = { { frame_total_bb.Min.x + arrow_frame_width, frame_total_bb.Min.y }, { frame_total_bb.Max.x - arrow_frame_width, frame_total_bb.Max.y } };
 
 
-        const bool total_hovered = ImGui::ItemHoverable(total_bb, id) || g->NavId == id;
+        const bool total_hovered = g->ActiveId != id && (ImGui::ItemHoverable(total_bb, id) || g->NavId == id);
         const bool text_hovered = total_hovered && ImGui::IsMouseHoveringRect(text_bb.Min, text_bb.Max);
         const bool frame_drag_hovered = total_hovered && ImGui::IsMouseHoveringRect(frame_drag_bb.Min, frame_drag_bb.Max);
 
@@ -874,7 +874,9 @@ namespace yart
         ImGui::RenderTextClipped(frame_drag_bb.Min, frame_drag_bb.Max, value_buf, value_buf_end, nullptr, { 0.5f, 0.5f });
 
         ImGui::RenderNavHighlight(frame_total_bb, id);
-        made_changes |= ImGui::DragBehavior(id, data_type, p_val, 1.0f, p_min, p_max, format, 0);
+        made_changes |= ImGui::DragBehavior(id, data_type, p_val, 1.0f, p_min, p_max, format, ImGuiSliderFlags_AlwaysClamp);
+        if (g->ActiveId == id)
+            Input::SetCursorLocked();
 
         return made_changes;
     }

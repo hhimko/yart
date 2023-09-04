@@ -8,7 +8,7 @@
 
 #include <iostream>
 
-#include <GLFW/glfw3.h>
+#include <imgui_internal.h>
 #include <imgui.h>
 
 #include "window.h"
@@ -18,9 +18,10 @@
 static float s_horizontalAxis;
 static float s_verticalAxis;
 
-static int s_current_mouse_mode = GLFW_CURSOR_NORMAL;
-static glm::ivec2 s_mousePosition = { 0, 0 }; 
-static glm::ivec2 s_mouseMoveDelta = { 0, 0 }; 
+static bool s_cursorLocked = false;
+static bool s_cursorLockedLastFrame = false;
+static bool s_cursorLockForce= false;
+static ImVec2 s_mouseLockPos = { 0, 0 }; 
 
 
 namespace yart
@@ -35,29 +36,27 @@ namespace yart
         return s_verticalAxis;
     }
 
-    void Input::SetCursorLocked(bool state)
+    void Input::SetCursorLocked(bool force)
     {
-        yart::Window& window = yart::Window::Get();
+        // Hide the mouse cursor for the immediate frame
+        ImGui::SetMouseCursor(ImGuiMouseCursor_None); 
+        s_cursorLocked = true;
+        s_cursorLockForce = force;
 
-        int glfw_input_mode = state ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL;
-        if (glfw_input_mode == s_current_mouse_mode)
-            return;
-
-        s_current_mouse_mode = glfw_input_mode;
-        glfwSetInputMode(window.m_window, GLFW_CURSOR, glfw_input_mode);
-
-        s_mouseMoveDelta = { 0, 0 }; // Required to avoid jumping cursor issues 
+        if (!s_cursorLockedLastFrame) {
+            ImGuiContext* g = ImGui::GetCurrentContext();
+            s_mouseLockPos = g->IO.MousePos;
+        }
     }
 
-    const glm::ivec2 &Input::GetMouseMoveDelta()
+    ImVec2 Input::GetMouseMoveDelta()
     {
-        return s_mouseMoveDelta;
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        return g->IO.MouseDelta;
     }
 
     void Input::Update()
     {
-        yart::Window& window = yart::Window::Get();
-
         // Update movement axes
         s_horizontalAxis = 0.0f;
         s_verticalAxis = 0.0f;
@@ -69,11 +68,29 @@ namespace yart
         s_verticalAxis -= 1.0f * ImGui::IsKeyDown(ImGuiKey_S);
 
         // Update mouse state
-        double mouse_x, mouse_y;
-        glfwGetCursorPos(window.m_window, &mouse_x, &mouse_y);
-        glm::ivec2 mouse_pos = { mouse_x, mouse_y };
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        if (s_cursorLocked) {
+            if (s_cursorLockForce) {
+                yart::Window& window = yart::Window::Get();
+                
+                double x, y;
+                glfwGetCursorPos(window.m_window, &x, &y);
+                g->IO.MouseDelta.x = (float)x - s_mouseLockPos.x;
+                g->IO.MouseDelta.y = (float)y - s_mouseLockPos.y;
 
-        s_mouseMoveDelta = s_mousePosition - mouse_pos;
-        s_mousePosition = mouse_pos;
+                glfwSetCursorPos(window.m_window, (double)s_mouseLockPos.x, (double)s_mouseLockPos.y);
+            }
+        } else if (s_cursorLockedLastFrame) {
+            // Hide the cursor for one additional frame to mitigate flickering
+            ImGui::SetMouseCursor(ImGuiMouseCursor_None); 
+            g->IO.MousePos = s_mouseLockPos;
+            g->IO.MousePosPrev = s_mouseLockPos;
+
+            yart::Window& window = yart::Window::Get();
+            glfwSetCursorPos(window.m_window, (double)s_mouseLockPos.x, (double)s_mouseLockPos.y);
+        }
+
+        s_cursorLockedLastFrame = s_cursorLocked;
+        s_cursorLocked = false;
     }
 } // namespace yart

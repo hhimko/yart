@@ -6,7 +6,7 @@
 #pragma once
 
 
-#include <glm/glm.hpp>
+#include <imgui.h>
 
 
 namespace yart
@@ -33,17 +33,17 @@ namespace yart
 
         // -- MOUSE CONTROLS -- // 
 
-        /// @brief Set the lock state of the mouse 
+        /// @brief Lock the mouse cursor for a single frame
         /// @details 
         ///     Locking the mouse hides the cursor and disables it's movement on the screen while still 
         ///     capturing the mouse movement delta, which is helpful for creating 3D camera controls. 
         ///     The cursor is unlocked by default
-        /// @param state Whether the mouse should be locked
-        static void SetCursorLocked(bool state);
+        /// @param force Whether to force the platform to lock the cursor position each frame
+        static void SetCursorLocked(bool force = false);
 
         /// @brief Get the amount of screen pixels the mouse cursor has moved since the previous frame
         /// @return Vector containing the amount of pixels moved
-        static const glm::ivec2& GetMouseMoveDelta();
+        static ImVec2 GetMouseMoveDelta();
 
     private:
         /// @brief Update the input system

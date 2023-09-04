@@ -83,24 +83,19 @@ namespace yart
 
 
             // -- ROTATION -- //
-            static bool currently_rotating = false;
-            if ((currently_rotating || GUI::IsMouseOverRenderViewport()) && ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
-                currently_rotating = true;
+            if (GUI::IsMouseOverRenderViewport() && ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
                 yart::Input::SetCursorLocked(true); // Lock and hide the cursor
-                const glm::ivec2& mouse = yart::Input::GetMouseMoveDelta();
+                ImVec2 mouse_delta = yart::Input::GetMouseMoveDelta();
 
-                if (mouse.x != 0 || mouse.y != 0) {
-                    target.m_cameraYaw += static_cast<float>(mouse.x) * 0.01f;
-                    target.m_cameraPitch += static_cast<float>(mouse.y) * 0.01f;
+                if (mouse_delta.x != 0 || mouse_delta.y != 0) {
+                    target.m_cameraYaw -= mouse_delta.x * 0.01f;
+                    target.m_cameraPitch -= mouse_delta.y * 0.01f;
                     target.m_cameraPitch = glm::clamp(target.m_cameraPitch, CAMERA_PITCH_MIN, CAMERA_PITCH_MAX);
                     target.m_cameraLookDirection = yart::utils::SphericalToCartesianUnitVector(target.m_cameraYaw, target.m_cameraPitch);
 
                     target.RecalculateCameraTransformationMatrix();
                     target.m_dirty = true;
                 }
-            } else {
-                yart::Input::SetCursorLocked(false); // Unlock the cursor 
-                currently_rotating = false;
             }
         }
 
