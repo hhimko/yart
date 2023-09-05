@@ -83,7 +83,8 @@ namespace yart
         void Refresh();
 
         /// @brief Issue Dear ImGui render commands to render the Viewport object context menu
-        void OnImGui();
+        /// @returns Whether any changes were made by the user since the last frame
+        bool OnImGui();
 
     private:
         yart::Image m_image;

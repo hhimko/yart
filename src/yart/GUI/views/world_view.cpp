@@ -14,21 +14,26 @@ namespace yart
 {
     namespace GUI
     {
-        void WorldView::OnRenderGUI(yart::World &target)
+        bool WorldView::OnRenderGUI(yart::World& target)
         {
-            bool section_open;
+            bool section_open, made_changes;
             section_open = GUI::BeginCollapsableSection("Sky");
             if (section_open) {
-                RenderSkySection(target);
+                made_changes |= RenderSkySection(target);
             }
             GUI::EndCollapsableSection(section_open);
+
+            return made_changes;
         }
 
-        void WorldView::RenderSkySection(yart::World &target)
+        bool WorldView::RenderSkySection(yart::World& target)
         {
+            bool made_changes;
+
             static const char* items[3] = { "Solid color", "Gradient", "Cubemap" }; 
             static int selected_item = 0;
             GUI::ComboHeader("Sky type", items, 3, &selected_item);
+
 
             switch (selected_item) {
             case 0: {
@@ -41,7 +46,7 @@ namespace yart
                 };
 
                 if (GUI::GradientEditor(ge_ctx))
-                    break;
+                    made_changes = true;
 
                 break;
             }
@@ -49,6 +54,8 @@ namespace yart
                 break;
             }
             }
+
+            return made_changes;
         }
 
     } // namespace GUI

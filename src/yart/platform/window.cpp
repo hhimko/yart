@@ -73,12 +73,12 @@ namespace yart
         return true;
     }
 
-    void Window::OnImGui()
+    bool Window::OnImGui()
     {
         ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
         ImGui::Text("Avg. %.3f ms/frame", 1000.0f / ImGui::GetIO().Framerate);
 
-        m_viewport->OnImGui();
+        return m_viewport->OnImGui();
     }
 
     void Window::Render()

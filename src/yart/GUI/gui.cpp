@@ -17,19 +17,22 @@ namespace yart
         return &s_context;
     }
 
-    void GUI::Render()
+    bool GUI::Render()
     {
         // Uncomment to display Dear ImGui's debug window
-        ImGui::ShowDemoWindow();
+        // ImGui::ShowDemoWindow();
 
 
-        // Update the display size delta
+        // Refresh and update the context state
         GuiContext* ctx = GUI::GetCurrentContext();
+        ctx->madeChanges = false;
+
         static ImVec2 last_display_size = ImGui::GetIO().DisplaySize;
         ImVec2 display_size = ImGui::GetIO().DisplaySize;
 
         ctx->displaySizeDelta = { display_size.x - last_display_size.x, display_size.y - last_display_size.y};
         last_display_size = display_size;
+
 
         // Render the static layout
         GUI::RenderMainMenuBar();
@@ -37,7 +40,9 @@ namespace yart
 
         // Render registered global callbacks
         for (auto callback : ctx->registeredCallbacks)
-            callback();
+            ctx->madeChanges |= callback();
+
+        return ctx->madeChanges;
     }   
 
     bool GUI::RenderViewAxesWindow(const glm::vec3 &x_axis, const glm::vec3 &y_axis, const glm::vec3 &z_axis, glm::vec3& clicked_axis)

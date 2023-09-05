@@ -35,6 +35,8 @@ namespace yart
         /// @return Whether the current frame has changed visually from the previous rendered frame (used for conditional viewport refreshing) 
         bool Render(float buffer[], uint32_t width, uint32_t height);
 
+        /// @brief Get the renderer's world instance 
+        /// @return Renderer's world instance 
         yart::World& GetWorld() const 
         {
             return *m_world;
@@ -86,7 +88,6 @@ namespace yart
         std::unique_ptr<yart::World> m_world = std::make_unique<World>();
         uint32_t m_width = 0; // Width of the render output in pixels 
         uint32_t m_height = 0; // Height of the render output in pixels 
-        bool m_dirty = true; // Signals whether the current frame has changed visually from the previous rendered frame (used for conditional viewport refreshing) 
 
         // Iterators used by Renderer::Render for multithreading
         std::vector<uint32_t> m_verticalPixelIterator;

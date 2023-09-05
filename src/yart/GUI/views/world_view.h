@@ -21,14 +21,16 @@ namespace yart
         public:
             /// @brief Issue GUI render commands to display the World object context menu
             /// @param target View target instance
-            static void OnRenderGUI(yart::World& target);
+            /// @returns Whether any changes were made by the user since the last frame
+            static bool OnRenderGUI(yart::World& target);
 
         private:
             WorldView() = delete;
 
             /// @brief Issue "Sky" section GUI render commands
             /// @param target View target instance
-            static void RenderSkySection(yart::World& target);
+            /// @returns Whether any changes were made by the user since the last frame
+            static bool RenderSkySection(yart::World& target);
 
         };   
 

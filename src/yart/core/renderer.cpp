@@ -21,13 +21,14 @@ namespace yart
     bool Renderer::Render(float buffer[], uint32_t width, uint32_t height)
     {
         YART_ASSERT(buffer != nullptr);
-        if (width != m_width || height != m_height)
+
+        bool dirty = false;
+        if (width != m_width || height != m_height) {
             Resize(width, height);
-            
+            dirty = true;
+        }
 
-        // -- RAY GENERATION LOOP -- //
-
-        // Multithreaded iteration through all pixels
+        // Multithreaded iteration through all image pixels
         std::for_each(std::execution::par, m_verticalPixelIterator.begin(), m_verticalPixelIterator.end(), [&](uint32_t y) {
             std::for_each(std::execution::par, m_horizontalPixelIterator.begin(), m_horizontalPixelIterator.end(), [&](uint32_t x) {
 
@@ -46,10 +47,7 @@ namespace yart
             });
         });
 
-
-        bool was_dirty = m_dirty;
-        m_dirty = false;
-        return was_dirty;
+        return dirty;
     }
 
     void Renderer::Resize(uint32_t width, uint32_t height)
@@ -104,7 +102,6 @@ namespace yart
         const glm::mat4 projection_matrix_inverse = yart::utils::CreateInverseProjectionMatrix(fov, w, h, m_nearClippingPlane);
 
         m_inverseViewProjectionMatrix = view_matrix_inverse * projection_matrix_inverse;
-        m_dirty = true;
     }
     
 } // namespace yart

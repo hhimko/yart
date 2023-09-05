@@ -322,7 +322,7 @@ namespace yart
 
             // Render the currently active inspector item
             if (active_item != nullptr)
-                active_item->callback();
+                ctx->madeChanges |= active_item->callback();
 
             ImGui::EndChild();
             if (open)

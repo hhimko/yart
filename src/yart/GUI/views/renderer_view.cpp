@@ -19,18 +19,20 @@ namespace yart
 {
     namespace GUI
     {
-        void RendererView::OnRenderGUI(yart::Renderer& target)
+        bool RendererView::OnRenderGUI(yart::Renderer& target)
         {
-            bool section_open;
+            bool section_open, made_changes = false;
+
             section_open = GUI::BeginCollapsableSection("Camera");
             if (section_open) {
-                RenderCameraSection(target);
+                made_changes |= RenderCameraSection(target);
             }
             GUI::EndCollapsableSection(section_open);
 
+            return made_changes;
         }
 
-        void RendererView::OnRenderViewAxesWindow(yart::Renderer& target)
+        bool RendererView::OnRenderViewAxesWindow(yart::Renderer& target)
         {
             const glm::vec3 x_axis = { glm::sin(target.m_cameraYaw), glm::sin(target.m_cameraPitch) * glm::cos(target.m_cameraYaw), -glm::cos(target.m_cameraYaw) };
             const glm::vec3 y_axis = { 0, -glm::cos(target.m_cameraPitch), -glm::sin(target.m_cameraPitch) };
@@ -44,18 +46,22 @@ namespace yart
                 target.m_cameraLookDirection = yart::utils::SphericalToCartesianUnitVector(target.m_cameraYaw, target.m_cameraPitch); // Can't use `clicked_axis` directly here, because of rotation clamping
 
                 target.RecalculateCameraTransformationMatrix();
-                target.m_dirty = true;
+                return true;
             }
+
+            return false;
         }
 
-        void RendererView::HandleInputs(yart::Renderer& target)
+        bool RendererView::HandleInputs(yart::Renderer& target)
         {
+            bool made_changes = false;
+
             // -- TRANSLATION -- //
             // Forward/backward movement
             float vertical_speed = yart::Input::GetVerticalAxis();
             if (vertical_speed != 0) {
                 target.m_cameraPosition += target.m_cameraLookDirection * vertical_speed * s_cameraMoveSpeed;
-                target.m_dirty = true;
+                made_changes = true;
             }
 
             // Side-to-side movement
@@ -63,7 +69,7 @@ namespace yart
             if (horizontal_speed != 0) {
                 const glm::vec3 u = -glm::normalize(glm::cross(target.m_cameraLookDirection, target.UP_DIRECTION)); // Camera view horizontal (right) direction vector
                 target.m_cameraPosition += u * horizontal_speed * s_cameraMoveSpeed;
-                target.m_dirty = true;
+                made_changes = true;
             }
 
             // Ascend/descend movement
@@ -71,7 +77,7 @@ namespace yart
             elevation_speed -= static_cast<float>(ImGui::IsKeyDown(ImGuiKey_LeftCtrl));
             if (elevation_speed != 0) {
                 target.m_cameraPosition += target.UP_DIRECTION * elevation_speed * s_cameraMoveSpeed;
-                target.m_dirty = true;
+                made_changes = true;
             }
 
 
@@ -87,24 +93,32 @@ namespace yart
                     target.m_cameraLookDirection = yart::utils::SphericalToCartesianUnitVector(target.m_cameraYaw, target.m_cameraPitch);
 
                     target.RecalculateCameraTransformationMatrix();
-                    target.m_dirty = true;
+                    made_changes = true;
                 }
             }
+
+            return made_changes;
         }
 
-        void RendererView::RenderCameraSection(yart::Renderer &target)
+        bool RendererView::RenderCameraSection(yart::Renderer &target)
         {
+            bool made_changes = false;
+
             if (GUI::SliderFloat("FOV", &target.m_fieldOfView, FOV_MIN, FOV_MAX)) {
                 target.RecalculateCameraTransformationMatrix();
+                made_changes = true;
             }
 
             if (GUI::SliderFloat("Near clipping plane", &target.m_nearClippingPlane, NEAR_CLIP_MIN, NEAR_CLIP_MAX)) {
                 target.RecalculateCameraTransformationMatrix();
+                made_changes = true;
             }
 
             if (GUI::SliderFloat("Far clipping plane", &target.m_farClippingPlane, FAR_CLIP_MIN, FAR_CLIP_MAX)) {
-                target.m_dirty = true;
+                made_changes = true;
             }
+
+            return made_changes;
         }
 
     } // namespace GUI

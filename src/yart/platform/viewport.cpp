@@ -87,7 +87,7 @@ namespace yart
         m_shouldRefresh = false;
     }
 
-    void Viewport::OnImGui()
+    bool Viewport::OnImGui()
     {
         ImGui::SeparatorText("Viewport");
 
@@ -99,6 +99,8 @@ namespace yart
 
         ImGui::Text("Width: %d", m_imageWidth / m_imageScale);
         ImGui::Text("Height: %d", m_imageHeight / m_imageScale);
+
+        return scale_changed;
     }
 
 } // namespace yart

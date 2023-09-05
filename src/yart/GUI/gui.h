@@ -62,7 +62,7 @@ namespace yart
     namespace GUI
     {
         /// @brief Callback function for rendering custom Dear ImGui windows  
-        typedef std::function<void()> imgui_callback_t;
+        using imgui_callback_t = std::function<bool()>;
 
         /// @brief GUI context, holding all state required to render a specific UI layout
         struct GuiContext; // Opaque type without including `gui_internal.h`
@@ -100,7 +100,8 @@ namespace yart
 
         /// @brief Issue Dear ImGui render commands for the current GUI context
         /// @note This method should only be called after calling `ImGui::NewFrame()`
-        void Render();
+        /// @returns Whether any changes were made by the user within this frame
+        bool Render();
 
         /// @brief Render the view axes context window
         /// @param x_axis View x-axis

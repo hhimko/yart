@@ -48,6 +48,8 @@ namespace yart
             /// @brief Currently open inspector nav bar window
             InspectorWindow* activeInspectorWindow = nullptr;
 
+            /// @brief Whether any changes were made by the user within the last frame
+            bool madeChanges;
             /// @brief Amount of pixels the OS window size has changed since last frame
             ImVec2 displaySizeDelta;
             /// @brief Current render viewport area position on screen in pixel coordinates

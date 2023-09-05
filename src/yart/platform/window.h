@@ -29,7 +29,7 @@ namespace yart
     class Window {
     public:
         /// @brief Dear ImGui callback type for registering user defined draw commands
-        typedef std::function<void()> imgui_callback_t;
+        using imgui_callback_t = std::function<void()>;
 
 
         Window(const Window&) = delete;
@@ -48,7 +48,8 @@ namespace yart
         bool Init(const char* title, int win_w, int win_h);
 
         /// @brief Issue Dear ImGui render commands to render the Window object context menu
-        void OnImGui();
+        /// @returns Whether any changes were made by the user since the last frame
+        bool OnImGui();
 
         /// @brief Submit frame for render and present the next frame-in-flight to the window
         void Render();

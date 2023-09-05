@@ -31,12 +31,6 @@
 
 namespace yart
 {
-    Application &Application::Get()
-    {
-        static Application instance; // Instantiated on first call and guaranteed to be destroyed on exit 
-        return instance;
-    }
-
     int Application::Run()
     {
         YART_ASSERT(!m_running);
@@ -54,7 +48,7 @@ namespace yart
 
             // Handle user input
             yart::Input::Update();
-            yart::GUI::RendererView::HandleInputs(m_renderer);
+            m_shouldRefresh |= yart::GUI::RendererView::HandleInputs(m_renderer);
 
             // Ray trace the scene on CPU onto the viewport image buffer
             auto viewport = window.GetViewport();
@@ -65,7 +59,7 @@ namespace yart
             viewport->GetImageSize(&image_width, &image_height);
             
             bool viewport_dirty = m_renderer.Render(viewport->GetImageData(), image_width, image_height);
-            if (viewport_dirty)
+            if (viewport_dirty || m_shouldRefresh)
                 viewport->EnsureRefresh(); // Make sure the viewport image gets refreshed  
 
             // Render and present a frame to a platform window on GPU
@@ -82,13 +76,24 @@ namespace yart
 
     bool Application::Setup()
     {
+        // Initialize the platform window
         yart::Window& window = yart::Window::Get();
         window.SetFontLoadCallback(yart::GUI::LoadFonts);
         if (!window.Init(YART_WINDOW_TITLE, YART_WINDOW_WIDTH, YART_WINDOW_HEIGHT))
             return false;
 
         // Setup GUI rendering
-        window.SetDearImGuiCallback(yart::GUI::Render);  
+        SetupGUI();
+        window.SetDearImGuiCallback(
+            std::bind(&yart::Application::OnRender, this)
+        );  
+
+        return true;
+    }
+
+    void Application::SetupGUI()
+    {
+        yart::Window& window = yart::Window::Get();
         yart::GUI::ApplyCustomStyle();
 
         // Register GUI callbacks
@@ -106,7 +111,14 @@ namespace yart
         yart::GUI::RegisterInspectorWindow("Window", ICON_CI_DEVICE_DESKTOP, color_gray, 
             std::bind(&yart::Window::OnImGui, &window)
         );
+    }
 
-        return true;
+    void Application::OnRender()
+    {
+        // This is called each frame by the platform window
+        m_shouldRefresh = false;
+
+        bool made_changes = yart::GUI::Render();
+        m_shouldRefresh |= made_changes;
     }
 } // namespace yart

@@ -26,22 +26,26 @@ namespace yart
         public:
             /// @brief Issue GUI render commands to display the Renderer object context menu
             /// @param target View target instance
-            static void OnRenderGUI(yart::Renderer& target);
+            /// @returns Whether any changes were made by the user since the last frame
+            static bool OnRenderGUI(yart::Renderer& target);
 
             /// @brief Issue GUI render commands to display the view axes context window
             /// @param target View target instance
-            static void OnRenderViewAxesWindow(yart::Renderer& target);
+            /// @returns Whether any changes were made by the user since the last frame
+            static bool OnRenderViewAxesWindow(yart::Renderer& target);
 
             /// @brief Update the renderer's camera state based on user input
             /// @param target View target instance
-            static void HandleInputs(yart::Renderer& target);
+            /// @returns Whether any changes were made by the user since the last frame
+            static bool HandleInputs(yart::Renderer& target);
 
         private:
             RendererView() = delete;
 
             /// @brief Issue "Camera" section GUI render commands
             /// @param target View target instance
-            static void RenderCameraSection(yart::Renderer& target);
+            /// @returns Whether any changes were made by the user since the last frame
+            static bool RenderCameraSection(yart::Renderer& target);
 
         private:
             /// @brief Smallest valid value for camera's FOV in degrees

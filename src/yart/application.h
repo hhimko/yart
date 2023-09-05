@@ -24,7 +24,11 @@ namespace yart
 
         /// @brief Get the static instance, lazily initialized on first call
         /// @return Static Application instance
-        static Application& Get();
+        static Application& Get()
+        {
+            static Application instance; // Instantiated on first call and guaranteed to be destroyed on exit 
+            return instance;
+        }
 
         /// @brief Run the application mainloop if not already running
         /// @return Application exit status code 
@@ -40,9 +44,17 @@ namespace yart
         /// @return Whether the application has been successfully initialized 
         bool Setup();
 
+        /// @brief Initialize GUI rendering and register custom views
+        void SetupGUI();
+
+        /// @brief Issue GUI render commands  
+        /// @details Should be called each frame by the platform window
+        void OnRender();
+
     private:
         yart::Renderer m_renderer;
         bool m_running = false;
+        bool m_shouldRefresh = false; // Whether the viewport image should be rerendered next frame
 
     };
 } // namespace yart
