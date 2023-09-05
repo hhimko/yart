@@ -1,12 +1,11 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @file
-/// @brief Implementation of the ViewRenderer class 
+/// @brief Implementation of the RendererView class 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "renderer_view.h"
 
 
-#include "yart/utils/glm_utils.h"
 #include "yart/platform/input.h"
 #include "yart/core/renderer.h"
 #include "yart/GUI/gui.h"
@@ -26,12 +25,6 @@ namespace yart
             section_open = GUI::BeginCollapsableSection("Camera");
             if (section_open) {
                 RenderCameraSection(target);
-            }
-            GUI::EndCollapsableSection(section_open);
-
-            section_open = GUI::BeginCollapsableSection("World");
-            if (section_open) {
-                RenderWorldSection(target);
             }
             GUI::EndCollapsableSection(section_open);
 
@@ -114,33 +107,5 @@ namespace yart
             }
         }
 
-        void RendererView::RenderWorldSection(yart::Renderer &target)
-        {
-            static const char* items[3] = { "Solid color", "Gradient", "Cubemap" }; 
-            static int selected_item = 0;
-            GUI::ComboHeader("Skybox type", items, 3, &selected_item);
-
-            switch (selected_item) {
-            case 0: {
-                break;
-            }
-            case 1: {
-                static GradientEditorContext ge_ctx { 
-                    target.m_worldSkyGradientValues, 
-                    target.m_worldSkyGradientLocations 
-                };
-
-                if (GUI::GradientEditor(ge_ctx))
-                    target.m_dirty = true;
-
-                break;
-            }
-            case 2: {
-                break;
-            }
-            }
-        }
-
     } // namespace GUI
 } // namespace yart
-

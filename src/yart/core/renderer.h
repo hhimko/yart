@@ -8,10 +8,12 @@
 
 #include <cstdint>
 #include <vector>
+#include <memory>
 
 #include <glm/glm.hpp>
 
 #include "yart/GUI/views/renderer_view.h"
+#include "world.h"
 #include "ray.h"
 
 
@@ -32,6 +34,11 @@ namespace yart
         /// @param height Height in pixels of the output image
         /// @return Whether the current frame has changed visually from the previous rendered frame (used for conditional viewport refreshing) 
         bool Render(float buffer[], uint32_t width, uint32_t height);
+
+        yart::World& GetWorld() const 
+        {
+            return *m_world;
+        }
 
     private:
         ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -76,6 +83,7 @@ namespace yart
         void RecalculateCameraTransformationMatrix();
 
     private:
+        std::unique_ptr<yart::World> m_world = std::make_unique<World>();
         uint32_t m_width = 0; // Width of the render output in pixels 
         uint32_t m_height = 0; // Height of the render output in pixels 
         bool m_dirty = true; // Signals whether the current frame has changed visually from the previous rendered frame (used for conditional viewport refreshing) 
@@ -98,11 +106,6 @@ namespace yart
 
         // Cached view projection matrix inverse for transforming screen space coordinates into world space 
         glm::mat4 m_inverseViewProjectionMatrix; 
-
-
-        // -- WORLD DATA -- //
-        std::vector<glm::vec3> m_worldSkyGradientValues = { {1,0,0}, {0,1,0}, {0,0,1} };
-        std::vector<float> m_worldSkyGradientLocations = { 0.0f, 0.5f, 1.0f };
 
 
         // -- FRIEND DECLARATIONS -- //

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @file
-/// @brief Definition of the ViewRenderer class 
+/// @brief Definition of the RendererView class 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
@@ -42,10 +42,6 @@ namespace yart
             /// @brief Issue "Camera" section GUI render commands
             /// @param target View target instance
             static void RenderCameraSection(yart::Renderer& target);
-
-            /// @brief Issue "World" section GUI render commands
-            /// @param target View target instance
-            static void RenderWorldSection(yart::Renderer& target);
 
         private:
             /// @brief Smallest valid value for camera's FOV in degrees

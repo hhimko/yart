@@ -13,7 +13,6 @@
 #include <imgui.h>
 
 #include "yart/utils/yart_utils.h"
-#include "yart/utils/glm_utils.h"
 #include "yart/application.h"
 
 
@@ -89,11 +88,7 @@ namespace yart
 
     void Renderer::Miss(const Ray& ray, HitPayload& payload)
     {
-        float t = (ray.direction.y + 1.0f) / 2.0f; 
-        
-        payload.resultColor = yart::utils::LinearGradient(
-            m_worldSkyGradientValues.data(), m_worldSkyGradientLocations.data(), m_worldSkyGradientValues.size(), t
-        );
+        payload.resultColor = m_world->SampleSkyColor(ray.direction);
     }
 
     void Renderer::RecalculateCameraTransformationMatrix()

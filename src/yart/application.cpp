@@ -99,6 +99,10 @@ namespace yart
             std::bind(&yart::GUI::RendererView::OnRenderGUI, std::ref(m_renderer))
         );
 
+        yart::GUI::RegisterInspectorWindow("World", ICON_CI_GLOBE, color_gray, 
+            std::bind(&yart::GUI::WorldView::OnRenderGUI, std::ref(m_renderer.GetWorld()))
+        );
+
         yart::GUI::RegisterInspectorWindow("Window", ICON_CI_DEVICE_DESKTOP, color_gray, 
             std::bind(&yart::Window::OnImGui, &window)
         );
