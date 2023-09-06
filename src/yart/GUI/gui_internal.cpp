@@ -751,8 +751,8 @@ namespace yart
         static constexpr float arrow_frame_width = 14.0f;
         static const float text_width_percent = 0.4f; // TODO: This value should be calculated based on the current indent at some point
 
-        const ImRect text_bb = { total_bb.Min, { total_bb.Min.x + total_bb.GetWidth() * text_width_percent - item_spacing, total_bb.Max.y }};
-        const ImRect frame_total_bb = { { text_bb.Max.x + item_spacing, text_bb.Min.y }, total_bb.Max };
+        const ImRect text_bb = { total_bb.Min, { total_bb.Min.x + IM_ROUND(total_bb.GetWidth() * text_width_percent) - item_spacing, total_bb.Max.y }};
+        const ImRect frame_total_bb = { { text_bb.Max.x + item_spacing, total_bb.Min.y }, total_bb.Max };
         const ImRect frame_drag_bb = { { frame_total_bb.Min.x + arrow_frame_width, frame_total_bb.Min.y }, { frame_total_bb.Max.x - arrow_frame_width, frame_total_bb.Max.y } };
 
 
@@ -1061,15 +1061,11 @@ namespace yart
         
 
         // -- RENDER GRADIENT RECT AND COLOR PICKER HANDLES -- //
-        const ImU32 border_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_SliderGrab]);
-        const ImU32 border_col_hovered = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_SliderGrabActive]);
-        static constexpr ImU32 border_col_active = 0xFFFFFFFF;
-
         for (size_t i = 0; i < ctx.values.size(); ++i) {
             const ImVec2 p_min = { cursor_pos.x + glm::round(ctx.locations[i] * gradient_size.x), cursor_pos.y };
 
-            const ImU32 col = (i == ctx.selectedItemIndex) ? border_col_active : (i == hovered_idx) ? border_col_hovered : border_col; 
-            GradientSamplingPointHandle(ctx.values[i], p_min, picker_size, col);
+            const ImU32 border_col = (i == ctx.selectedItemIndex) ? 0xFFFFFFFF : ImGui::GetColorU32((i == hovered_idx) ? ImGuiCol_SliderGrabActive : ImGuiCol_SliderGrab);
+            GradientSamplingPointHandle(ctx.values[i], p_min, picker_size, border_col);
         }
 
         GUI::DrawGradientRect(draw_list, gradient_p_min, gradient_p_max, ctx.values.data(), ctx.locations.data(), ctx.values.size(), true);

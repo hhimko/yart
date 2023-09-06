@@ -20,7 +20,7 @@ namespace yart
     bool GUI::Render()
     {
         // Uncomment to display Dear ImGui's debug window
-        // ImGui::ShowDemoWindow();
+        ImGui::ShowDemoWindow();
 
 
         // Refresh and update the context state
@@ -469,12 +469,12 @@ namespace yart
         return GUI::SliderEx(name, ImGuiDataType_Float, (void*)p_val, (float*)&min, (float*)&max, format, (void*)&arrow_step);
     }
 
-    void GUI::ComboHeader(const char *name, const char *items[], size_t items_size, int *selected_item)
+    bool GUI::ComboHeader(const char *name, const char *items[], size_t items_size, int *selected_item)
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
         ImGuiWindow* window = g->CurrentWindow;
         if (window->SkipItems)
-            return;
+            return false;
 
         ImVec2 p_min = window->DC.CursorPos;
         ImVec2 p_max = { window->WorkRect.Max.x, window->DC.CursorPos.y + ImGui::GetFrameHeight() };
@@ -483,14 +483,17 @@ namespace yart
         ImGuiID id = GUI::GetIDFormatted("##ComboHeader/%s", name);
         ImGui::ItemSize(total_bb);
         if (!ImGui::ItemAdd(total_bb, id, nullptr)) 
-            return;
+            return false;
 
+
+        bool item_changed = false;
 
         // When navigating with keyboard/gamepad, cycle over all the items
         bool nav_activated_by_code = (g->NavActivateId == id);
         bool nav_activated_by_inputs = (g->NavActivatePressedId == id);
         if (nav_activated_by_code || nav_activated_by_inputs) {
             *selected_item = (*selected_item + 1) % items_size;
+            item_changed = true;
         }
 
         // During nav, the items can be cycled over with arrow keys
@@ -498,10 +501,11 @@ namespace yart
             if (g->NavMoveDir == ImGuiDir_Left) {
                 *selected_item = --(*selected_item) < 0 ? static_cast<int>(items_size - 1) : *selected_item;
                 ImGui::NavMoveRequestCancel();
-            }
-            else if (g->NavMoveDir == ImGuiDir_Right) {
+                item_changed = true;
+            } else if (g->NavMoveDir == ImGuiDir_Right) {
                 *selected_item = (*selected_item + 1) % items_size;
                 ImGui::NavMoveRequestCancel();
+                item_changed = true;
             }
         }
 
@@ -522,7 +526,10 @@ namespace yart
                 ImGui::SetFocusID(id, window);
                 ImGui::FocusWindow(window);
 
-                *selected_item = i;
+                if (*selected_item != i) {
+                    *selected_item = i;
+                    item_changed = true;
+                }
             }
 
             const bool hovered = ImGui::IsItemHovered();
@@ -552,6 +559,106 @@ namespace yart
         }
 
         ImGui::RenderNavHighlight(total_bb, id);
+        return item_changed;
+    }
+
+    bool GUI::ColorEdit(const char* name, float color[3])
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        ImGuiWindow* window = g->CurrentWindow;
+        if (window->SkipItems)
+            return false;
+
+        // Calculate the total bounding box of the widget
+        const ImGuiID id = window->GetID(name);
+        const ImRect total_bb = { window->DC.CursorPos, { window->WorkRect.Max.x, window->DC.CursorPos.y + ImGui::GetFrameHeight() }};
+
+        ImGui::ItemSize(total_bb);
+        if (!ImGui::ItemAdd(total_bb, id))
+            return false;
+
+
+        const float item_spacing = g->Style.ItemInnerSpacing.x;
+        static const float text_width_percent = 0.4f; // TODO: This value should be calculated based on the current indent at some point
+
+        const ImRect text_bb = { total_bb.Min, { total_bb.Min.x + IM_ROUND(total_bb.GetWidth() * text_width_percent) - item_spacing, total_bb.Max.y }};
+        const ImRect frame_bb = { { text_bb.Max.x + item_spacing, total_bb.Min.y }, total_bb.Max };
+
+        const bool total_hovered = g->ActiveId != id && (ImGui::ItemHoverable(total_bb, id) || g->NavId == id);
+        const bool text_hovered = total_hovered && ImGui::IsMouseHoveringRect(text_bb.Min, text_bb.Max);
+
+        const bool set_current_color_edit_id = (g->ColorEditCurrentID == 0);
+        if (set_current_color_edit_id)
+            g->ColorEditCurrentID = id;
+
+        static constexpr bool has_alpha = false;
+
+        bool frame_hovered = false, made_changes = false;
+        if (ImGui::ButtonBehavior(frame_bb, id, &frame_hovered, nullptr)) {
+            // Store current color and open a picker
+            g->ColorPickerRef = { color[0], color[1], color[2], has_alpha ? color[3] : 1.0f };
+            ImGui::OpenPopup("ColorPicker");
+            ImGui::SetNextWindowPos({ frame_bb.Min.x,  frame_bb.Max.y + g->Style.ItemSpacing.y });
+        }
+
+        ImGuiWindow* picker_popup_window = nullptr;
+        if (ImGui::BeginPopup("ColorPicker")) {
+            picker_popup_window = g->CurrentWindow;
+
+            ImGui::TextEx(name);
+            ImGui::Spacing();
+            
+            // ImGui::SetNextItemWidth(18 * 12.0f); // Use 256 + bar sizes?
+            static constexpr ImGuiColorEditFlags flags = has_alpha ? ImGuiColorEditFlags_None : ImGuiColorEditFlags_NoAlpha;
+            made_changes |= ImGui::ColorPicker4("##Picker", color, flags, &g->ColorPickerRef.x);
+
+            ImGui::EndPopup();
+        }
+
+        if (set_current_color_edit_id)
+            g->ColorEditCurrentID = 0;
+
+
+        // Render the label text
+        if (GUI::DrawText(window->DrawList, text_bb.Min, text_bb.Max, 0.0f, name) && text_hovered)
+            ImGui::SetTooltip(name);
+
+        // Render the color button frame
+        const ImU32 col = ImGui::ColorConvertFloat4ToU32({ color[0], color[1], color[2], 1.0f });
+        const ImU32 border_col = ImGui::GetColorU32(frame_hovered ? ImGuiCol_SliderGrabActive : ImGuiCol_SliderGrab);
+        window->DrawList->AddRectFilled({ frame_bb.Min.x, frame_bb.Min.y }, { frame_bb.Max.x, frame_bb.Max.y}, col, g->Style.FrameRounding);
+        window->DrawList->AddRect(frame_bb.Min, frame_bb.Max, border_col, g->Style.FrameRounding);
+
+        // Drag and Drop Target
+        // if (BeginDragDropTarget())
+        // {
+        //     bool accepted_drag_drop = false;
+        //     if (const ImGuiPayload* payload = AcceptDragDropPayload(IMGUI_PAYLOAD_TYPE_COLOR_3F))
+        //     {
+        //         memcpy((float*)col, payload->Data, sizeof(float) * 3); // Preserve alpha if any //-V512 //-V1086
+        //         made_changes = accepted_drag_drop = true;
+        //     }
+        //     if (const ImGuiPayload* payload = AcceptDragDropPayload(IMGUI_PAYLOAD_TYPE_COLOR_4F))
+        //     {
+        //         memcpy((float*)col, payload->Data, sizeof(float) * components);
+        //         made_changes = accepted_drag_drop = true;
+        //     }
+
+        //     // Drag-drop payloads are always RGB
+        //     if (accepted_drag_drop && (flags & ImGuiColorEditFlags_InputHSV))
+        //         ColorConvertRGBtoHSV(col[0], col[1], col[2], col[0], col[1], col[2]);
+        //     EndDragDropTarget();
+        // }
+
+        // When picker is being actively used, use its active id so IsItemActive() will function on ColorEdit4().
+        if (picker_popup_window && g->ActiveId != 0 && g->ActiveIdWindow == picker_popup_window)
+            g->LastItemData.ID = g->ActiveId;
+
+        if (made_changes && id != 0)
+            ImGui::MarkItemEdited(id);
+
+        ImGui::RenderNavHighlight(frame_bb, id);
+        return made_changes;
     }
 
     bool GUI::GradientEditor(GradientEditorContext& ctx)

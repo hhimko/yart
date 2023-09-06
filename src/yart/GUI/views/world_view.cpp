@@ -6,6 +6,7 @@
 #include "world_view.h"
 
 
+#include "yart/utils/yart_utils.h"
 #include "yart/core/world.h"
 #include "yart/GUI/gui.h"
 
@@ -16,7 +17,7 @@ namespace yart
     {
         bool WorldView::OnRenderGUI(yart::World& target)
         {
-            bool section_open, made_changes;
+            bool section_open, made_changes = false;
             section_open = GUI::BeginCollapsableSection("Sky");
             if (section_open) {
                 made_changes |= RenderSkySection(target);
@@ -28,18 +29,27 @@ namespace yart
 
         bool WorldView::RenderSkySection(yart::World& target)
         {
-            bool made_changes;
+            using SkyType = yart::World::SkyType;
+            bool made_changes = false;
 
-            static const char* items[3] = { "Solid color", "Gradient", "Cubemap" }; 
-            static int selected_item = 0;
-            GUI::ComboHeader("Sky type", items, 3, &selected_item);
+            static const size_t items_size = 3;
+            static_assert(items_size == static_cast<uint8_t>(SkyType::COUNT));
+            static const char* items[items_size] = { "Solid color",        "Gradient",        "Skybox" };
+            static SkyType items_LUT[items_size] = { SkyType::SOLID_COLOR, SkyType::GRADIENT, SkyType::SKYBOX };
 
+            static int selected_item = static_cast<uint8_t>(target.m_skyType);
+            if (GUI::ComboHeader("Sky type", items, items_size, &selected_item)) 
+                made_changes = true;
 
-            switch (selected_item) {
-            case 0: {
+            switch (items_LUT[selected_item]) {
+            case SkyType::SOLID_COLOR: {
+                static_assert(sizeof(glm::vec3) == sizeof(float) * 3);
+                if (GUI::ColorEdit("Sky color", (float*)&target.m_skySolidColor))
+                    made_changes = true;
+                
                 break;
             }
-            case 1: {
+            case SkyType::GRADIENT: {
                 static GradientEditorContext ge_ctx { 
                     target.m_skyGradientValues, 
                     target.m_skyGradientLocations 
@@ -50,11 +60,14 @@ namespace yart
 
                 break;
             }
-            case 2: {
+            case SkyType::SKYBOX: {
                 break;
             }
+            case SkyType::COUNT:
+                YART_UNREACHABLE();
             }
 
+            target.m_skyType = items_LUT[selected_item];
             return made_changes;
         }
 

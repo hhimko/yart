@@ -244,7 +244,10 @@ namespace yart
         /// @param items Array of combo items
         /// @param items_size Size of the `items` array
         /// @param selected_item The currently selected combo item index
-        void ComboHeader(const char* name, const char* items[], size_t items_size, int* selected_item); 
+        /// @returns Whether the selected item has changed since last frame
+        bool ComboHeader(const char* name, const char* items[], size_t items_size, int* selected_item); 
+
+        bool ColorEdit(const char* name, float color[3]);
 
         /// @brief Render a linear gradient editor widget
         /// @param ctx Object holding the widget's state

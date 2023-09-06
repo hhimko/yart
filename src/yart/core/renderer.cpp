@@ -81,6 +81,7 @@ namespace yart
 
     void Renderer::ClosestHit(const Ray& ray, HitPayload& payload)
     {
+        YART_UNUSED(ray);
         payload.resultColor = glm::vec3{0,0,0};
     }
 
