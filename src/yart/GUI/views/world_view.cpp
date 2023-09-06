@@ -41,6 +41,7 @@ namespace yart
             if (GUI::ComboHeader("Sky type", items, items_size, &selected_item)) 
                 made_changes = true;
 
+
             switch (items_LUT[selected_item]) {
             case SkyType::SOLID_COLOR: {
                 static_assert(sizeof(glm::vec3) == sizeof(float) * 3);

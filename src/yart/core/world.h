@@ -28,6 +28,12 @@ namespace yart
         glm::vec3 SampleSkyColor(const glm::vec3& direction);
 
     private:
+        /// @brief Sample the skybox texture at a given direction
+        /// @param direction Unit direction vector
+        /// @return Color at the sampled point
+        glm::vec3 SampleSkyboxTexture(const glm::vec3& direction);
+
+    private:
         /// @brief Types of renderable environment skies
         enum class SkyType : uint8_t {
             SOLID_COLOR = 0,
@@ -49,6 +55,19 @@ namespace yart
         static constexpr float DEFAULT_SKY_GRADIENT_LOCATION1 = 0.0f;
         static constexpr float DEFAULT_SKY_GRADIENT_LOCATION2 = 1.0f;
         std::vector<float> m_skyGradientLocations = { DEFAULT_SKY_GRADIENT_LOCATION1, DEFAULT_SKY_GRADIENT_LOCATION2 };
+
+        static constexpr float DEFAULT_SKY_SKYBOX_TEXTURE[12] = { 
+            1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f 
+        };
+        size_t m_skySkyboxTextureSize = 2;
+        const float* m_skySkyboxTextures[6] = { 
+            DEFAULT_SKY_SKYBOX_TEXTURE, // Positive X axis
+            DEFAULT_SKY_SKYBOX_TEXTURE, // Negative X axis
+            DEFAULT_SKY_SKYBOX_TEXTURE, // Positive Y axis
+            DEFAULT_SKY_SKYBOX_TEXTURE, // Negative Y axis
+            DEFAULT_SKY_SKYBOX_TEXTURE, // Positive Z axis
+            DEFAULT_SKY_SKYBOX_TEXTURE  // Negative Z axis
+        };
 
 
         // -- FRIEND DECLARATIONS -- //
