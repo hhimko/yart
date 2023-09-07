@@ -954,7 +954,7 @@ namespace yart
 
                     ctx.values[j] = temp_val;
                     ctx.ids[j] = temp_id;
-                    i = j;
+                    ctx.selectedItemIndex = static_cast<uint8_t>(j);
                     break;
                 }
             }
@@ -973,7 +973,7 @@ namespace yart
 
                     ctx.values[j] = temp_val;
                     ctx.ids[j] = temp_id;
-                    i = j;
+                    ctx.selectedItemIndex = static_cast<uint8_t>(j);
                     break;
                 }
             }
@@ -1072,14 +1072,24 @@ namespace yart
 
 
         // -- RENDER HANDLE STATE CONTROLS -- //
-        GUI::BeginFrame("Stop 1", 1);
-        {
-            static float f;
-            ImGui::DragFloat("idk1", &f);
-        }
-        GUI::EndFrame();
+        bool disable = ctx.selectedItemIndex >= ctx.values.size();
+        if (disable)
+            ImGui::BeginDisabled();
 
-        
+        float disabled_col[3] = { 0.0f, 0.0f, 0.0f };
+        static_assert(sizeof(glm::vec3) == 3 * sizeof(float));
+        state_updated |= GUI::ColorEdit("Stop color", disable ? disabled_col : (float*)&ctx.values[ctx.selectedItemIndex]);
+
+        float location_as_percent = disable ? 0.0f : ctx.locations[ctx.selectedItemIndex] * 100.0f;
+        if (GUI::SliderFloat("Stop location", &location_as_percent, 0.0f, 100.0f, "%.1f %%")) {
+            float new_location = location_as_percent / 100.0f;
+            if (UpdateGradientEditorLocations(ctx, ctx.selectedItemIndex, new_location))
+                state_updated = true;
+        }
+
+        if (disable)
+            ImGui::EndDisabled();
+
         ImGui::EndGroup();
         return state_updated;
     }

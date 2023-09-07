@@ -48,12 +48,12 @@ namespace yart
         static constexpr glm::vec3 DEFAULT_SKY_COLOR = { 0.131f, 0.241f, 0.500f };
         glm::vec3 m_skySolidColor = DEFAULT_SKY_COLOR;
 
-        static constexpr glm::vec3 DEFAULT_SKY_GRADIENT_VALUE1 = { 0.158f, 0.180f, 0.195f };
-        static constexpr glm::vec3 DEFAULT_SKY_GRADIENT_VALUE2 = { 0.158f, 0.180f, 0.195f };
+        static constexpr glm::vec3 DEFAULT_SKY_GRADIENT_VALUE1 = { 0.316f, 0.544f, 0.625f };
+        static constexpr glm::vec3 DEFAULT_SKY_GRADIENT_VALUE2 = { 0.131f, 0.241f, 0.500f };
         std::vector<glm::vec3> m_skyGradientValues = { DEFAULT_SKY_GRADIENT_VALUE1, DEFAULT_SKY_GRADIENT_VALUE2 };
 
-        static constexpr float DEFAULT_SKY_GRADIENT_LOCATION1 = 0.0f;
-        static constexpr float DEFAULT_SKY_GRADIENT_LOCATION2 = 1.0f;
+        static constexpr float DEFAULT_SKY_GRADIENT_LOCATION1 = 0.25f;
+        static constexpr float DEFAULT_SKY_GRADIENT_LOCATION2 = 1.00f;
         std::vector<float> m_skyGradientLocations = { DEFAULT_SKY_GRADIENT_LOCATION1, DEFAULT_SKY_GRADIENT_LOCATION2 };
 
         static constexpr float DEFAULT_SKY_SKYBOX_TEXTURE[12] = { 

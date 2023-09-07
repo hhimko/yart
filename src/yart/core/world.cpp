@@ -68,10 +68,10 @@ namespace yart
         }
 
         // Convert range from [-1..1] to [0..texture_size]
-        const size_t u_coord = static_cast<size_t>(glm::ceil(u / max_axis + 1.0f) / 2.0f * (m_skySkyboxTextureSize - 1));
-        const size_t v_coord = static_cast<size_t>(glm::ceil(v / max_axis + 1.0f) / 2.0f * (m_skySkyboxTextureSize - 1));
+        const size_t u_coord = static_cast<size_t>(glm::round((u / max_axis + 1.0f) / 2.0f * (m_skySkyboxTextureSize - 1)));
+        const size_t v_coord = static_cast<size_t>(glm::round((v / max_axis + 1.0f) / 2.0f * (m_skySkyboxTextureSize - 1)));
 
-        const float* val = m_skySkyboxTextures[index] + v_coord * m_skySkyboxTextureSize + u_coord;
+        const float* val = m_skySkyboxTextures[index] + (v_coord * m_skySkyboxTextureSize + u_coord) * 3;
         return { val[0], val[1], val[2] };
     }
 } // namespace yart
