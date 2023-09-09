@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @file
-/// @brief Implementation of core YART helper utility classes and macros
+/// @brief Implementation of YART platform helper utility classes and macros
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
@@ -30,9 +30,7 @@
     #define YART_ASSERT(expr) assert(expr) 
     #define YART_ABORT(msg) assert(0 && msg)
     #define YART_UNREACHABLE() YART_ABORT("Reached unreachable section")
-#endif
-
-// TODO: Create YART logging macros
+#endif // #ifndef DOXYGEN_EXCLUDE
 
 
 namespace yart

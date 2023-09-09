@@ -6,6 +6,9 @@
 #include "ray.h"
 
 
+#include "yart/core/utils/glm_utils.h"
+
+
 namespace yart
 {
     bool Ray::IntersectTriangle(const Ray &ray, 
@@ -22,7 +25,7 @@ namespace yart
         float det = glm::dot(E01, P);
 
         // Back culling step
-        if (det < EPSILON) 
+        if (det < yart::utils::EPSILON) 
            return false;
 
         float inv_det = 1.f / det;

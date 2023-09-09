@@ -20,7 +20,7 @@
 #endif
 
 
-static void on_glfw_error(int error_code, const char *description) 
+static void on_glfw_error(int error_code, const char* description) 
 {
     std::cerr << "GLFW Error " << error_code << ": " << description << std::endl;
 }

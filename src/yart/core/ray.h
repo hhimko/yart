@@ -35,8 +35,5 @@ namespace yart
             float& t, float& u, float& v
         );
 
-    private:
-        static constexpr float EPSILON = 0.0001f;
-
     };
 } // namespace yart

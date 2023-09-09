@@ -7,8 +7,8 @@
 #include "gui_internal.h"
 
 
-#include "yart/utils/glm_utils.h"
-#include "yart/utils/yart_utils.h"
+#include "yart/core/utils/glm_utils.h"
+#include "yart/core/utils/yart_utils.h"
 #include "yart/platform/input.h"
 #include "font/IconsCodicons.h"
 
@@ -1076,12 +1076,12 @@ namespace yart
         if (disable)
             ImGui::BeginDisabled();
 
-        float disabled_col[3] = { 0.0f, 0.0f, 0.0f };
+        float disabled_col[3] = { YART_GUI_COLOR_DARK_GRAY };
         static_assert(sizeof(glm::vec3) == 3 * sizeof(float));
         state_updated |= GUI::ColorEdit("Stop color", disable ? disabled_col : (float*)&ctx.values[ctx.selectedItemIndex]);
 
         float location_as_percent = disable ? 0.0f : ctx.locations[ctx.selectedItemIndex] * 100.0f;
-        if (GUI::SliderFloat("Stop location", &location_as_percent, 0.0f, 100.0f, "%.1f %%")) {
+        if (GUI::SliderFloat("Stop location", &location_as_percent, 0.0f, 100.0f, "%.2f%%")) {
             float new_location = location_as_percent / 100.0f;
             if (UpdateGradientEditorLocations(ctx, ctx.selectedItemIndex, new_location))
                 state_updated = true;

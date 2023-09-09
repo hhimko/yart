@@ -6,7 +6,7 @@
 #include "world_view.h"
 
 
-#include "yart/utils/yart_utils.h"
+#include "yart/core/utils/yart_utils.h"
 #include "yart/core/world.h"
 #include "yart/GUI/gui.h"
 
@@ -34,8 +34,8 @@ namespace yart
 
             static const size_t items_size = 3;
             static_assert(items_size == static_cast<uint8_t>(SkyType::COUNT));
-            static const char* items[items_size] = { "Solid color",        "Gradient",        "Skybox" };
-            static SkyType items_LUT[items_size] = { SkyType::SOLID_COLOR, SkyType::GRADIENT, SkyType::SKYBOX };
+            static const char* items[items_size] = { "Solid color",        "Gradient",        "Cubemap"        };
+            static SkyType items_LUT[items_size] = { SkyType::SOLID_COLOR, SkyType::GRADIENT, SkyType::CUBEMAP };
 
             static int selected_item = static_cast<uint8_t>(target.m_skyType);
             if (GUI::ComboHeader("Sky type", items, items_size, &selected_item)) 
@@ -61,7 +61,7 @@ namespace yart
 
                 break;
             }
-            case SkyType::SKYBOX: {
+            case SkyType::CUBEMAP: {
                 break;
             }
             case SkyType::COUNT:
