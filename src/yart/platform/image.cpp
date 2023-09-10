@@ -11,7 +11,7 @@
 #include <imgui.h>
 #include <backends/imgui_impl_vulkan.h> // Renderer backend
 
-#include "yart/utils/yart_utils.h"
+#include "yart/core/utils/yart_utils.h"
 #include "utils/vk_utils.h"
 
 

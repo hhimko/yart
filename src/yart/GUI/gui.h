@@ -94,9 +94,9 @@ namespace yart
         };
 
 
-        /// @brief Get the active GUI context
+        /// @brief Get the current GUI context
         /// @return The currently active context object
-        GuiContext* GetCurrentContext();
+        GuiContext* GetGUIContext();
 
         /// @brief Issue Dear ImGui render commands for the current GUI context
         /// @note This method should only be called after calling `ImGui::NewFrame()`

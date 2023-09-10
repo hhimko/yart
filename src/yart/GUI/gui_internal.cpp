@@ -109,7 +109,7 @@ namespace yart
         ImVec2 drag = SeparatorHandle({ window->DC.CursorPos.x, window->DC.CursorPos.y }, separator_size, cursor);
         layout.size += layout.direction == GUI::LayoutDir::HORIZONTAL ? drag.x : drag.y;
 
-        GuiContext* ctx = GUI::GetCurrentContext();
+        GuiContext* ctx = GUI::GetGUIContext();
         if (layout.preserveSecondSectionSize && drag.x == 0 && drag.y == 0)
             layout.size += layout.direction == GUI::LayoutDir::HORIZONTAL ? ctx->displaySizeDelta.x : ctx->displaySizeDelta.y;
 
@@ -203,7 +203,7 @@ namespace yart
 		}
 
         // Store the size of the main menu bar for content area computation
-        GuiContext* ctx = GUI::GetCurrentContext();
+        GuiContext* ctx = GUI::GetGUIContext();
         ctx->mainMenuBarHeight = ImGui::GetWindowSize().y;
 
         ImGui::EndMainMenuBar();
@@ -212,7 +212,7 @@ namespace yart
     void GUI::RenderMainContentFrame()
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
-        GuiContext* ctx = GUI::GetCurrentContext();
+        GuiContext* ctx = GUI::GetGUIContext();
 
         ImVec2 display_size = ImGui::GetIO().DisplaySize;
         float menu_bar_height = ctx->mainMenuBarHeight;
@@ -257,7 +257,7 @@ namespace yart
 
     void GUI::RenderContextWindow()
     {
-        GuiContext* ctx = GUI::GetCurrentContext();
+        GuiContext* ctx = GUI::GetGUIContext();
         ImGuiContext* g = ImGui::GetCurrentContext();
 
         // Render the scene+context menu layout
@@ -335,7 +335,7 @@ namespace yart
 
     void GUI::RenderInspectorNavBar()
     {
-        GuiContext* ctx = GUI::GetCurrentContext();
+        GuiContext* ctx = GUI::GetGUIContext();
         ImGuiContext* g = ImGui::GetCurrentContext();
 
         const float window_y_offset = ImGui::GetFrameHeight() - 1.0f;
@@ -599,7 +599,7 @@ namespace yart
         );
 
         // Set a constant window size and position
-        GuiContext* ctx = GUI::GetCurrentContext();
+        GuiContext* ctx = GUI::GetGUIContext();
         ImVec2 viewport_pos = ctx->renderViewportAreaPos;
         ImVec2 window_center = {
             viewport_pos.x + ctx->renderViewportAreaWidth - window_size.x / 2 - window_margin.x, 

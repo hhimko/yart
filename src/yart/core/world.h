@@ -10,6 +10,7 @@
 
 #include <glm/glm.hpp>
 
+#include "yart/core/RES/resources/cubemap.h"
 #include "yart/GUI/views/world_view.h"
 
 
@@ -20,18 +21,12 @@ namespace yart
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     class World {
     public:
-        World() = default;
+        World();
 
         /// @brief Get the sky color at a given direction 
         /// @param direction Unit direction vector
         /// @return Color at the sampled point
         glm::vec3 SampleSkyColor(const glm::vec3& direction);
-
-    private:
-        /// @brief Sample the cubemap texture at a given direction
-        /// @param direction Unit direction vector
-        /// @return Color at the sampled point
-        glm::vec3 SampleCubemapColor(const glm::vec3& direction);
 
     private:
         /// @brief Types of renderable environment skies
@@ -56,19 +51,7 @@ namespace yart
         static constexpr float DEFAULT_SKY_GRADIENT_LOCATION2 = 1.00f;
         std::vector<float> m_skyGradientLocations = { DEFAULT_SKY_GRADIENT_LOCATION1, DEFAULT_SKY_GRADIENT_LOCATION2 };
 
-        static constexpr float DEFAULT_SKY_CUBEMAP_TEXTURE[12] = { 
-            1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f 
-        };
-        size_t m_skyCubemapTextureSize = 2;
-        const float* m_skyCubemapTextures[6] = { 
-            DEFAULT_SKY_CUBEMAP_TEXTURE, // Positive X axis
-            DEFAULT_SKY_CUBEMAP_TEXTURE, // Negative X axis
-            DEFAULT_SKY_CUBEMAP_TEXTURE, // Positive Y axis
-            DEFAULT_SKY_CUBEMAP_TEXTURE, // Negative Y axis
-            DEFAULT_SKY_CUBEMAP_TEXTURE, // Positive Z axis
-            DEFAULT_SKY_CUBEMAP_TEXTURE  // Negative Z axis
-        };
-
+        RES::CubeMap* m_skyCubeMap;
 
         // -- FRIEND DECLARATIONS -- //
         friend class yart::GUI::WorldView;

@@ -11,7 +11,7 @@
 
 namespace yart
 {
-    GUI::GuiContext* GUI::GetCurrentContext()
+    GUI::GuiContext* GUI::GetGUIContext()
     {
         static yart::GUI::GuiContext s_context = { };  
         return &s_context;
@@ -24,7 +24,7 @@ namespace yart
 
 
         // Refresh and update the context state
-        GuiContext* ctx = GUI::GetCurrentContext();
+        GuiContext* ctx = GUI::GetGUIContext();
         ctx->madeChanges = false;
 
         static ImVec2 last_display_size = ImGui::GetIO().DisplaySize;
@@ -141,7 +141,7 @@ namespace yart
 
     void GUI::LoadFonts()
     {
-        GuiContext* ctx = GUI::GetCurrentContext();
+        GuiContext* ctx = GUI::GetGUIContext();
 
         ImGuiIO& io = ImGui::GetIO();
         static float icon_font_size = 16.0f;
@@ -157,7 +157,7 @@ namespace yart
 
     void GUI::PushIconsFont()
     {
-        GuiContext* ctx = GUI::GetCurrentContext();
+        GuiContext* ctx = GUI::GetGUIContext();
         ImGui::PushFont(ctx->iconsFont);
     }
 
@@ -176,13 +176,13 @@ namespace yart
 
     ImVec2 GUI::GetRenderViewportAreaPosition()
     {
-        GuiContext* ctx = GetCurrentContext();
+        GuiContext* ctx = GetGUIContext();
         return ctx->renderViewportAreaPos;
     }
 
     ImVec2 GUI::GetRenderViewportAreaSize()
     {
-        GuiContext* ctx = GetCurrentContext();
+        GuiContext* ctx = GetGUIContext();
 
         float w = ctx->renderViewportAreaWidth;
         float h = ctx->renderViewportAreaHeight;
@@ -194,7 +194,7 @@ namespace yart
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
         if (g->HoveredWindow != nullptr) {
-            GuiContext* ctx = GUI::GetCurrentContext();
+            GuiContext* ctx = GUI::GetGUIContext();
             return g->HoveredWindow->ID == ctx->renderViewportWindowID;
         }
 
@@ -203,13 +203,13 @@ namespace yart
 
     void GUI::RegisterCallback(imgui_callback_t callback)
     {
-        GuiContext* ctx = GetCurrentContext();
+        GuiContext* ctx = GetGUIContext();
         ctx->registeredCallbacks.push_back(callback);
     }
 
     void GUI::RegisterInspectorWindow(const char *name, const char *icon, ImU32 color, imgui_callback_t callback)
     {
-        GuiContext* ctx = GetCurrentContext();
+        GuiContext* ctx = GetGUIContext();
 
         InspectorWindow item;
         item.name = name;
