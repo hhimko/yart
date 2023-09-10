@@ -18,6 +18,7 @@ target_link_libraries(yart
     PRIVATE glfw
     PRIVATE glm
     PRIVATE imgui
+    PRIVATE stb
 )
 
 # Copy dependencies into the build directory

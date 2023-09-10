@@ -119,7 +119,7 @@ add_subdirectory(lib/glfw EXCLUDE_FROM_ALL)
 # Add GLM header-only library
 check_submodule_exists(glm)
 add_library(glm INTERFACE)
-target_include_directories(glm INTERFACE lib/glm)
+target_include_directories(glm INTERFACE ${CMAKE_SOURCE_DIR}/lib/glm)
 
 # Build Dear ImGui from source with GLFW and Vulkan backends
 check_submodule_exists(imgui)
@@ -138,6 +138,17 @@ target_link_libraries(imgui
     PRIVATE Vulkan::Vulkan
     PRIVATE glfw
 )
+
+# Add STB header-only library
+add_library(stb INTERFACE)
+target_include_directories(stb INTERFACE ${CMAKE_SOURCE_DIR}/lib/stb)
+
+# Disable compiler warnings on STB 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    target_compile_options(stb INTERFACE /W0)
+else()
+    target_compile_options(stb INTERFACE -W0)
+endif()
 
 # Add yart source 
 include(${CMAKE_SOURCE_DIR}/src/config.cmake)
