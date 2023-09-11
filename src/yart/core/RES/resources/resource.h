@@ -18,6 +18,9 @@ namespace yart
         /// @brief Type for specifying resource UUIDs
         typedef size_t resourceID_t;
 
+        /// @brief ID constant for default resources
+        static constexpr resourceID_t DEFAULT_RESOURCE_ID = 0;
+
         /// @brief Type for storing `Resource` subclasses class IDs
         /// @details Used for uniquely identifying `Resource` child classes
         /// @note Should be compatible with `ResourceType_` enum's underlying type from `res_internal.h`

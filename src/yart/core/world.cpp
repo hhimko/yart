@@ -13,11 +13,6 @@
 
 namespace yart
 {
-    World::World()
-    {
-        m_skyCubeMap = RES::GetDefault<RES::CubeMap>();
-    }
-
     glm::vec3 World::SampleSkyColor(const glm::vec3& direction)
     {
         switch (m_skyType) {
@@ -31,7 +26,8 @@ namespace yart
             );
         }
         case SkyType::CUBEMAP: {
-            return m_skyCubeMap->Sample(direction);
+            RES::CubeMap* cubemap = RES::GetResourceByID<RES::CubeMap>(m_skyCubeMap);
+            return cubemap->Sample(direction);
         }
         case SkyType::COUNT:
             break;

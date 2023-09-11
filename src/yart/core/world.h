@@ -21,8 +21,6 @@ namespace yart
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     class World {
     public:
-        World();
-
         /// @brief Get the sky color at a given direction 
         /// @param direction Unit direction vector
         /// @return Color at the sampled point
@@ -51,7 +49,8 @@ namespace yart
         static constexpr float DEFAULT_SKY_GRADIENT_LOCATION2 = 1.00f;
         std::vector<float> m_skyGradientLocations = { DEFAULT_SKY_GRADIENT_LOCATION1, DEFAULT_SKY_GRADIENT_LOCATION2 };
 
-        RES::CubeMap* m_skyCubeMap;
+        RES::resourceID_t m_skyCubeMap = RES::DEFAULT_RESOURCE_ID;
+
 
         // -- FRIEND DECLARATIONS -- //
         friend class yart::GUI::WorldView;

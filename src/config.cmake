@@ -23,3 +23,4 @@ target_link_libraries(yart
 
 # Copy dependencies into the build directory
 file(COPY "src/font/codicon.ttf" DESTINATION  "${CMAKE_CURRENT_BINARY_DIR}/bin/res/fonts")
+file(COPY "res/." DESTINATION  "${CMAKE_CURRENT_BINARY_DIR}/bin/res")

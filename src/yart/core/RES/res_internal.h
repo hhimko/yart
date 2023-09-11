@@ -7,6 +7,8 @@
 #pragma once
 
 
+#include <glm/glm.hpp>
+
 #include "yart/core/utils/yart_utils.h"
 #include "resources/resource.h"
 
@@ -23,6 +25,23 @@ namespace yart
         };
         static_assert(sizeof(ResourceType_) == sizeof(ResourceType));
 
+        /// @brief Internal structure used for holding image-related data
+        struct Image {
+        public:
+            /// @brief Static number of channels in the image (RGB)
+            static constexpr uint8_t CHANNELS = 3; 
+
+            /// @brief Image width in pixels
+            uint32_t width;
+            /// @brief Image height in pixels
+            uint32_t height;
+            /// @brief Image frame padding size in pixels 
+            uint8_t padding;
+            /// @brief Image pixel data in floats
+            /// @details Flexible-size, 0-length array
+            float data[]; 
+
+        };
 
         /// @brief Internal `RES` module context object
         struct ResourcesContext {
@@ -36,6 +55,30 @@ namespace yart
         /// @brief Get the current `RES` module context
         /// @return The current context
         ResourcesContext& GetResourcesContext();
+
+        /// @brief Load a new image from file
+        /// @param filename Path to the image file
+        /// @param padding Amount of pixels to pad the image with on each side
+        /// @return Newly created image or `nullptr` on fail 
+        Image* LoadImageFromFile(const char* filename, uint8_t padding = (uint8_t)0U);
+
+        /// @brief Sample a given image at given pixel coordinates
+        /// @param image The image to sample from
+        /// @param x Sample X coordinate
+        /// @param y Sample Y coordinate
+        /// @return Color of the image at the sample point
+        glm::vec3 SampleImage(const Image* image, float x, float y);
+
+        /// @brief Sample a given image at normalized UV coordinates
+        /// @param image The image to sample from
+        /// @param u Normalized U coordinate in the [0..1] range
+        /// @param v Normalized V coordinate in the [0..1] range
+        /// @return Color of the image at the sample point
+        glm::vec3 SampleImageNorm(const Image* image, float u, float v);
+
+        /// @brief Destroy a given image object
+        /// @param image Result of RES::LoadImageFromFile()
+        void DestroyImage(Image* image);
 
     } // namespace RES
 } // namespace yart

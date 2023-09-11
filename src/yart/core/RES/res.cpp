@@ -18,7 +18,7 @@ namespace yart
     namespace RES
     {
         template <class TResource>
-        TResource* GetDefault<TResource>()
+        TResource* GetDefault()
         {            
             static_assert(std::is_base_of<Resource, TResource>::value, "TResource not derived from RES::Resource");
             ResourcesContext& ctx = GetResourcesContext();
@@ -36,6 +36,28 @@ namespace yart
 
         // Explicit template instantiations
         template CubeMap* GetDefault<CubeMap>();
+
+        template <class TResource>
+        TResource* GetResourceByID(resourceID_t& id)
+        {
+            static_assert(std::is_base_of<Resource, TResource>::value, "TResource not derived from RES::Resource");
+            if (id == DEFAULT_RESOURCE_ID)
+                return GetDefault<TResource>();
+
+
+            TResource* resource = nullptr;
+
+            // Fallback to returning the default resource if the ID was not found
+            if (resource == nullptr) {
+                id = DEFAULT_RESOURCE_ID; // Set the ID accordingly, to avoid searching for the invalid ID in the future
+                return GetDefault<TResource>();
+            }
+
+            return resource;
+        }
+
+        // Explicit template instantiations
+        template CubeMap* GetResourceByID<CubeMap>(resourceID_t& id);
 
     } // namespace RES
 } // namespace yart
