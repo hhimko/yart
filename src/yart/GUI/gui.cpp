@@ -20,7 +20,7 @@ namespace yart
     bool GUI::Render()
     {
         // Uncomment to display Dear ImGui's debug window
-        ImGui::ShowDemoWindow();
+        // ImGui::ShowDemoWindow();
 
 
         // Refresh and update the context state

@@ -77,6 +77,26 @@ namespace yart
             return inverse_projection_matrix;
         }
 
+        /// @brief Bilinearly interpolate between 4 values
+        /// @param p00 Lower-left corner value, favored by tx=0, ty=0
+        /// @param p10 Lower-right corner value, favored by tx=1, ty=0
+        /// @param p01 Upper-left corner value, favored by tx=0, ty=1
+        /// @param p11 Upper-right corner value, favored by tx=1, ty=1
+        /// @param tx Horizontal interpolation variable
+        /// @param ty Vertical interpolation variable
+        /// @tparam L Integer between 1 and 4 included that qualify the dimension of the vector
+        /// @tparam T Floating-point scalar types
+        /// @tparam Q Value from qualifier enum
+        /// @return Bilinear interpolation result
+        template<glm::length_t L, typename T, glm::qualifier Q>
+        GLM_FUNC_QUALIFIER glm::vec<L, T, Q> InterpolateBilinear(
+            const glm::vec<L, T, Q>& p00, const glm::vec<L, T, Q>& p10, const glm::vec<L, T, Q>& p01, const glm::vec<L, T, Q>& p11, float tx, float ty
+        ) {
+            glm::vec<L, T, Q> a = p00 * (1.0f - tx) + p10 * tx;
+            glm::vec<L, T, Q> b = p01 * (1.0f - tx) + p11 * tx;
+            return a * (1.0f - ty) + b * ty;
+        }
+
         /// @brief Compute a linearly interpolated gradient from an equally spaced array of values
         /// @param values Array of gradient sampling points 
         /// @param size Size of the `values` array

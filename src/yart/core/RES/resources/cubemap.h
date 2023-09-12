@@ -30,12 +30,26 @@ namespace yart
             /// @return Color at the sampled point
             glm::vec3 Sample(const glm::vec3& direction);
 
+            /// @brief Get the currently used interpolation type 
+            /// @return The current interpolation type
+            InterpolationType GetInterpolationType() const 
+            { 
+                return m_interpolation; 
+            }
+
+            /// @brief Set the interpolation strategy to be used by the cubemap
+            /// @param interpolation The desired interpolation type
+            void SetInterpolationType(InterpolationType interpolation) 
+            {
+                m_interpolation = interpolation;
+            }
+
         private:
             /// @brief Construct a new CubeMap object from 6 images for each cube face
             /// @param name Display name
             /// @param id Resource ID
             /// @param pos_z Positive Z-axis cube face image
-            CubeMap(const char* name, resourceID_t id, Image* pos_z);
+            CubeMap(const char* name, resourceID_t id, Image* pos_x, Image* pos_y, Image* pos_z, Image* neg_x, Image* neg_y, Image* neg_z);
 
             /// @brief Load and return the default cubemap
             /// @details The caller is expected to free the returned default instance 
@@ -61,6 +75,9 @@ namespace yart
 
             /// @brief Cube face images
             Image* m_images[CubeMapCubeSide_COUNT];
+
+            /// @brief Type of interpolation used for all the cubemap images
+            InterpolationType m_interpolation = InterpolationType::BILINEAR;
 
 
             // -- FRIEND DECLARATIONS -- //

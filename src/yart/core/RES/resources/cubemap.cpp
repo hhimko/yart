@@ -13,7 +13,7 @@ namespace yart
 {
     namespace RES
     {
-        const ResourceType CubeMap::CLASS_ID = ResourceType_CUBEMAP;
+        const ResourceType CubeMap::CLASS_ID = ResourceType_CubeMap;
 
         glm::vec3 CubeMap::Sample(const glm::vec3& direction)
         {
@@ -36,7 +36,7 @@ namespace yart
 
                 u = direction.x;
                 v = is_pos ? -direction.z : direction.z;
-                index = is_pos ? CubeMapCubeSide_PosY : CubeMapCubeSide_NegX;
+                index = is_pos ? CubeMapCubeSide_PosY : CubeMapCubeSide_NegY;
             } else if (abs_dir.z >= abs_dir.x && abs_dir.z >= abs_dir.y) {
                 // Z-major
                 max_axis = abs_dir.z;
@@ -51,30 +51,30 @@ namespace yart
             u = (u / max_axis + 1.0f) / 2.0f;
             v = 1.0f - (v / max_axis + 1.0f) / 2.0f;
 
-            return SampleImageNorm(m_images[index], u, v);
+            return SampleImageNorm(m_images[index], u, v, m_interpolation);
         }
 
-        CubeMap::CubeMap(const char *name, resourceID_t id, Image* pos_z)
+        CubeMap::CubeMap(const char *name, resourceID_t id, Image* pos_x, Image* pos_y, Image* pos_z, Image* neg_x, Image* neg_y, Image* neg_z)
             : Resource(name, id)
         {
-            m_images[CubeMapCubeSide_PosX] = pos_z;
-            m_images[CubeMapCubeSide_PosY] = pos_z;
+            m_images[CubeMapCubeSide_PosX] = pos_x;
+            m_images[CubeMapCubeSide_PosY] = pos_y;
             m_images[CubeMapCubeSide_PosZ] = pos_z;
-            m_images[CubeMapCubeSide_NegX] = pos_z;
-            m_images[CubeMapCubeSide_NegY] = pos_z;
-            m_images[CubeMapCubeSide_NegZ] = pos_z;
+            m_images[CubeMapCubeSide_NegX] = neg_x;
+            m_images[CubeMapCubeSide_NegY] = neg_y;
+            m_images[CubeMapCubeSide_NegZ] = neg_z;
         }
 
         CubeMap* CubeMap::LoadDefault()
         {
-            Image* px = LoadImageFromFile("../res/defaults/DefaultCubeMap_PZ.png", 0);
-            Image* py = LoadImageFromFile("../res/defaults/DefaultCubeMap_PZ.png", 0);
-            Image* pz = LoadImageFromFile("../res/defaults/DefaultCubeMap_PZ.png", 2);
-            Image* nx = LoadImageFromFile("../res/defaults/DefaultCubeMap_PZ.png", 0);
-            Image* ny = LoadImageFromFile("../res/defaults/DefaultCubeMap_PZ.png", 0);
-            Image* nz = LoadImageFromFile("../res/defaults/DefaultCubeMap_PZ.png", 0);
+            Image* px = LoadImageFromFile("../res/defaults/DefaultCubeMap_PX.png");
+            Image* py = LoadImageFromFile("../res/defaults/DefaultCubeMap_PY.png");
+            Image* pz = LoadImageFromFile("../res/defaults/DefaultCubeMap_PZ.png");
+            Image* nx = LoadImageFromFile("../res/defaults/DefaultCubeMap_NX.png");
+            Image* ny = LoadImageFromFile("../res/defaults/DefaultCubeMap_NY.png");
+            Image* nz = LoadImageFromFile("../res/defaults/DefaultCubeMap_NZ.png");
 
-            return new CubeMap("Default CubeMap", 0, pz);
+            return new CubeMap("Default CubeMap", DEFAULT_RESOURCE_ID, px, py, pz, nx, ny, nz);
         }
 
     } // namespace RES

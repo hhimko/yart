@@ -6,6 +6,7 @@
 #include "world_view.h"
 
 
+#include "yart/core/RES/resources/cubemap.h"
 #include "yart/core/utils/yart_utils.h"
 #include "yart/core/world.h"
 #include "yart/GUI/gui.h"
@@ -62,6 +63,14 @@ namespace yart
                 break;
             }
             case SkyType::CUBEMAP: {
+                RES::CubeMap* cubemap = RES::GetResourceByID<RES::CubeMap>(target.m_skyCubeMap);
+
+                bool interpolation = (cubemap->GetInterpolationType() == RES::InterpolationType::BILINEAR);
+                if (ImGui::Checkbox("Interpolate", &interpolation)) {
+                    cubemap->SetInterpolationType(interpolation ? RES::InterpolationType::BILINEAR : RES::InterpolationType::NEAREST);
+                    made_changes = true;
+                }
+
                 break;
             }
             case SkyType::COUNT:

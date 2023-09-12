@@ -26,6 +26,12 @@ namespace yart
         /// @note Should be compatible with `ResourceType_` enum's underlying type from `res_internal.h`
         typedef uint8_t ResourceType;
 
+        /// @brief Enumeration of possible image interpolation strategies
+        enum class InterpolationType : uint8_t {
+            NEAREST = 0, /// @brief Perform nearest neighbour interpolation
+            BILINEAR     /// @brief Perform bilinear interpolation
+        };
+
 
         /// @brief Base class for visual resources 
         /// @warning This class is not intended to be instantiated without deriving
