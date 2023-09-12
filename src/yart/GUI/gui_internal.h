@@ -18,12 +18,6 @@ namespace yart
 {
     namespace GUI
     {
-        /// @brief Layout direction enum
-        enum class LayoutDir : uint8_t {
-            HORIZONTAL,
-            VERTICAL
-        };
-
         /// @brief Structure containing data required to render a inspector nav bar window 
         struct InspectorWindow {
         public:
@@ -70,8 +64,15 @@ namespace yart
 
         };
 
+        /// @brief Layout direction enum
+        enum class LayoutDir : uint8_t {
+            HORIZONTAL,
+            VERTICAL
+
+        };
+
         /// @brief Layout specification object used to store state of layout widgets
-        struct LayoutState {
+        struct LayoutContext {
         public:
             /// @brief Direction of the layout (vertical / horizontal)
             LayoutDir direction;
@@ -89,34 +90,9 @@ namespace yart
         };
 
 
-        /// @brief Begin a new GUI layout
-        /// @param layout Layout state
-        /// @return Whether the layout section is currently visible on screen
-        bool BeginLayout(LayoutState& layout);
-
-        /// @brief End the previous layout segment and start the next segment
-        /// @param layout Layout state
-        /// @return Whether the layout section is currently visible on screen
-        bool LayoutSeparator(LayoutState& layout);
-
-        /// @brief Finalize rendering a layout
-        /// @param layout Layout state
-        void EndLayout(LayoutState& layout);
-
-        /// @brief Begin a custom YART tab bar with a single tab item
-        /// @param item_name First tab item name
-        /// @return Whether the first tab item is currently opened
-        /// @note `ImGui::EndCustomTabBar()` should always be called after calling this method
-        bool BeginCustomTabBar(const char* item_name);
-
-        /// @brief Finalize rendering a custom YART tab bar
-        void EndCustomTabBar();
-
-        /// @brief Check whether the mouse cursor lies within a given circle
-        /// @param pos Circle position on the screen
-        /// @param radius Radius of the circle
-        /// @return Whether the mouse cursor is inside circle
-        bool IsMouseHoveringCircle(const ImVec2& pos, float radius);
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        /// YART application's static layout rendering functions 
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
 
         /// @brief Issue main menu bar render commands 
         void RenderMainMenuBar();
@@ -130,7 +106,8 @@ namespace yart
         /// @brief Issue the inspector window's side nav bar render commands
         void RenderInspectorNavBar();
 
-        /// @brief Render a YART GUI window 
+        /// @brief Render a YART GUI style detached window 
+        /// @details The window is rendered on top of the viewport stack, detached from the static layout
         /// @param name Name of the window
         /// @param callback Dear ImGui callback 
         void RenderWindow(const char* name, imgui_callback_t callback);
@@ -143,18 +120,45 @@ namespace yart
         /// @return Whether the user has clicked on an axis and the `clicked_axis` output variable has been set 
         bool RenderViewAxesWindowEx(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis, glm::vec3& clicked_axis);
 
-        /// @brief Render a YART GUI style highlight rect to a given Dear ImGui draw list
-        /// @param draw_list Dear ImGui's draw list on which to render
-        /// @param p_min Highlight rectangle upper-left corner 
-        /// @param p_max Highlight rectangle lower-right corner
-        /// @param t Max gradient color interpolation value. Expected to be in the [0..1] range
-        /// @param hovered Whether the highlight is currently hovered
-        /// @param active Whether the highlight is currently active 
-        /// @param rounding Optional edge rounding value 
-        /// @param flags Additional Dear ImGui draw flags 
-        void DrawHighlightRect(ImDrawList* draw_list, ImVec2 p_min, ImVec2 p_max, float t, bool hovered, bool active, float rounding = 0.0f, ImDrawFlags flags = (ImDrawFlags)0);
 
-        /// @brief Internal function for rendering a YART GUI style slider widget
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        /// Layout group widgets rendering functions
+        ///  - Layouts are trying to simulate and simplify the docking branch of Dear ImGui, without
+        ///    the additional viewports and just the functionality required by YART
+        ///  - The current layout code is limited to rendering at most two segments within one layout,
+        ///    due to the `LayoutContext` structure currently holding just one `size` value
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        /// @brief Begin a new GUI layout
+        /// @param layout Layout state object
+        /// @return Whether the layout section is currently visible on screen
+        bool BeginLayout(LayoutContext& layout);
+
+        /// @brief End the previous layout segment and start the next segment
+        /// @param layout Layout state object
+        /// @return Whether the layout section is currently visible on screen
+        bool LayoutSeparator(LayoutContext& layout);
+
+        /// @brief Finalize rendering a layout
+        /// @param layout Layout state object
+        void EndLayout(LayoutContext& layout);
+
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        /// Custom GUI widgets rendering internal functions
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        /// @brief Begin a YART GUI style tab bar with an initial tab item
+        /// @details Subsequent tab items can be issued calling `ImGui::BeginTabItem()`
+        /// @param item_name First tab item name
+        /// @return Whether the first tab item is currently opened
+        /// @note `ImGui::EndTabBar()` should always be called after calling this method
+        bool BeginTabBar(const char* item_name);
+
+        /// @brief Finalize rendering a YART GUI style tab bar
+        void EndTabBar();
+
+        /// @brief Render a YART GUI style slider widget
         /// @param name Label text displayed next to the slider
         /// @param data_type Type of the slider variable
         /// @param p_val Pointer to the controlled value
@@ -165,10 +169,95 @@ namespace yart
         /// @return Whether the input value has changed  
         bool SliderEx(const char* name, ImGuiDataType data_type, void* p_val, const void* p_min, const void* p_max, const char* format, const void* p_arrow_step);
 
-        /// @brief Render a linear gradient editor widget
+        /// @brief Render a YART GUI style linear gradient editor widget
         /// @param ctx Object holding the widget's state
         /// @return Whether the gradient has changed since the last frame
         bool GradientEditorEx(GradientEditorContext& ctx);
+
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        /// Various primitive drawing helper functions 
+        ///  - Designed to extend the Dear ImGui's ImDrawList object  
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        /// @brief Add a width aware text to a given Dear ImGui draw list
+        /// @param draw_list Dear ImGui draw list on which to draw the text
+        /// @param p_min Text rectangle upper-left corner in screen space coordinates
+        /// @param p_max Text rectangle lower-right corner in screen space coordinates
+        /// @param align Y-axis text alignment. Expected to be in the [0..1] range
+        /// @param text String to render
+        /// @return Whether the text had been clipped. Useful for showing tooltips
+        bool DrawText(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, float align, const char* text);
+
+        /// @brief Add a rectangle filled with a linear gradient to a given Dear ImGui draw list
+        /// @param draw_list Dear ImGui draw list on which to draw the rectangle
+        /// @param p_min Rectangle upper-left corner in screen space coordinates
+        /// @param p_max Rectangle lower-right corner in screen space coordinates
+        /// @param values Array of gradient sampling point color values
+        /// @param locations Array of gradient sampling point locations 
+        ///     Size of the array is expected to be equal to the `values` array size, and each value should be in the [0..1] range
+        /// @param size Size of the `values` and `locations` arrays
+        /// @param border Whether a 1px border should be drawn over the rect
+        void DrawGradientRect(ImDrawList* draw_list, ImVec2 p_min, ImVec2 p_max, glm::vec3 const* values, float const* locations, size_t size, bool border = false);
+
+        /// @brief Add a rounded rectangle filled with a gradient to a Dear ImGui draw list
+        /// @param draw_list Dear ImGui's draw list on which to render
+        /// @param p_min Draw rect upper-left corner 
+        /// @param p_max Draw rect lower-right corner
+        /// @param min_col Start color of the gradient
+        /// @param max_col End color of the gradient
+        /// @param rounding Optional edge rounding value 
+        /// @param flags Additional Dear ImGui draw flags 
+        void DrawGradientRect(ImDrawList* draw_list, ImVec2 p_min, ImVec2 p_max, ImU32 min_col, ImU32 max_col, float rounding = 0.0f, ImDrawFlags flags = (ImDrawFlags)0);
+
+        /// @brief Add a YART GUI style highlight rect to a given Dear ImGui draw list
+        /// @param draw_list Dear ImGui's draw list on which to render
+        /// @param p_min Highlight rectangle upper-left corner 
+        /// @param p_max Highlight rectangle lower-right corner
+        /// @param t Max gradient color interpolation value. Expected to be in the [0..1] range
+        /// @param hovered Whether the highlight is currently hovered
+        /// @param active Whether the highlight is currently active 
+        /// @param rounding Optional edge rounding value 
+        /// @param flags Additional Dear ImGui draw flags 
+        void DrawHighlightRect(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, float t, bool hovered, bool active, float rounding = 0.0f, ImDrawFlags flags = (ImDrawFlags)0);
+
+        /// @brief Add a left facing arrow to a given Dear ImGui draw list
+        /// @param draw_list Dear ImGui draw list on which to draw the arrow
+        /// @param p_min Arrow bounding box top-left corner
+        /// @param p_max Arrow bounding box bottom-right corner
+        /// @param padding X and Y padding values for the bounding box 
+        /// @param col Arrow fill color
+        void DrawLeftArrow(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, const ImVec2& padding, ImU32 col);
+
+        /// @brief Add a right facing arrow to a given Dear ImGui draw list
+        /// @param draw_list Dear ImGui draw list on which to draw the arrow
+        /// @param p_min Arrow bounding box top-left corner
+        /// @param p_max Arrow bounding box bottom-right corner
+        /// @param padding X and Y padding values for the bounding box 
+        /// @param col Arrow fill color
+        void DrawRightArrow(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, const ImVec2& padding, ImU32 col);
+
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        /// Helper utility functions
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        /// @brief Helper function for getting a Dear ImGui ID from a formatted string
+        /// @param fmt Format of the string
+        /// @return Dear ImGui ID
+        ImGuiID GetIDFormatted(const char* fmt, ...);
+
+        /// @brief Compute YART GUI frame bounding boxes for the next widget
+        /// @param text_bb Bounding box of the label area
+        /// @param frame_bb Bounding box of the widget frame area
+        /// @return The total bounding box 
+        ImRect GetFrameSizes(ImRect& text_bb, ImRect& frame_bb);
+
+        /// @brief Check whether the mouse cursor lies within a given circle
+        /// @param pos Circle position on the screen
+        /// @param radius Radius of the circle
+        /// @return Whether the mouse cursor is inside circle
+        bool IsMouseHoveringCircle(const ImVec2& pos, float radius);
 
     } // namespace GUI
 } // namespace yart

@@ -122,11 +122,6 @@ namespace yart
         /// @note Call `ImGui::PopFont()` to return to the previous font in the stack
         void PushIconsFont();
 
-        /// @brief Helper function for getting a Dear ImGui ID from a formatted string
-        /// @param fmt Format of the string
-        /// @return Dear ImGui ID
-        ImGuiID GetIDFormatted(const char* fmt, ...);
-
         /// @brief Get the current position of the render viewport area
         /// @return Position in screen pixel coordinates
         ImVec2 GetRenderViewportAreaPosition();
@@ -167,44 +162,8 @@ namespace yart
         /// @brief Finish recording a frame window
         void EndFrame();
 
-        /// @brief Draw width aware text to a given Dear ImGui draw list
-        /// @param draw_list Dear ImGui draw list on which to draw the text
-        /// @param p_min Text rectangle upper-left corner in screen space coordinates
-        /// @param p_max Text rectangle lower-right corner in screen space coordinates
-        /// @param align Y-axis text alignment. Expected to be in the [0..1] range
-        /// @param text String to render
-        /// @return Whether the text had been clipped. Useful for showing tooltips
-        bool DrawText(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, float align, const char* text);
-
-        /// @brief Draw a left facing arrow to a given Dear ImGui draw list
-        /// @param draw_list Dear ImGui draw list on which to draw the arrow
-        /// @param p_min Arrow bounding box top-left corner
-        /// @param p_max Arrow bounding box bottom-right corner
-        /// @param padding X and Y padding values for the bounding box 
-        /// @param col Arrow fill color
-        void DrawLeftArrow(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, const ImVec2& padding, ImU32 col);
-
-        /// @brief  Draw a right facing arrow to a given Dear ImGui draw list
-        /// @param draw_list Dear ImGui draw list on which to draw the arrow
-        /// @param p_min Arrow bounding box top-left corner
-        /// @param p_max Arrow bounding box bottom-right corner
-        /// @param padding X and Y padding values for the bounding box 
-        /// @param col Arrow fill color
-        void DrawRightArrow(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, const ImVec2& padding, ImU32 col);
-
-        /// @brief Add a rectangle filled with a linear gradient to a given Dear ImGui draw list
-        /// @param draw_list Dear ImGui draw list on which to draw the rectangle
-        /// @param p_min Rectangle upper-left corner in screen space coordinates
-        /// @param p_max Rectangle lower-right corner in screen space coordinates
-        /// @param values Array of gradient sampling point color values
-        /// @param locations Array of gradient sampling point locations 
-        ///     Size of the array is expected to be equal to the `values` array size, and each value should be in the [0..1] range
-        /// @param size Size of the `values` and `locations` arrays
-        /// @param border Whether a 1px border should be drawn over the rect
-        void DrawGradientRect(ImDrawList* draw_list, ImVec2 p_min, ImVec2 p_max, glm::vec3 const* values, float const* locations, size_t size, bool border = false);
-
         /// @brief Render a YART GUI style slider widget for an int variable 
-        /// @param name Label text displayed next to the slider
+        /// @param name Label text displayed next to the widget
         /// @param p_val Pointer to the controlled value
         /// @param format Format in which to display the value
         /// @param arrow_step The step of change in value when using the frame arrows
@@ -212,7 +171,7 @@ namespace yart
         bool SliderInt(const char* name, int* p_val, const char* format = "%d", int arrow_step = 1);
 
         /// @brief Render a YART GUI style slider widget for an int variable with value clamping
-        /// @param name Label text displayed next to the slider
+        /// @param name Label text displayed next to the widget
         /// @param p_val Pointer to the controlled value
         /// @param min The minimal (inclusive) valid value
         /// @param max The maximal (inclusive) valid value
@@ -222,7 +181,7 @@ namespace yart
         bool SliderInt(const char* name, int* p_val, int min, int max, const char* format = "%d", int arrow_step = 1);
 
         /// @brief Render a YART GUI style slider widget for a float variable 
-        /// @param name Label text displayed next to the slider
+        /// @param name Label text displayed next to the widget
         /// @param p_val Pointer to the controlled value
         /// @param format Format in which to display the value
         /// @param arrow_step The step of change in value when using the frame arrows
@@ -230,7 +189,7 @@ namespace yart
         bool SliderFloat(const char* name, float* p_val, const char* format = "%.2f", float arrow_step = 1.0f);
 
         /// @brief Render a YART GUI style slider widget for a float variable with value clamping
-        /// @param name Label text displayed next to the slider
+        /// @param name Label text displayed next to the widget
         /// @param p_val Pointer to the controlled value
         /// @param min The minimal (inclusive) valid value
         /// @param max The maximal (inclusive) valid value
@@ -239,14 +198,24 @@ namespace yart
         /// @return Whether the input value has changed
         bool SliderFloat(const char* name, float* p_val, float min, float max, const char* format = "%.2f", float arrow_step = 1.0f);
 
+        /// @brief Render a YART GUI style checkbox widget
+        /// @param name Label text displayed next to the checkbox
+        /// @param val Pointer to the controlled boolean value
+        /// @return Whether the input value has changed
+        bool CheckBox(const char* name, bool* val);
+
         /// @brief Render a YART GUI style combo header widget
-        /// @param name Identifying name of the widget
+        /// @param name Label text displayed next to the widget
         /// @param items Array of combo items
         /// @param items_size Size of the `items` array
         /// @param selected_item The currently selected combo item index
         /// @returns Whether the selected item has changed since last frame
         bool ComboHeader(const char* name, const char* items[], size_t items_size, int* selected_item); 
 
+        /// @brief Render a YART GUI style color edit widget
+        /// @param name Label text displayed next to the widget
+        /// @param color 
+        /// @return 
         bool ColorEdit(const char* name, float color[3]);
 
         /// @brief Render a linear gradient editor widget

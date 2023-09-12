@@ -33,159 +33,6 @@
 
 namespace yart
 {
-    bool GUI::BeginLayout(LayoutState& layout)
-    {
-        ImGuiContext* g = ImGui::GetCurrentContext();
-        if (layout.size <= 0.0f) {
-            float min_size = ImMax(g->Style.ChildRounding * 2.0f + 2.0f, layout.min_size);
-            float content_avail = layout.direction == GUI::LayoutDir::HORIZONTAL ? ImGui::GetContentRegionAvail().x : ImGui::GetContentRegionAvail().y;
-            layout.size = ImMax((content_avail - SEPARATOR_HANDLE_THICKNESS) * layout.default_size_ratio, min_size);
-        }
-
-        // The whole layout is captured into a group to act as a single item 
-        ImGui::BeginGroup();
-
-        // Start capturing the fist segment
-        ImVec2 old_item_spacing = g->Style.ItemSpacing;
-        g->Style.ItemSpacing = { 0.0f, 0.0f };
-
-        ImVec2 region = layout.direction == GUI::LayoutDir::HORIZONTAL ? ImVec2(layout.size, 0) : ImVec2(0, layout.size);
-        bool ret = ImGui::BeginChild("LayoutSegment_First", region, false, layout.window_flags);
-            
-        g->Style.ItemSpacing = old_item_spacing;
-
-        return ret;
-    }
-
-    /// @brief Draw the separator handle and handle its inputs
-    /// @param pos Start position of the handle's bounding box
-    /// @param size Size of the handle's bounding box
-    /// @param cursor Cursor to be used while the handle is hovered over
-    /// @return Mouse drag amount since last frame 
-    ImVec2 SeparatorHandle(ImVec2 pos, ImVec2 size, ImGuiMouseCursor_ cursor) 
-    {
-        ImGuiContext* g = ImGui::GetCurrentContext();
-
-        const ImRect bb(pos, { pos.x + size.x, pos.y + size.y });
-        ImGui::ItemSize(size);
-
-        const ImGuiID id = ImGui::GetID("SeparatorHandle");
-        ImGui::ItemAdd(bb, id);
-
-        bool hovered, held;
-        ImGui::ButtonBehavior(bb, id, &hovered, &held);
-
-        const ImVec4 col = held ? g->Style.Colors[ImGuiCol_ResizeGripActive] : (hovered ? g->Style.Colors[ImGuiCol_ResizeGripHovered] : g->Style.Colors[ImGuiCol_ResizeGrip]);
-        ImGui::GetWindowDrawList()->AddRectFilled(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(col));
-
-        if (hovered || held)
-            ImGui::SetMouseCursor(cursor);
-
-        if (held) {
-            ImVec2 drag = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left, 0.0f);
-            ImGui::ResetMouseDragDelta();
-            return drag;
-        }
-
-        return {0.0f, 0.0f};
-    }
-
-    bool GUI::LayoutSeparator(LayoutState& layout)
-    {
-        ImGuiContext* g = ImGui::GetCurrentContext();
-
-        // Finalize capturing the previous segment
-        ImVec2 old_item_spacing = g->Style.ItemSpacing;
-        g->Style.ItemSpacing = { 0.0f, 0.0f };
-        ImGui::EndChild();
-
-        // Draw and handle the separator
-        ImGuiWindow* window = g->CurrentWindow;
-
-        if (layout.direction == GUI::LayoutDir::HORIZONTAL) ImGui::SameLine();
-        ImVec2 separator_size = layout.direction == GUI::LayoutDir::HORIZONTAL ? ImVec2(SEPARATOR_HANDLE_THICKNESS, ImGui::GetContentRegionAvail().y) : ImVec2(window->Size.x, SEPARATOR_HANDLE_THICKNESS);
-        ImGuiMouseCursor_ cursor = layout.direction == GUI::LayoutDir::HORIZONTAL ? ImGuiMouseCursor_ResizeEW : ImGuiMouseCursor_ResizeNS;
-
-        ImVec2 drag = SeparatorHandle({ window->DC.CursorPos.x, window->DC.CursorPos.y }, separator_size, cursor);
-        layout.size += layout.direction == GUI::LayoutDir::HORIZONTAL ? drag.x : drag.y;
-
-        GuiContext* ctx = GUI::GetGUIContext();
-        if (layout.preserveSecondSectionSize && drag.x == 0 && drag.y == 0)
-            layout.size += layout.direction == GUI::LayoutDir::HORIZONTAL ? ctx->displaySizeDelta.x : ctx->displaySizeDelta.y;
-
-
-        float min_size = ImMax(g->Style.ChildRounding * 2.0f + 2.0f, layout.min_size);
-        if (layout.size < min_size) 
-            layout.size = min_size;
-
-        float content = layout.direction == GUI::LayoutDir::HORIZONTAL ? window->Size.x : window->Size.y;
-        float max_size = content - min_size - SEPARATOR_HANDLE_THICKNESS;
-        if (max_size > min_size && layout.size > max_size)
-            layout.size = max_size;
-
-        // Start capturing the next segment
-        if (layout.direction == GUI::LayoutDir::HORIZONTAL) ImGui::SameLine();
-        bool ret = ImGui::BeginChild("LayoutSegment_Second", { 0.0f, 0.0f }, false, layout.window_flags);
-        g->Style.ItemSpacing = old_item_spacing;
-
-        return ret;
-    }
-
-    void GUI::EndLayout(LayoutState& layout)
-    {
-        (void)layout; // Unused
-
-        // Finalize capturing the previous segment
-        ImGui::EndChild();
-
-        ImGui::EndGroup();
-    }
-
-    bool GUI::BeginCustomTabBar(const char* item_name)
-    {
-        ImGuiContext* g = ImGui::GetCurrentContext();
-
-        // The whole tab bar is recorded into a group to act as a single item
-        ImGui::BeginGroup();
-
-        ImVec2 backup_spacing = g->Style.ItemSpacing;
-        g->Style.ItemSpacing = { 0.0f, 0.0f };
-
-        ImGui::ItemSize({ g->Style.ChildRounding , 0.0f });
-        ImGui::SameLine();
-
-        ImVec4 backup_tab_active_color = g->Style.Colors[ImGuiCol_TabActive];
-        ImVec2 backup_frame_padding = g->Style.FramePadding;
-        g->Style.FramePadding = { 16.0f, backup_frame_padding.y };
-        g->Style.Colors[ImGuiCol_TabActive] = { YART_GUI_COLOR_BLACK, YART_GUI_ALPHA_TRANSPARENT };
-        ImGui::BeginTabBar("##TabBar", ImGuiTabBarFlags_AutoSelectNewTabs);
-        g->Style.Colors[ImGuiCol_TabActive] = backup_tab_active_color;
-
-        ImVec2 backup_inner_spacing = g->Style.ItemInnerSpacing;
-        g->Style.ItemInnerSpacing = { 0.0f, 0.0f };
-        g->Style.ItemSpacing = { 0.0f, -1.0f };
-        bool open = ImGui::BeginTabItem(item_name, nullptr, ImGuiTabItemFlags_NoPushId);
-        g->Style.ItemSpacing = backup_spacing;
-        g->Style.ItemInnerSpacing = backup_inner_spacing;
-        g->Style.FramePadding = backup_frame_padding;
-
-        return open;
-    }
-
-    void GUI::EndCustomTabBar() 
-    {
-        ImGui::EndTabBar();
-        ImGui::EndGroup();
-    }
-
-    bool GUI::IsMouseHoveringCircle(const ImVec2 &pos, float radius)
-    {
-        ImGuiIO& io = ImGui::GetIO();
-        float dx = io.MousePos.x - pos.x;
-        float dy = io.MousePos.y - pos.y;
-        return dx * dx + dy * dy <= radius * radius;
-    }
-
     void GUI::RenderMainMenuBar()
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
@@ -233,7 +80,7 @@ namespace yart
         g->Style.WindowPadding = backup_padding;
 
         // Render the main frame layout
-        static LayoutState horizontal_layout = { };
+        static LayoutContext horizontal_layout = { };
         horizontal_layout.direction = GUI::LayoutDir::HORIZONTAL;
         horizontal_layout.preserveSecondSectionSize = true;
         horizontal_layout.default_size_ratio = 3.0f / 4.0f;
@@ -261,7 +108,7 @@ namespace yart
         ImGuiContext* g = ImGui::GetCurrentContext();
 
         // Render the scene+context menu layout
-        static LayoutState vertical_layout = { };
+        static LayoutContext vertical_layout = { };
         vertical_layout.direction = GUI::LayoutDir::VERTICAL;
         vertical_layout.default_size_ratio = 1.0f / 3.0f;
         vertical_layout.window_flags = ImGuiWindowFlags_NoBackground;
@@ -270,7 +117,7 @@ namespace yart
         // Scene + Object inspectors section
         GUI::BeginLayout(vertical_layout);
 
-        if (GUI::BeginCustomTabBar("Scene")) {
+        if (GUI::BeginTabBar("Scene")) {
             ImGui::BeginChild("##Content", { 0.0f, 0.0f }, false, ImGuiWindowFlags_AlwaysUseWindowPadding);
 
             ImGui::Text("Hello from the Scene tab!");
@@ -287,7 +134,7 @@ namespace yart
             ImGui::EndChild();
             ImGui::EndTabItem();
         }
-        GUI::EndCustomTabBar();
+        GUI::EndTabBar();
 
         // Master inspector section
         GUI::LayoutSeparator(vertical_layout);
@@ -303,7 +150,7 @@ namespace yart
         if (active_item != nullptr)
             ImFormatStringToTempBuffer(&name, nullptr, "%s###InspectorTabItem", active_item->name);
 
-        bool open = GUI::BeginCustomTabBar(name);
+        bool open = GUI::BeginTabBar(name);
         {
             static constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysUseWindowPadding;
             ImGui::BeginChild("##Content", { 0.0f, 0.0f }, false, flags);
@@ -328,7 +175,7 @@ namespace yart
             if (open)
                 ImGui::EndTabItem();
         }
-        GUI::EndCustomTabBar();
+        GUI::EndTabBar();
 
         GUI::EndLayout(vertical_layout);
     }
@@ -455,7 +302,7 @@ namespace yart
         ImGui::End();
     }
 
-    /// @brief Positive view axis rendering helper function
+        /// @brief Positive view axis rendering helper function
     /// @param draw_list ImGui window draw list
     /// @param win_pos Center window position of the view axes context window
     /// @param axis Normalized axis direction
@@ -668,55 +515,149 @@ namespace yart
         return clicked;
     }
 
-    void GUI::DrawHighlightRect(ImDrawList* draw_list, ImVec2 p_min, ImVec2 p_max, float t, bool hovered, bool active, float rounding, ImDrawFlags flags)
+    bool GUI::BeginLayout(LayoutContext& layout)
     {
-        if (p_min.x >= p_max.x || p_min.y >= p_max.y)
-            return;
-
-
-        // Compute the color values for each side
-        glm::vec3 colors[2] = {
-            // Start color
-            active ? glm::vec3(YART_GUI_COLOR_LIGHT_PRIMARY) :
-            hovered ? glm::vec3(YART_GUI_COLOR_PRIMARY) :
-            glm::vec3(YART_GUI_COLOR_DARK_PRIMARY),
-
-            // End color
-            active ? glm::vec3(YART_GUI_COLOR_LIGHT_SECONDARY) :
-            hovered ? glm::vec3(YART_GUI_COLOR_SECONDARY) :
-            glm::vec3(YART_GUI_COLOR_DARK_SECONDARY)
-        };
-
-        // Interpolate the end color by the t value
-        if (t != 1.0f)
-            colors[1] = yart::utils::LinearGradient(colors, 2, t);
-
-        const ImU32 start_col = ImGui::ColorConvertFloat4ToU32({ colors[0].x, colors[0].y, colors[0].z, YART_GUI_ALPHA_OPAQUE });
-        const ImU32 end_col = ImGui::ColorConvertFloat4ToU32({ colors[1].x, colors[1].y, colors[1].z, YART_GUI_ALPHA_OPAQUE });
-
-
-        if (rounding >= 0.5f && !((flags & ImDrawFlags_RoundCornersMask_) == ImDrawFlags_RoundCornersNone)) {
-            if ((flags & ImDrawFlags_RoundCornersMask_) == 0)
-                flags |= ImDrawFlags_RoundCornersAll;
-
-            if (flags & ImDrawFlags_RoundCornersLeft) {
-                p_min.x += rounding;
-
-                const ImVec2 p1 = { p_min.x - rounding, p_min.y };
-                const ImVec2 p2 = { p_min.x + 1.0f, p_max.y };
-                draw_list->AddRectFilled(p1, p2, start_col, rounding, flags & ImDrawFlags_RoundCornersLeft);
-            }
-
-            if (flags & ImDrawFlags_RoundCornersRight) {
-                p_max.x -= rounding;
-
-                const ImVec2 p1 = { p_max.x - 1.0f, p_min.y };
-                const ImVec2 p2 = { p_max.x + rounding, p_max.y };
-                draw_list->AddRectFilled(p1, p2, end_col, rounding, flags & ImDrawFlags_RoundCornersRight);
-            }
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        if (layout.size <= 0.0f) {
+            float min_size = ImMax(g->Style.ChildRounding * 2.0f + 2.0f, layout.min_size);
+            float content_avail = layout.direction == GUI::LayoutDir::HORIZONTAL ? ImGui::GetContentRegionAvail().x : ImGui::GetContentRegionAvail().y;
+            layout.size = ImMax((content_avail - SEPARATOR_HANDLE_THICKNESS) * layout.default_size_ratio, min_size);
         }
 
-        draw_list->AddRectFilledMultiColor(p_min, p_max, start_col, end_col, end_col, start_col);
+        // The whole layout is captured into a group to act as a single item 
+        ImGui::BeginGroup();
+
+        // Start capturing the fist segment
+        ImVec2 old_item_spacing = g->Style.ItemSpacing;
+        g->Style.ItemSpacing = { 0.0f, 0.0f };
+
+        ImVec2 region = layout.direction == GUI::LayoutDir::HORIZONTAL ? ImVec2(layout.size, 0) : ImVec2(0, layout.size);
+        bool ret = ImGui::BeginChild("LayoutSegment_First", region, false, layout.window_flags);
+            
+        g->Style.ItemSpacing = old_item_spacing;
+
+        return ret;
+    }
+
+    /// @brief Draw the separator handle and handle its inputs
+    /// @param pos Start position of the handle's bounding box
+    /// @param size Size of the handle's bounding box
+    /// @param cursor Cursor to be used while the handle is hovered over
+    /// @return Mouse drag amount since last frame 
+    ImVec2 SeparatorHandle(ImVec2 pos, ImVec2 size, ImGuiMouseCursor_ cursor) 
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+
+        const ImRect bb(pos, { pos.x + size.x, pos.y + size.y });
+        ImGui::ItemSize(size);
+
+        const ImGuiID id = ImGui::GetID("SeparatorHandle");
+        ImGui::ItemAdd(bb, id);
+
+        bool hovered, held;
+        ImGui::ButtonBehavior(bb, id, &hovered, &held);
+
+        const ImVec4 col = held ? g->Style.Colors[ImGuiCol_ResizeGripActive] : (hovered ? g->Style.Colors[ImGuiCol_ResizeGripHovered] : g->Style.Colors[ImGuiCol_ResizeGrip]);
+        ImGui::GetWindowDrawList()->AddRectFilled(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(col));
+
+        if (hovered || held)
+            ImGui::SetMouseCursor(cursor);
+
+        if (held) {
+            ImVec2 drag = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left, 0.0f);
+            ImGui::ResetMouseDragDelta();
+            return drag;
+        }
+
+        return {0.0f, 0.0f};
+    }
+
+    bool GUI::LayoutSeparator(LayoutContext& layout)
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+
+        // Finalize capturing the previous segment
+        ImVec2 old_item_spacing = g->Style.ItemSpacing;
+        g->Style.ItemSpacing = { 0.0f, 0.0f };
+        ImGui::EndChild();
+
+        // Draw and handle the separator
+        ImGuiWindow* window = g->CurrentWindow;
+
+        if (layout.direction == GUI::LayoutDir::HORIZONTAL) ImGui::SameLine();
+        ImVec2 separator_size = layout.direction == GUI::LayoutDir::HORIZONTAL ? ImVec2(SEPARATOR_HANDLE_THICKNESS, ImGui::GetContentRegionAvail().y) : ImVec2(window->Size.x, SEPARATOR_HANDLE_THICKNESS);
+        ImGuiMouseCursor_ cursor = layout.direction == GUI::LayoutDir::HORIZONTAL ? ImGuiMouseCursor_ResizeEW : ImGuiMouseCursor_ResizeNS;
+
+        ImVec2 drag = SeparatorHandle({ window->DC.CursorPos.x, window->DC.CursorPos.y }, separator_size, cursor);
+        layout.size += layout.direction == GUI::LayoutDir::HORIZONTAL ? drag.x : drag.y;
+
+        GuiContext* ctx = GUI::GetGUIContext();
+        if (layout.preserveSecondSectionSize && drag.x == 0 && drag.y == 0)
+            layout.size += layout.direction == GUI::LayoutDir::HORIZONTAL ? ctx->displaySizeDelta.x : ctx->displaySizeDelta.y;
+
+
+        float min_size = ImMax(g->Style.ChildRounding * 2.0f + 2.0f, layout.min_size);
+        if (layout.size < min_size) 
+            layout.size = min_size;
+
+        float content = layout.direction == GUI::LayoutDir::HORIZONTAL ? window->Size.x : window->Size.y;
+        float max_size = content - min_size - SEPARATOR_HANDLE_THICKNESS;
+        if (max_size > min_size && layout.size > max_size)
+            layout.size = max_size;
+
+        // Start capturing the next segment
+        if (layout.direction == GUI::LayoutDir::HORIZONTAL) ImGui::SameLine();
+        bool ret = ImGui::BeginChild("LayoutSegment_Second", { 0.0f, 0.0f }, false, layout.window_flags);
+        g->Style.ItemSpacing = old_item_spacing;
+
+        return ret;
+    }
+
+    void GUI::EndLayout(LayoutContext& layout)
+    {
+        (void)layout; // Unused
+
+        // Finalize capturing the previous segment
+        ImGui::EndChild();
+
+        ImGui::EndGroup();
+    }
+
+    bool GUI::BeginTabBar(const char* item_name)
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+
+        // The whole tab bar is recorded into a group to act as a single item
+        ImGui::BeginGroup();
+
+        ImVec2 backup_spacing = g->Style.ItemSpacing;
+        g->Style.ItemSpacing = { 0.0f, 0.0f };
+
+        ImGui::ItemSize({ g->Style.ChildRounding , 0.0f });
+        ImGui::SameLine();
+
+        ImVec4 backup_tab_active_color = g->Style.Colors[ImGuiCol_TabActive];
+        ImVec2 backup_frame_padding = g->Style.FramePadding;
+        g->Style.FramePadding = { 16.0f, backup_frame_padding.y };
+        g->Style.Colors[ImGuiCol_TabActive] = { YART_GUI_COLOR_BLACK, YART_GUI_ALPHA_TRANSPARENT };
+        ImGui::BeginTabBar("##TabBar", ImGuiTabBarFlags_AutoSelectNewTabs);
+        g->Style.Colors[ImGuiCol_TabActive] = backup_tab_active_color;
+
+        ImVec2 backup_inner_spacing = g->Style.ItemInnerSpacing;
+        g->Style.ItemInnerSpacing = { 0.0f, 0.0f };
+        g->Style.ItemSpacing = { 0.0f, -1.0f };
+        bool open = ImGui::BeginTabItem(item_name, nullptr, ImGuiTabItemFlags_NoPushId);
+        g->Style.ItemSpacing = backup_spacing;
+        g->Style.ItemInnerSpacing = backup_inner_spacing;
+        g->Style.FramePadding = backup_frame_padding;
+
+        return open;
+    }
+
+    void GUI::EndTabBar() 
+    {
+        ImGui::EndTabBar();
+        ImGui::EndGroup();
     }
 
     /// @brief Internal generic function for rendering a YART GUI style slider widget
@@ -738,23 +679,18 @@ namespace yart
         if (window->SkipItems)
             return false;
 
-        // Calculate the total bounding box of the widget
-        const ImGuiID id = window->GetID(name);
-        const ImRect total_bb = { window->DC.CursorPos, { window->WorkRect.Max.x, window->DC.CursorPos.y + ImGui::GetFrameHeight() }};
 
+        ImRect text_bb, frame_bb;
+        const ImRect total_bb = GUI::GetFrameSizes(text_bb, frame_bb);
+
+        const ImGuiID id = window->GetID(name);
         ImGui::ItemSize(total_bb);
         if (!ImGui::ItemAdd(total_bb, id))
             return false;
 
 
-        const float item_spacing = g->Style.ItemInnerSpacing.x;
         static constexpr float arrow_frame_width = 14.0f;
-        static const float text_width_percent = 0.4f; // TODO: This value should be calculated based on the current indent at some point
-
-        const ImRect text_bb = { total_bb.Min, { total_bb.Min.x + IM_ROUND(total_bb.GetWidth() * text_width_percent) - item_spacing, total_bb.Max.y }};
-        const ImRect frame_total_bb = { { text_bb.Max.x + item_spacing, total_bb.Min.y }, total_bb.Max };
-        const ImRect frame_drag_bb = { { frame_total_bb.Min.x + arrow_frame_width, frame_total_bb.Min.y }, { frame_total_bb.Max.x - arrow_frame_width, frame_total_bb.Max.y } };
-
+        const ImRect frame_drag_bb = { { frame_bb.Min.x + arrow_frame_width, frame_bb.Min.y }, { frame_bb.Max.x - arrow_frame_width, frame_bb.Max.y } };
 
         const bool total_hovered = g->ActiveId != id && (ImGui::ItemHoverable(total_bb, id) || g->NavId == id);
         const bool text_hovered = total_hovered && ImGui::IsMouseHoveringRect(text_bb.Min, text_bb.Max);
@@ -790,14 +726,14 @@ namespace yart
 
         // During temp input, skip drawing the custom frame 
         if (temp_input_is_active)
-            return ImGui::TempInputScalar(frame_total_bb, id, name, data_type, p_val, format, p_min, p_max);
+            return ImGui::TempInputScalar(frame_bb, id, name, data_type, p_val, format, p_min, p_max);
 
         
         static constexpr float frame_separator_thickness = 1.0f;
         const float frame_rounding = g->Style.FrameRounding;
 
-        const ImRect left_arrow_bb = { frame_total_bb.Min, { frame_drag_bb.Min.x - frame_separator_thickness, frame_total_bb.Max.y } };
-        const ImRect right_arrow_bb = { { frame_drag_bb.Max.x + frame_separator_thickness, frame_total_bb.Min.y }, frame_total_bb.Max };
+        const ImRect left_arrow_bb = { frame_bb.Min, { frame_drag_bb.Min.x - frame_separator_thickness, frame_bb.Max.y } };
+        const ImRect right_arrow_bb = { { frame_drag_bb.Max.x + frame_separator_thickness, frame_bb.Min.y }, frame_bb.Max };
 
         const bool left_arrow_hovered = total_hovered && !frame_drag_hovered && ImGui::IsMouseHoveringRect(left_arrow_bb.Min, left_arrow_bb.Max);
         const bool left_arrow_active = g->ActiveId != id && left_arrow_hovered && ImGui::IsMouseDown(ImGuiMouseButton_Left);
@@ -873,7 +809,7 @@ namespace yart
         const char* value_buf_end = value_buf + ImFormatString(value_buf, IM_ARRAYSIZE(value_buf), format, *p_val);
         ImGui::RenderTextClipped(frame_drag_bb.Min, frame_drag_bb.Max, value_buf, value_buf_end, nullptr, { 0.5f, 0.5f });
 
-        ImGui::RenderNavHighlight(frame_total_bb, id);
+        ImGui::RenderNavHighlight(frame_bb, id);
         made_changes |= ImGui::DragBehavior(id, data_type, p_val, 1.0f, p_min, p_max, format, ImGuiSliderFlags_AlwaysClamp);
         if (g->ActiveId == id)
             Input::SetCursorLocked();
@@ -1092,6 +1028,191 @@ namespace yart
 
         ImGui::EndGroup();
         return state_updated;
+    }
+    
+    bool GUI::DrawText(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, float align, const char* text)
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+
+        // Calculate offset based on the alignment value
+        const ImVec2 text_size = ImGui::CalcTextSize(text);
+        const float offset_x = ImMax(0.0f, (p_max.x - p_min.x) * align - text_size.x * align);
+        const float offset_y = (p_max.y - p_min.y - g->FontSize) / 2.0f;
+
+        const ImVec2 p0 = { p_min.x + offset_x, p_min.y + offset_y }; 
+        ImGui::RenderTextEllipsis(draw_list, p0, p_max, p_max.x, p_max.x, text, nullptr, &text_size);
+
+        return text_size.x > (p_max.x - p_min.x);
+    }
+
+    void GUI::DrawGradientRect(ImDrawList* draw_list, ImVec2 p_min, ImVec2 p_max, glm::vec3 const* values, float const* locations, size_t size, bool border)
+    {
+        const ImVec2 rect_size = { p_max.x - p_min.x, p_max.y - p_max.y };
+        p_max.x = p_min.x + rect_size.x * locations[0];
+        const float start_x = p_min.x;
+
+        // If the first stops location is not 0.0f we draw a solid color at the beginning 
+        if (p_min.x != p_max.x) {
+            const ImU32 col = ImGui::ColorConvertFloat4ToU32({ values[0].x, values[0].y, values[0].z, 1.0f });
+            draw_list->AddRectFilled(p_min, p_max, col);
+        }
+
+        // Draw the individual segments as color interpolated rects
+        for (size_t i = 0; i < size - 1; ++i) {
+            p_min.x = p_max.x;
+            p_max.x = p_min.x + rect_size.x * (locations[i + 1] - locations[i]);
+
+            const ImU32 col_min = ImGui::ColorConvertFloat4ToU32({ values[i    ].x, values[i    ].y, values[i    ].z, 1.0f });
+            const ImU32 col_max = ImGui::ColorConvertFloat4ToU32({ values[i + 1].x, values[i + 1].y, values[i + 1].z, 1.0f });
+            draw_list->AddRectFilledMultiColor(p_min, p_max, col_min, col_max, col_max, col_min);
+        }
+
+        // If the last stops location is not 1.0f we draw a solid color at the end
+        if (p_max.x != p_min.x + rect_size.x) {
+            p_min.x = p_max.x;
+            p_max.x = start_x + rect_size.x;
+            
+            const glm::vec3& last = values[size - 1];
+            const ImU32 col = ImGui::ColorConvertFloat4ToU32({ last.x, last.y, last.z, 1.0f });
+            draw_list->AddRectFilled(p_min, p_max, col);
+        }
+
+        // Draw an optional border
+        if (border) {
+            ImGuiContext* g = ImGui::GetCurrentContext();
+            const ImU32 border_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_Border]);
+            draw_list->AddRect({ start_x - 1.0f, p_min.y }, p_max, border_col);
+        }
+    }
+
+    void GUI::DrawGradientRect(ImDrawList* draw_list, ImVec2 p_min, ImVec2 p_max, ImU32 min_col, ImU32 max_col, float rounding, ImDrawFlags flags)
+    {
+        if (p_min.x >= p_max.x || p_min.y >= p_max.y)
+            return;
+
+
+        if (rounding >= 0.5f && !((flags & ImDrawFlags_RoundCornersMask_) == ImDrawFlags_RoundCornersNone)) {
+            if ((flags & ImDrawFlags_RoundCornersMask_) == 0)
+                flags |= ImDrawFlags_RoundCornersAll;
+
+            if (flags & ImDrawFlags_RoundCornersLeft) {
+                p_min.x += rounding;
+
+                const ImVec2 p1 = { p_min.x - rounding, p_min.y };
+                const ImVec2 p2 = { p_min.x + 1.0f, p_max.y };
+                draw_list->AddRectFilled(p1, p2, min_col, rounding, flags & ImDrawFlags_RoundCornersLeft);
+            }
+
+            if (flags & ImDrawFlags_RoundCornersRight) {
+                p_max.x -= rounding;
+
+                const ImVec2 p1 = { p_max.x - 1.0f, p_min.y };
+                const ImVec2 p2 = { p_max.x + rounding, p_max.y };
+                draw_list->AddRectFilled(p1, p2, max_col, rounding, flags & ImDrawFlags_RoundCornersRight);
+            }
+        }
+
+        draw_list->AddRectFilledMultiColor(p_min, p_max, min_col, max_col, max_col, min_col);
+    }
+
+    void GUI::DrawHighlightRect(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, float t, bool hovered, bool active, float rounding, ImDrawFlags flags)
+    {
+        // Compute the color values for each side
+        glm::vec3 colors[2] = {
+            // Start color
+            active ? glm::vec3(YART_GUI_COLOR_LIGHT_PRIMARY) :
+            hovered ? glm::vec3(YART_GUI_COLOR_PRIMARY) :
+            glm::vec3(YART_GUI_COLOR_DARK_PRIMARY),
+
+            // End color
+            active ? glm::vec3(YART_GUI_COLOR_LIGHT_SECONDARY) :
+            hovered ? glm::vec3(YART_GUI_COLOR_SECONDARY) :
+            glm::vec3(YART_GUI_COLOR_DARK_SECONDARY)
+        };
+
+        // Interpolate the end color by the t value
+        if (t != 1.0f)
+            colors[1] = yart::utils::LinearGradient(colors, 2, t);
+
+        const ImU32 min_col = ImGui::ColorConvertFloat4ToU32({ colors[0].x, colors[0].y, colors[0].z, YART_GUI_ALPHA_OPAQUE });
+        const ImU32 max_col = ImGui::ColorConvertFloat4ToU32({ colors[1].x, colors[1].y, colors[1].z, YART_GUI_ALPHA_OPAQUE });
+
+        DrawGradientRect(draw_list, p_min, p_max, min_col, max_col, rounding, flags);
+    }
+
+    void GUI::DrawLeftArrow(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, const ImVec2& padding, ImU32 col)
+    {
+        if ((col & IM_COL32_A_MASK) == 0)
+            return;
+
+        const ImVec2 p0 = { p_max.x - padding.x, p_min.y + padding.y };
+        const ImVec2 p2 = { p0.x, p_max.y - padding.y };
+        const ImVec2 p1 = { p_min.x + padding.x, p0.y + (p2.y - p0.y) / 2.0f };
+
+        draw_list->PathLineTo(p0);
+        draw_list->PathLineTo(p1);
+        draw_list->PathLineTo(p2);
+        draw_list->PathStroke(col, ImDrawFlags_None, 1.0f);
+    }
+
+    void GUI::DrawRightArrow(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, const ImVec2& padding, ImU32 col)
+    {
+        if ((col & IM_COL32_A_MASK) == 0)
+            return;
+
+        const ImVec2 p0 = { p_min.x + padding.x, p_min.y + padding.y };
+        const ImVec2 p2 = { p0.x, p_max.y - padding.y };
+        const ImVec2 p1 = { p_max.x - padding.x, p0.y + (p2.y - p0.y) / 2.0f };
+
+        draw_list->PathLineTo(p0);
+        draw_list->PathLineTo(p1);
+        draw_list->PathLineTo(p2);
+        draw_list->PathStroke(col, ImDrawFlags_None, 1.0f);
+    }
+
+    ImGuiID GUI::GetIDFormatted(const char* fmt, ...)
+    {
+        ImGuiWindow* window = ImGui::GetCurrentWindow();
+        va_list args;
+        va_start(args, fmt);
+
+        const char* str;
+        ImFormatStringToTempBufferV(&str, nullptr, fmt, args);
+
+        va_end(args);
+        return window->GetID(str);
+    }
+
+    ImRect GUI::GetFrameSizes(ImRect& text_bb, ImRect& frame_bb) 
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        ImGuiWindow* window = g->CurrentWindow;
+
+        // Calculate the total bounding box of the widget
+        const ImRect total_bb = { window->DC.CursorPos, { window->WorkRect.Max.x, window->DC.CursorPos.y + ImGui::GetFrameHeight() }};
+        static const float text_width_percent = 0.4f; // TODO: This value should be calculated based on the current indent at some point
+
+        const bool display_name = true; 
+        const float frame_spacing = display_name ? g->Style.ItemInnerSpacing.x : 0.0f;
+        const float text_frame_width = display_name ? IM_ROUND(total_bb.GetWidth() * text_width_percent) : 0.0f;
+
+        text_bb.Min = total_bb.Min;
+        text_bb.Max = { total_bb.Min.x + text_frame_width - frame_spacing, total_bb.Max.y };
+        frame_bb.Min = { text_bb.Max.x + frame_spacing, total_bb.Min.y };
+        frame_bb.Max = total_bb.Max;
+
+        // Return the total bounding box of the widget
+        return total_bb;
+    }
+
+    bool GUI::IsMouseHoveringCircle(const ImVec2& pos, float radius)
+    {
+        ImGuiIO& io = ImGui::GetIO();
+
+        float dx = io.MousePos.x - pos.x;
+        float dy = io.MousePos.y - pos.y;
+
+        return dx * dx + dy * dy <= radius * radius;
     }
 
 } // namespace yart

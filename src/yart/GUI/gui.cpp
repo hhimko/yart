@@ -161,19 +161,6 @@ namespace yart
         ImGui::PushFont(ctx->iconsFont);
     }
 
-    ImGuiID GUI::GetIDFormatted(const char* fmt, ...)
-    {
-        ImGuiWindow* window = ImGui::GetCurrentWindow();
-        va_list args;
-        va_start(args, fmt);
-
-        const char* str;
-        ImFormatStringToTempBufferV(&str, nullptr, fmt, args);
-
-        va_end(args);
-        return window->GetID(str);
-    }
-
     ImVec2 GUI::GetRenderViewportAreaPosition()
     {
         GuiContext* ctx = GetGUIContext();
@@ -364,91 +351,6 @@ namespace yart
         ImGui::EndChild();
     }
 
-    bool GUI::DrawText(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, float align, const char* text)
-    {
-        ImGuiContext* g = ImGui::GetCurrentContext();
-
-        // Calculate offset based on the alignment value
-        const ImVec2 text_size = ImGui::CalcTextSize(text);
-        const float offset_x = ImMax(0.0f, (p_max.x - p_min.x) * align - text_size.x * align);
-        const float offset_y = (p_max.y - p_min.y - g->FontSize) / 2.0f;
-
-        const ImVec2 p0 = { p_min.x + offset_x, p_min.y + offset_y }; 
-        ImGui::RenderTextEllipsis(draw_list, p0, p_max, p_max.x, p_max.x, text, nullptr, &text_size);
-
-        return text_size.x > (p_max.x - p_min.x);
-    }
-
-    void GUI::DrawLeftArrow(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, const ImVec2& padding, ImU32 col)
-    {
-        if ((col & IM_COL32_A_MASK) == 0)
-            return;
-
-        const ImVec2 p0 = { p_max.x - padding.x, p_min.y + padding.y };
-        const ImVec2 p2 = { p0.x, p_max.y - padding.y };
-        const ImVec2 p1 = { p_min.x + padding.x, p0.y + (p2.y - p0.y) / 2.0f };
-
-        draw_list->PathLineTo(p0);
-        draw_list->PathLineTo(p1);
-        draw_list->PathLineTo(p2);
-        draw_list->PathStroke(col, ImDrawFlags_None, 1.0f);
-    }
-
-    void GUI::DrawRightArrow(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, const ImVec2& padding, ImU32 col)
-    {
-        if ((col & IM_COL32_A_MASK) == 0)
-            return;
-
-        const ImVec2 p0 = { p_min.x + padding.x, p_min.y + padding.y };
-        const ImVec2 p2 = { p0.x, p_max.y - padding.y };
-        const ImVec2 p1 = { p_max.x - padding.x, p0.y + (p2.y - p0.y) / 2.0f };
-
-        draw_list->PathLineTo(p0);
-        draw_list->PathLineTo(p1);
-        draw_list->PathLineTo(p2);
-        draw_list->PathStroke(col, ImDrawFlags_None, 1.0f);
-    }
-
-    void GUI::DrawGradientRect(ImDrawList* draw_list, ImVec2 p_min, ImVec2 p_max, glm::vec3 const* values, float const* locations, size_t size, bool border)
-    {
-        const ImVec2 rect_size = { p_max.x - p_min.x, p_max.y - p_max.y };
-        p_max.x = p_min.x + rect_size.x * locations[0];
-        const float start_x = p_min.x;
-
-        // If the first stops location is not 0.0f we draw a solid color at the beginning 
-        if (p_min.x != p_max.x) {
-            const ImU32 col = ImGui::ColorConvertFloat4ToU32({ values[0].x, values[0].y, values[0].z, 1.0f });
-            draw_list->AddRectFilled(p_min, p_max, col);
-        }
-
-        // Draw the individual segments as color interpolated rects
-        for (size_t i = 0; i < size - 1; ++i) {
-            p_min.x = p_max.x;
-            p_max.x = p_min.x + rect_size.x * (locations[i + 1] - locations[i]);
-
-            const ImU32 col_min = ImGui::ColorConvertFloat4ToU32({ values[i    ].x, values[i    ].y, values[i    ].z, 1.0f });
-            const ImU32 col_max = ImGui::ColorConvertFloat4ToU32({ values[i + 1].x, values[i + 1].y, values[i + 1].z, 1.0f });
-            draw_list->AddRectFilledMultiColor(p_min, p_max, col_min, col_max, col_max, col_min);
-        }
-
-        // If the last stops location is not 1.0f we draw a solid color at the end
-        if (p_max.x != p_min.x + rect_size.x) {
-            p_min.x = p_max.x;
-            p_max.x = start_x + rect_size.x;
-            
-            const glm::vec3& last = values[size - 1];
-            const ImU32 col = ImGui::ColorConvertFloat4ToU32({ last.x, last.y, last.z, 1.0f });
-            draw_list->AddRectFilled(p_min, p_max, col);
-        }
-
-        // Draw an optional border
-        if (border) {
-            ImGuiContext* g = ImGui::GetCurrentContext();
-            const ImU32 border_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_Border]);
-            draw_list->AddRect({ start_x - 1.0f, p_min.y }, p_max, border_col);
-        }
-    }
-
     bool GUI::SliderInt(const char* name, int* p_val, const char* format, int arrow_step)
     {
         return GUI::SliderEx(name, ImGuiDataType_S32, (void*)p_val, nullptr, nullptr, format, (void*)&arrow_step);
@@ -469,6 +371,28 @@ namespace yart
         return GUI::SliderEx(name, ImGuiDataType_Float, (void*)p_val, (float*)&min, (float*)&max, format, (void*)&arrow_step);
     }
 
+    bool GUI::CheckBox(const char* name, bool* val)
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        ImGuiWindow* window = g->CurrentWindow;
+        if (window->SkipItems)
+            return false;
+
+        ImRect text_bb, frame_bb;
+        const ImRect total_bb = GetFrameSizes(text_bb, frame_bb);
+
+        const ImGuiID id = window->GetID(name);
+        ImGui::ItemSize(total_bb);
+        if (!ImGui::ItemAdd(total_bb, id))
+            return false;
+
+
+        const bool total_hovered = g->ActiveId != id && (ImGui::ItemHoverable(total_bb, id) || g->NavId == id);
+        const bool text_hovered = total_hovered && ImGui::IsMouseHoveringRect(text_bb.Min, text_bb.Max);
+
+        return false;
+    }
+
     bool GUI::ComboHeader(const char *name, const char *items[], size_t items_size, int *selected_item)
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
@@ -476,13 +400,12 @@ namespace yart
         if (window->SkipItems)
             return false;
 
-        ImVec2 p_min = window->DC.CursorPos;
-        ImVec2 p_max = { window->WorkRect.Max.x, window->DC.CursorPos.y + ImGui::GetFrameHeight() };
-        const ImRect total_bb = { p_min, p_max };
+        ImRect text_bb, frame_bb;
+        const ImRect total_bb = GetFrameSizes(text_bb, frame_bb);
 
         ImGuiID id = GUI::GetIDFormatted("##ComboHeader/%s", name);
         ImGui::ItemSize(total_bb);
-        if (!ImGui::ItemAdd(total_bb, id, nullptr)) 
+        if (!ImGui::ItemAdd(total_bb, id)) 
             return false;
 
 
@@ -515,9 +438,11 @@ namespace yart
         const ImU32 frame_hovered_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_FrameBgHovered]);
         const float rounding = g->Style.FrameRounding;
 
+        ImVec2 p_min = frame_bb.Min;
+        ImVec2 p_max = frame_bb.Max;
         for (int i = 0; i < items_size; ++i) {
-            p_min.x = total_bb.Min.x + total_bb.GetWidth() * (i / static_cast<float>(items_size));
-            p_max.x = total_bb.Min.x + total_bb.GetWidth() * ((i + 1) / static_cast<float>(items_size));
+            p_min.x = frame_bb.Min.x + frame_bb.GetWidth() * (i / static_cast<float>(items_size));
+            p_max.x = frame_bb.Min.x + frame_bb.GetWidth() * ((i + 1) / static_cast<float>(items_size));
 
             ImGuiID button_id = GUI::GetIDFormatted("##ComboHeader/%s/%d", name, i);
             ImGui::ItemAdd({ p_min, p_max }, button_id, nullptr, ImGuiItemFlags_NoNav);
@@ -552,13 +477,13 @@ namespace yart
         // Render header items separators
         const ImU32 separator_col = ImGui::ColorConvertFloat4ToU32({ YART_GUI_COLOR_DARK_GRAY, YART_GUI_ALPHA_OPAQUE });
         for (int i = 0; i < items_size - 1; ++i) {
-            p_min.x = total_bb.Min.x + total_bb.GetWidth() * ((i + 1) / static_cast<float>(items_size)) - 1.0f;
+            p_min.x = frame_bb.Min.x + frame_bb.GetWidth() * ((i + 1) / static_cast<float>(items_size)) - 1.0f;
             p_max.x = p_min.x + 2.0f;
 
             window->DrawList->AddRectFilled(p_min, p_max, separator_col);
         }
 
-        ImGui::RenderNavHighlight(total_bb, id);
+        ImGui::RenderNavHighlight(frame_bb, id);
         return item_changed;
     }
 
@@ -570,19 +495,14 @@ namespace yart
             return false;
 
         // Calculate the total bounding box of the widget
-        const ImGuiID id = window->GetID(name);
-        const ImRect total_bb = { window->DC.CursorPos, { window->WorkRect.Max.x, window->DC.CursorPos.y + ImGui::GetFrameHeight() }};
+        ImRect text_bb, frame_bb;
+        const ImRect total_bb = GetFrameSizes(text_bb, frame_bb);
 
+        const ImGuiID id = window->GetID(name);
         ImGui::ItemSize(total_bb);
         if (!ImGui::ItemAdd(total_bb, id))
             return false;
 
-
-        const float item_spacing = g->Style.ItemInnerSpacing.x;
-        static const float text_width_percent = 0.4f; // TODO: This value should be calculated based on the current indent at some point
-
-        const ImRect text_bb = { total_bb.Min, { total_bb.Min.x + IM_ROUND(total_bb.GetWidth() * text_width_percent) - item_spacing, total_bb.Max.y }};
-        const ImRect frame_bb = { { text_bb.Max.x + item_spacing, total_bb.Min.y }, total_bb.Max };
 
         const bool total_hovered = g->ActiveId != id && (ImGui::ItemHoverable(total_bb, id) || g->NavId == id);
         const bool text_hovered = total_hovered && ImGui::IsMouseHoveringRect(text_bb.Min, text_bb.Max);

@@ -1,0 +1,26 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file
+/// @brief 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#pragma once
+
+
+#include <vector>
+
+
+namespace yart
+{
+    struct Object {
+    public:
+        /// @brief String identifier of the object
+        const char* name;
+
+    };
+
+    struct Scene {
+    public:
+        std::vector<Object> objects;
+
+    };
+} // namespace yart
