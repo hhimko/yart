@@ -42,7 +42,7 @@ namespace yart
         };
 
         /// @brief Internal `RES` module context object
-        struct ResourcesContext {
+        struct ResContext {
         public:
             /// @brief Array of pointers to lazily-loaded default resources from each `Resource` child class  
             const Resource* defaultResources[ResourceType_COUNT] = {};
@@ -52,7 +52,7 @@ namespace yart
 
         /// @brief Get the current `RES` module context
         /// @return The current context
-        ResourcesContext& GetResourcesContext();
+        ResContext* GetResContext();
 
         /// @brief Load a new image from file
         /// @param filename Path to the image file

@@ -21,10 +21,10 @@ namespace yart
 {
     namespace RES
     {
-        ResourcesContext& GetResourcesContext()
+        ResContext* GetResContext()
         {
-            static ResourcesContext s_currentContext;
-            return s_currentContext;
+            static ResContext s_currentContext;
+            return &s_currentContext;
         }
 
         Image* LoadImageFromFile(const char* filename)

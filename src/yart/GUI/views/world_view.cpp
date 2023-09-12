@@ -66,7 +66,7 @@ namespace yart
                 RES::CubeMap* cubemap = RES::GetResourceByID<RES::CubeMap>(target.m_skyCubeMap);
 
                 bool interpolation = (cubemap->GetInterpolationType() == RES::InterpolationType::BILINEAR);
-                if (ImGui::Checkbox("Interpolate", &interpolation)) {
+                if (GUI::CheckBox("Interpolate", &interpolation)) {
                     cubemap->SetInterpolationType(interpolation ? RES::InterpolationType::BILINEAR : RES::InterpolationType::NEAREST);
                     made_changes = true;
                 }

@@ -7,6 +7,8 @@
 #include "gui_internal.h"
 
 
+#include <cstring> // For memset
+
 #include "yart/core/utils/glm_utils.h"
 #include "yart/core/utils/yart_utils.h"
 #include "yart/platform/input.h"
@@ -50,7 +52,7 @@ namespace yart
 		}
 
         // Store the size of the main menu bar for content area computation
-        GuiContext* ctx = GUI::GetGUIContext();
+        GuiContext* ctx = GUI::GetGuiContext();
         ctx->mainMenuBarHeight = ImGui::GetWindowSize().y;
 
         ImGui::EndMainMenuBar();
@@ -59,7 +61,7 @@ namespace yart
     void GUI::RenderMainContentFrame()
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
-        GuiContext* ctx = GUI::GetGUIContext();
+        GuiContext* ctx = GUI::GetGuiContext();
 
         ImVec2 display_size = ImGui::GetIO().DisplaySize;
         float menu_bar_height = ctx->mainMenuBarHeight;
@@ -104,7 +106,7 @@ namespace yart
 
     void GUI::RenderContextWindow()
     {
-        GuiContext* ctx = GUI::GetGUIContext();
+        GuiContext* ctx = GUI::GetGuiContext();
         ImGuiContext* g = ImGui::GetCurrentContext();
 
         // Render the scene+context menu layout
@@ -182,7 +184,7 @@ namespace yart
 
     void GUI::RenderInspectorNavBar()
     {
-        GuiContext* ctx = GUI::GetGUIContext();
+        GuiContext* ctx = GUI::GetGuiContext();
         ImGuiContext* g = ImGui::GetCurrentContext();
 
         const float window_y_offset = ImGui::GetFrameHeight() - 1.0f;
@@ -446,7 +448,7 @@ namespace yart
         );
 
         // Set a constant window size and position
-        GuiContext* ctx = GUI::GetGUIContext();
+        GuiContext* ctx = GUI::GetGuiContext();
         ImVec2 viewport_pos = ctx->renderViewportAreaPos;
         ImVec2 window_center = {
             viewport_pos.x + ctx->renderViewportAreaWidth - window_size.x / 2 - window_margin.x, 
@@ -591,7 +593,7 @@ namespace yart
         ImVec2 drag = SeparatorHandle({ window->DC.CursorPos.x, window->DC.CursorPos.y }, separator_size, cursor);
         layout.size += layout.direction == GUI::LayoutDir::HORIZONTAL ? drag.x : drag.y;
 
-        GuiContext* ctx = GUI::GetGUIContext();
+        GuiContext* ctx = GUI::GetGuiContext();
         if (layout.preserveSecondSectionSize && drag.x == 0 && drag.y == 0)
             layout.size += layout.direction == GUI::LayoutDir::HORIZONTAL ? ctx->displaySizeDelta.x : ctx->displaySizeDelta.y;
 
@@ -621,6 +623,24 @@ namespace yart
         ImGui::EndChild();
 
         ImGui::EndGroup();
+    }
+
+    GUI::NextItemData GUI::GetNextItemData()
+    {
+        GuiContext* ctx = GetGuiContext();
+
+        NextItemData backup = ctx->nextItem;
+        memset(&ctx->nextItem, 0, sizeof(NextItemData));
+        
+        return backup;
+    }
+
+    void GUI::SetNextItemFrameMaxWidth(float max_width)
+    {
+        GuiContext* ctx = GetGuiContext();
+
+        ctx->nextItem.flags |= NextItemFlags_MaxFrameWidth;
+        ctx->nextItem.maxFrameWidth = max_width;
     }
 
     bool GUI::BeginTabBar(const char* item_name)

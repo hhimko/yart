@@ -94,9 +94,13 @@ namespace yart
         };
 
 
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        /// GUI module public interface 
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+
         /// @brief Get the current GUI context
         /// @return The currently active context object
-        GuiContext* GetGUIContext();
+        GuiContext* GetGuiContext();
 
         /// @brief Issue Dear ImGui render commands for the current GUI context
         /// @note This method should only be called after calling `ImGui::NewFrame()`
@@ -145,22 +149,9 @@ namespace yart
         /// @param callback Callback function pointer to the nav bar item contents
         void RegisterInspectorWindow(const char* name, const char* icon, ImU32 color, imgui_callback_t callback);
 
-        /// @brief Begin a YART GUI style collapsable header
-        /// @param name Name of the section
-        /// @return Whether the section is currently opened and the contents should be rendered
-        bool BeginCollapsableSection(const char* name);
-
-        /// @brief Finish recording a YART GUI style collapsable header
-        /// @param was_open The value returned by GUI::BeginCollapsableSection()
-        void EndCollapsableSection(bool was_open);
-
-        /// @brief Begin a new named frame window  
-        /// @param name Name of the frame, displayed as the header
-        /// @param rows Number of rows to be displayed inside the frame. Used for determining the frame height
-        void BeginFrame(const char* name, uint32_t rows);
-
-        /// @brief Finish recording a frame window
-        void EndFrame();
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        /// Custom GUI widgets rendering public interface
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
 
         /// @brief Render a YART GUI style slider widget for an int variable 
         /// @param name Label text displayed next to the widget
@@ -226,6 +217,23 @@ namespace yart
         /// @brief Render a horizontal separator line over the full window width
         /// @param thickness Separator line thickness
         void FullWidthSeparator(float thickness);
+
+        /// @brief Begin a YART GUI style collapsable header
+        /// @param name Name of the section
+        /// @return Whether the section is currently opened and the contents should be rendered
+        bool BeginCollapsableSection(const char* name);
+
+        /// @brief Finish recording a YART GUI style collapsable header
+        /// @param was_open The value returned by GUI::BeginCollapsableSection()
+        void EndCollapsableSection(bool was_open);
+
+        /// @brief Begin a new named frame window  
+        /// @param name Name of the frame, displayed as the header
+        /// @param rows Number of rows to be displayed inside the frame. Used for determining the frame height
+        void BeginFrame(const char* name, uint32_t rows);
+
+        /// @brief Finish recording a frame window
+        void EndFrame();
         
     } // namespace GUI
 } // namespace yart

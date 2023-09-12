@@ -18,6 +18,24 @@ namespace yart
 {
     namespace GUI
     {
+        #ifndef DOXYGEN_EXCLUDE // Exclude from documentation
+            typedef uint32_t NextItemFlags; 
+        #endif
+
+        /// @brief Internal enum of next item state flags
+        enum NextItemFlags_: NextItemFlags {
+            NextItemFlags_None          = 0,
+            NextItemFlags_MaxFrameWidth = 1 << 0,
+            
+        };
+
+        /// @brief Layout direction enum
+        enum class LayoutDir : uint8_t {
+            HORIZONTAL,
+            VERTICAL
+
+        };
+
         /// @brief Structure containing data required to render a inspector nav bar window 
         struct InspectorWindow {
         public:
@@ -32,6 +50,16 @@ namespace yart
 
         };
 
+        /// @brief Internal structure for holding next widget item state variables
+        /// @details These variables exist outside of the GuiContext for ease of clearing with `memset` 
+        struct NextItemData {
+            /// @brief Active flags for the next rendered item 
+            NextItemFlags flags;
+            /// @brief Max frame width to use for the next rendered widget
+            float maxFrameWidth;
+
+        };
+
         /// @brief GUI context, holding all state required to render a specific UI layout
         struct GuiContext {
         public:
@@ -41,6 +69,9 @@ namespace yart
             std::vector<InspectorWindow> inspectorWindows;
             /// @brief Currently open inspector nav bar window
             InspectorWindow* activeInspectorWindow = nullptr;
+            /// @brief Next rendered item state 
+            /// @note This member should not be accessed manually, but rather with RES::GetNextItemData()
+            NextItemData nextItem;
 
             /// @brief Whether any changes were made by the user within the last frame
             bool madeChanges;
@@ -61,13 +92,6 @@ namespace yart
 
             /// @brief Pointer to a Dear ImGui icon Font object 
             ImFont* iconsFont = nullptr; 
-
-        };
-
-        /// @brief Layout direction enum
-        enum class LayoutDir : uint8_t {
-            HORIZONTAL,
-            VERTICAL
 
         };
 
@@ -142,6 +166,19 @@ namespace yart
         /// @brief Finalize rendering a layout
         /// @param layout Layout state object
         void EndLayout(LayoutContext& layout);
+
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        /// GUI widgets next item state internal functions 
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        /// @brief Retrieve a copy of the next item data structure and clear the original
+        /// @details This method should be called at the very beginning of all widget rendering functions 
+        NextItemData GetNextItemData();
+
+        /// @brief Set the max frame width for the next issued widget 
+        /// @param max_width Max frame width in pixels
+        void SetNextItemFrameMaxWidth(float max_width);
 
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -239,7 +276,7 @@ namespace yart
 
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
-        /// Helper utility functions
+        /// Various helper & utility functions for the GUI module
         ////////////////////////////////////////////////////////////////////////////////////////////////////
 
         /// @brief Helper function for getting a Dear ImGui ID from a formatted string
