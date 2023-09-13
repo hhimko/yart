@@ -76,6 +76,13 @@ namespace yart
         glm::vec3 SampleImageNorm(const Image* image, float u, float v, InterpolationType interpolation = InterpolationType::NEAREST);
 
 
+        /// @brief Populate a buffer with an image kernel window of given size 
+        /// @param image Image from which to build the kernel window
+        /// @param buffer Array to be populated with kernel values. 
+        ///     The size of the buffer array should be equal to `kernel_size * kernel_size * image->CHANNELS`
+        /// @param x Center x coordinate of the kernel window
+        /// @param y Center y coordinate of the kernel window
+        /// @param kernel_size Size of the kernel in pixels 
         void GetImageKernelWindow(const Image* image, float* buffer, int x, int y, int kernel_size);
 
         /// @brief Destroy a given image object

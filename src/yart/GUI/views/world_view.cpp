@@ -68,7 +68,7 @@ namespace yart
                 bool interpolate = (current_interpolator != RES::InterpolationType::NEAREST);
                 static RES::InterpolationType prev_interpolator = interpolate ? current_interpolator : RES::InterpolationType::BILINEAR;
 
-                if (GUI::CheckBox("Interpolate skybox", &interpolate)) {
+                if (GUI::CheckBox("Interpolate", &interpolate)) {
                     cubemap->SetInterpolationType(interpolate ? prev_interpolator : RES::InterpolationType::NEAREST);
                     made_changes = true;
                 }

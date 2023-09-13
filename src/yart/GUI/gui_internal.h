@@ -14,6 +14,14 @@
 #include "gui.h"
 
 
+#ifndef DOXYGEN_EXCLUDE // Exclude from documentation
+    #define YART_GUI_TEXT_ALIGN_LEFT    0.0f
+    #define YART_GUI_TEXT_ALIGN_CENTER  0.5f
+    #define YART_GUI_TEXT_ALIGN_RIGHT   1.0f
+    #define YART_GUI_DEFAULT_TEXT_ALIGN YART_GUI_TEXT_ALIGN_RIGHT
+#endif
+
+
 namespace yart
 {
     namespace GUI

@@ -165,7 +165,7 @@ namespace yart
 
             const ImVec4 backup_clip_rect = g->CurrentWindow->DrawList->_ClipRectStack.back();
             g->CurrentWindow->DrawList->PopClipRect();
-            static ImU32 bg_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_ChildBg]);
+            static ImU32 bg_col = ImGui::GetColorU32(ImGuiCol_ChildBg);
             g->CurrentWindow->DrawList->AddRectFilled(p_min, p_max, bg_col);
             g->CurrentWindow->DrawList->PushClipRect({ backup_clip_rect.x, backup_clip_rect.y }, { backup_clip_rect.z, backup_clip_rect.w });
 
@@ -202,7 +202,7 @@ namespace yart
         ImVec2 p_min = { window->Pos.x, window->Pos.y + window_y_offset };
         ImVec2 p_max = { p_min.x + window->Size.x + child_rounding, p_min.y + window->Size.y };
 
-        static const ImU32 bg_col = ImGui::ColorConvertFloat4ToU32({ YART_GUI_COLOR_DARKEST_GRAY, YART_GUI_ALPHA_OPAQUE });
+        static const ImU32 bg_col = ImGui::GetColorU32({ YART_GUI_COLOR_DARKEST_GRAY, YART_GUI_ALPHA_OPAQUE });
         window->DrawList->AddRectFilled(p_min, p_max, bg_col, child_rounding);
 
         // Render menu item icons
@@ -232,12 +232,8 @@ namespace yart
                 ImGui::SetTooltip(item.name);
 
             // Render background
-            const ImU32 normal_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_Tab]);
-            const ImU32 active_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_TabActive]);
-            const ImU32 hovered_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_TabHovered]);
-
-            const ImU32 color = hovered ? hovered_col : active ? active_col : normal_col;
-            window->DrawList->AddRectFilled(p_min, p_max, color, child_rounding, ImDrawFlags_RoundCornersLeft);
+            const ImU32 col = ImGui::GetColorU32(active ? ImGuiCol_TabActive : hovered ? ImGuiCol_TabHovered : ImGuiCol_Tab);
+            window->DrawList->AddRectFilled(p_min, p_max, col, child_rounding, ImDrawFlags_RoundCornersLeft);
 
             // Render the icon
             window->DC.CursorPos.x += icon_button_inner_padding;
@@ -559,8 +555,8 @@ namespace yart
         bool hovered, held;
         ImGui::ButtonBehavior(bb, id, &hovered, &held);
 
-        const ImVec4 col = held ? g->Style.Colors[ImGuiCol_ResizeGripActive] : (hovered ? g->Style.Colors[ImGuiCol_ResizeGripHovered] : g->Style.Colors[ImGuiCol_ResizeGrip]);
-        ImGui::GetWindowDrawList()->AddRectFilled(bb.Min, bb.Max, ImGui::ColorConvertFloat4ToU32(col));
+        const ImU32 col = ImGui::GetColorU32(held ? ImGuiCol_ResizeGripActive : hovered ? ImGuiCol_ResizeGripHovered : ImGuiCol_ResizeGrip);
+        g->CurrentWindow->DrawList->AddRectFilled(bb.Min, bb.Max, col);
 
         if (hovered || held)
             ImGui::SetMouseCursor(cursor);
@@ -723,7 +719,7 @@ namespace yart
         }
 
         // Render the label text
-        if (GUI::DrawText(window->DrawList, text_bb.Min, text_bb.Max, 0.0f, name) && text_hovered)
+        if (GUI::DrawText(window->DrawList, text_bb.Min, text_bb.Max, YART_GUI_DEFAULT_TEXT_ALIGN, name) && text_hovered)
             ImGui::SetTooltip(name);
 
         // During temp input, skip drawing the custom frame 
@@ -852,7 +848,7 @@ namespace yart
         ImGuiContext* g = ImGui::GetCurrentContext();
         ImDrawList* draw_list = g->CurrentWindow->DrawList;
 
-        const ImU32 col = ImGui::ColorConvertFloat4ToU32({ color.x, color.y, color.z, 1.0f });
+        const ImU32 col = ImGui::GetColorU32({ color.x, color.y, color.z, 1.0f });
 
         ImVec2 p1 = pos;
         ImVec2 p2 = { p1.x + size.x, p1.y + size.x };
@@ -1098,19 +1094,21 @@ namespace yart
                 flags |= ImDrawFlags_RoundCornersAll;
 
             if (flags & ImDrawFlags_RoundCornersLeft) {
-                p_min.x += rounding;
+                p_min.x += rounding + 1.0f;
 
-                const ImVec2 p1 = { p_min.x - rounding, p_min.y };
-                const ImVec2 p2 = { p_min.x + 1.0f, p_max.y };
-                draw_list->AddRectFilled(p1, p2, min_col, rounding, flags & ImDrawFlags_RoundCornersLeft);
+                const ImVec2 p1 = { p_min.x - rounding - 1.0f, p_min.y };
+                p_min.x += 1.0f;
+                const ImVec2 p2 = { p_min.x, p_max.y };
+                draw_list->AddRectFilled(p1, p2, min_col, rounding, ImDrawFlags_RoundCornersLeft);
             }
 
             if (flags & ImDrawFlags_RoundCornersRight) {
-                p_max.x -= rounding;
+                p_max.x -= rounding + 1.0f;
 
-                const ImVec2 p1 = { p_max.x - 1.0f, p_min.y };
-                const ImVec2 p2 = { p_max.x + rounding, p_max.y };
-                draw_list->AddRectFilled(p1, p2, max_col, rounding, flags & ImDrawFlags_RoundCornersRight);
+                const ImVec2 p2 = { p_max.x + rounding + 1.0f, p_max.y };
+                p_min.x -= 1.0f;
+                const ImVec2 p1 = { p_max.x, p_min.y };
+                draw_list->AddRectFilled(p1, p2, max_col, rounding, ImDrawFlags_RoundCornersRight);
             }
         }
 
@@ -1136,8 +1134,8 @@ namespace yart
         if (t != 1.0f)
             colors[1] = yart::utils::LinearGradient(colors, 2, t);
 
-        const ImU32 min_col = ImGui::ColorConvertFloat4ToU32({ colors[0].x, colors[0].y, colors[0].z, YART_GUI_ALPHA_OPAQUE });
-        const ImU32 max_col = ImGui::ColorConvertFloat4ToU32({ colors[1].x, colors[1].y, colors[1].z, YART_GUI_ALPHA_OPAQUE });
+        const ImU32 min_col = ImGui::GetColorU32({ colors[0].x, colors[0].y, colors[0].z, YART_GUI_ALPHA_OPAQUE });
+        const ImU32 max_col = ImGui::GetColorU32({ colors[1].x, colors[1].y, colors[1].z, YART_GUI_ALPHA_OPAQUE });
 
         DrawGradientRect(draw_list, p_min, p_max, min_col, max_col, rounding, flags);
     }

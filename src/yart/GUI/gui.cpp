@@ -75,6 +75,7 @@ namespace yart
         style.ItemInnerSpacing = { 6.0f, 4.0f };
         style.SeparatorTextBorderSize = 1.0f;
         style.SeparatorTextPadding = { 18.0f, 2.0f };
+        style.DisabledAlpha = 0.5f;
 
 
         // -- APPLY DEFAULT YART COLOR PALETTE -- // 
@@ -263,7 +264,7 @@ namespace yart
         }
 
         // Render label text
-        if (GUI::DrawText(window->DrawList, text_bb.Min, text_bb.Max, 0.0f, name) && text_hovered)
+        if (GUI::DrawText(window->DrawList, text_bb.Min, text_bb.Max, YART_GUI_DEFAULT_TEXT_ALIGN, name) && text_hovered)
             ImGui::SetTooltip(name);
 
         // Handle frame inputs
@@ -281,9 +282,6 @@ namespace yart
             const ImU32 col = ImGui::GetColorU32(active ? ImGuiCol_FrameBgActive : hovered ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg); 
             window->DrawList->AddRectFilled(frame_bb.Min, frame_bb.Max, col, rounding);
         }
-
-        const ImU32 border_col = ImGui::GetColorU32(ImGuiCol_Border); 
-        window->DrawList->AddRect(frame_bb.Min, frame_bb.Max, border_col, rounding);
 
         ImGui::RenderNavHighlight(frame_bb, id);
         return item_changed;
@@ -332,12 +330,12 @@ namespace yart
 
         // Render the label text
         const bool text_hovered = ImGui::IsItemHovered() && ImGui::IsMouseHoveringRect(text_bb.Min, text_bb.Max);
-        if (GUI::DrawText(window->DrawList, text_bb.Min, text_bb.Max, 0.0f, name) && text_hovered)
+        if (GUI::DrawText(window->DrawList, text_bb.Min, text_bb.Max, YART_GUI_DEFAULT_TEXT_ALIGN, name) && text_hovered)
             ImGui::SetTooltip(name);
 
         // Render the individual header items
-        const ImU32 frame_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_FrameBg]);
-        const ImU32 frame_hovered_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_FrameBgHovered]);
+        const ImU32 frame_col = ImGui::GetColorU32(ImGuiCol_FrameBg);
+        const ImU32 frame_hovered_col = ImGui::GetColorU32(ImGuiCol_FrameBgHovered);
         const float rounding = g->Style.FrameRounding;
 
         ImVec2 p_min = frame_bb.Min;
@@ -371,7 +369,7 @@ namespace yart
             }
 
             // Render header text
-            if (GUI::DrawText(window->DrawList, { p_min.x + 2.0f, p_min.y }, { p_max.x - 2.0f, p_max.y }, 0.5f, items[i]) && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
+            if (GUI::DrawText(window->DrawList, { p_min.x + 2.0f, p_min.y }, { p_max.x - 2.0f, p_max.y }, YART_GUI_TEXT_ALIGN_CENTER, items[i]) && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
                 ImGui::SetTooltip(items[i]);
         }
 
@@ -441,7 +439,7 @@ namespace yart
 
 
         // Render the label text
-        if (GUI::DrawText(window->DrawList, text_bb.Min, text_bb.Max, 0.0f, name) && text_hovered)
+        if (GUI::DrawText(window->DrawList, text_bb.Min, text_bb.Max, YART_GUI_DEFAULT_TEXT_ALIGN, name) && text_hovered)
             ImGui::SetTooltip(name);
 
         // Render the color button frame
