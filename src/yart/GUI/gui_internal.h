@@ -18,14 +18,14 @@ namespace yart
 {
     namespace GUI
     {
-        #ifndef DOXYGEN_EXCLUDE // Exclude from documentation
-            typedef uint32_t NextItemFlags; 
-        #endif
+        /// @brief Flags for GUI::CalculateItemSizes()
+        typedef uint32_t ItemSizesFlags; 
 
-        /// @brief Internal enum of next item state flags
-        enum NextItemFlags_: NextItemFlags {
-            NextItemFlags_None          = 0,
-            NextItemFlags_MaxFrameWidth = 1 << 0,
+        /// @brief Internal flags enum for GUI::CalculateItemSizes()
+        enum ItemSizesFlags_: ItemSizesFlags {
+            ItemSizesFlags_None        = 0,      /// @brief No flags
+            ItemSizesFlags_NoLabel     = 1 << 0, /// @brief Don't display the widget's label. Sets the width of `text_bb` to 0
+            ItemSizesFlags_SquareFrame = 1 << 1, /// @brief Make the widget's frame bounding box a square 
             
         };
 
@@ -50,16 +50,6 @@ namespace yart
 
         };
 
-        /// @brief Internal structure for holding next widget item state variables
-        /// @details These variables exist outside of the GuiContext for ease of clearing with `memset` 
-        struct NextItemData {
-            /// @brief Active flags for the next rendered item 
-            NextItemFlags flags;
-            /// @brief Max frame width to use for the next rendered widget
-            float maxFrameWidth;
-
-        };
-
         /// @brief GUI context, holding all state required to render a specific UI layout
         struct GuiContext {
         public:
@@ -69,9 +59,6 @@ namespace yart
             std::vector<InspectorWindow> inspectorWindows;
             /// @brief Currently open inspector nav bar window
             InspectorWindow* activeInspectorWindow = nullptr;
-            /// @brief Next rendered item state 
-            /// @note This member should not be accessed manually, but rather with RES::GetNextItemData()
-            NextItemData nextItem;
 
             /// @brief Whether any changes were made by the user within the last frame
             bool madeChanges;
@@ -166,19 +153,6 @@ namespace yart
         /// @brief Finalize rendering a layout
         /// @param layout Layout state object
         void EndLayout(LayoutContext& layout);
-
-
-        ////////////////////////////////////////////////////////////////////////////////////////////////////
-        /// GUI widgets next item state internal functions 
-        ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        /// @brief Retrieve a copy of the next item data structure and clear the original
-        /// @details This method should be called at the very beginning of all widget rendering functions 
-        NextItemData GetNextItemData();
-
-        /// @brief Set the max frame width for the next issued widget 
-        /// @param max_width Max frame width in pixels
-        void SetNextItemFrameMaxWidth(float max_width);
 
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -284,11 +258,12 @@ namespace yart
         /// @return Dear ImGui ID
         ImGuiID GetIDFormatted(const char* fmt, ...);
 
-        /// @brief Compute YART GUI frame bounding boxes for the next widget
+        /// @brief Compute standard YART GUI bounding boxes for the next widget
         /// @param text_bb Bounding box of the label area
         /// @param frame_bb Bounding box of the widget frame area
+        /// @param flags Optional flags from the `ItemSizesFlags_` enum
         /// @return The total bounding box 
-        ImRect GetFrameSizes(ImRect& text_bb, ImRect& frame_bb);
+        ImRect CalculateItemSizes(ImRect& text_bb, ImRect& frame_bb, ItemSizesFlags flags = ItemSizesFlags_None);
 
         /// @brief Check whether the mouse cursor lies within a given circle
         /// @param pos Circle position on the screen

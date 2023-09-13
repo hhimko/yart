@@ -237,7 +237,7 @@ namespace yart
 
 
         ImRect text_bb, frame_bb;
-        const ImRect total_bb = GetFrameSizes(text_bb, frame_bb);
+        const ImRect total_bb = CalculateItemSizes(text_bb, frame_bb, ItemSizesFlags_SquareFrame);
 
         const ImGuiID id = window->GetID(name);
         ImGui::ItemSize(total_bb);
@@ -273,24 +273,23 @@ namespace yart
             item_changed = true;
         }
 
-        // Render frame and checkbox icon
+        // Render frame
         const float rounding = g->Style.FrameRounding;
-        const ImU32 col = ImGui::GetColorU32(active ? ImGuiCol_FrameBgActive : hovered ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg); 
-        const ImU32 border_col = ImGui::GetColorU32(ImGuiCol_Border); 
-        window->DrawList->AddRectFilled(frame_bb.Min, frame_bb.Max, col, rounding);
-        window->DrawList->AddRect(frame_bb.Min, frame_bb.Max, border_col, rounding);
-
         if (*val) {
-            const ImU32 circle_col = ImGui::GetColorU32(active ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button); 
-            window->DrawList->AddCircleFilled(frame_bb.GetCenter(), frame_bb.GetHeight() / 2.0f - 4.0f, circle_col);
+            DrawHighlightRect(window->DrawList, frame_bb.Min, frame_bb.Max, 1.0f, hovered, active, rounding);
+        } else {
+            const ImU32 col = ImGui::GetColorU32(active ? ImGuiCol_FrameBgActive : hovered ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg); 
+            window->DrawList->AddRectFilled(frame_bb.Min, frame_bb.Max, col, rounding);
         }
 
+        const ImU32 border_col = ImGui::GetColorU32(ImGuiCol_Border); 
+        window->DrawList->AddRect(frame_bb.Min, frame_bb.Max, border_col, rounding);
 
         ImGui::RenderNavHighlight(frame_bb, id);
         return item_changed;
     }
 
-    bool GUI::ComboHeader(const char* name, const char* items[], size_t items_size, int* selected_item)
+    bool GUI::ComboHeader(const char* name, const char* items[], size_t items_size, int* selected_item, bool display_name)
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
         ImGuiWindow* window = g->CurrentWindow;
@@ -299,7 +298,8 @@ namespace yart
 
 
         ImRect text_bb, frame_bb;
-        const ImRect total_bb = GetFrameSizes(text_bb, frame_bb);
+        ItemSizesFlags flags = display_name ? ItemSizesFlags_None : ItemSizesFlags_NoLabel;
+        const ImRect total_bb = CalculateItemSizes(text_bb, frame_bb, flags);
 
         ImGuiID id = GUI::GetIDFormatted("##ComboHeader/%s", name);
         ImGui::ItemSize(total_bb);
@@ -329,6 +329,11 @@ namespace yart
             }
         }
 
+
+        // Render the label text
+        const bool text_hovered = ImGui::IsItemHovered() && ImGui::IsMouseHoveringRect(text_bb.Min, text_bb.Max);
+        if (GUI::DrawText(window->DrawList, text_bb.Min, text_bb.Max, 0.0f, name) && text_hovered)
+            ImGui::SetTooltip(name);
 
         // Render the individual header items
         const ImU32 frame_col = ImGui::ColorConvertFloat4ToU32(g->Style.Colors[ImGuiCol_FrameBg]);
@@ -393,7 +398,7 @@ namespace yart
 
         // Calculate the total bounding box of the widget
         ImRect text_bb, frame_bb;
-        const ImRect total_bb = GetFrameSizes(text_bb, frame_bb);
+        const ImRect total_bb = CalculateItemSizes(text_bb, frame_bb);
 
         const ImGuiID id = window->GetID(name);
         ImGui::ItemSize(total_bb);

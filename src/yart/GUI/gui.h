@@ -200,8 +200,9 @@ namespace yart
         /// @param items Array of combo items
         /// @param items_size Size of the `items` array
         /// @param selected_item The currently selected combo item index
+        /// @param display_name Whether the name should be displayed next to the widget
         /// @returns Whether the selected item has changed since last frame
-        bool ComboHeader(const char* name, const char* items[], size_t items_size, int* selected_item); 
+        bool ComboHeader(const char* name, const char* items[], size_t items_size, int* selected_item, bool display_name = true); 
 
         /// @brief Render a YART GUI style color edit widget
         /// @param name Label text displayed next to the widget

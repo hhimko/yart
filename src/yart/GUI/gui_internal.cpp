@@ -625,24 +625,6 @@ namespace yart
         ImGui::EndGroup();
     }
 
-    GUI::NextItemData GUI::GetNextItemData()
-    {
-        GuiContext* ctx = GetGuiContext();
-
-        NextItemData backup = ctx->nextItem;
-        memset(&ctx->nextItem, 0, sizeof(NextItemData));
-        
-        return backup;
-    }
-
-    void GUI::SetNextItemFrameMaxWidth(float max_width)
-    {
-        GuiContext* ctx = GetGuiContext();
-
-        ctx->nextItem.flags |= NextItemFlags_MaxFrameWidth;
-        ctx->nextItem.maxFrameWidth = max_width;
-    }
-
     bool GUI::BeginTabBar(const char* item_name)
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
@@ -701,7 +683,7 @@ namespace yart
 
 
         ImRect text_bb, frame_bb;
-        const ImRect total_bb = GUI::GetFrameSizes(text_bb, frame_bb);
+        const ImRect total_bb = GUI::CalculateItemSizes(text_bb, frame_bb);
 
         const ImGuiID id = window->GetID(name);
         ImGui::ItemSize(total_bb);
@@ -1203,7 +1185,7 @@ namespace yart
         return window->GetID(str);
     }
 
-    ImRect GUI::GetFrameSizes(ImRect& text_bb, ImRect& frame_bb) 
+    ImRect GUI::CalculateItemSizes(ImRect& text_bb, ImRect& frame_bb, ItemSizesFlags flags) 
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
         ImGuiWindow* window = g->CurrentWindow;
@@ -1212,14 +1194,15 @@ namespace yart
         const ImRect total_bb = { window->DC.CursorPos, { window->WorkRect.Max.x, window->DC.CursorPos.y + ImGui::GetFrameHeight() }};
         static const float text_width_percent = 0.4f; // TODO: This value should be calculated based on the current indent at some point
 
-        const bool display_name = true; 
+        const bool display_name = (flags & ItemSizesFlags_NoLabel) == 0; 
         const float frame_spacing = display_name ? g->Style.ItemInnerSpacing.x : 0.0f;
         const float text_frame_width = display_name ? IM_ROUND(total_bb.GetWidth() * text_width_percent) : 0.0f;
+        const float max_frame_width = (flags & ItemSizesFlags_SquareFrame) ? total_bb.GetHeight() : 0.0f;
 
         text_bb.Min = total_bb.Min;
         text_bb.Max = { total_bb.Min.x + text_frame_width - frame_spacing, total_bb.Max.y };
         frame_bb.Min = { text_bb.Max.x + frame_spacing, total_bb.Min.y };
-        frame_bb.Max = total_bb.Max;
+        frame_bb.Max = (max_frame_width <= 0) ? total_bb.Max : ImVec2(ImMin(frame_bb.Min.x + max_frame_width, total_bb.Max.x), total_bb.Max.y);
 
         // Return the total bounding box of the widget
         return total_bb;

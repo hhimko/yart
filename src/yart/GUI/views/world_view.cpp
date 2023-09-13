@@ -39,7 +39,7 @@ namespace yart
             static SkyType items_LUT[items_size] = { SkyType::SOLID_COLOR, SkyType::GRADIENT, SkyType::CUBEMAP };
 
             static int selected_item = static_cast<uint8_t>(target.m_skyType);
-            if (GUI::ComboHeader("Sky type", items, items_size, &selected_item)) 
+            if (GUI::ComboHeader("Sky type", items, items_size, &selected_item, false)) 
                 made_changes = true;
 
 
@@ -64,12 +64,30 @@ namespace yart
             }
             case SkyType::CUBEMAP: {
                 RES::CubeMap* cubemap = RES::GetResourceByID<RES::CubeMap>(target.m_skyCubeMap);
+                RES::InterpolationType current_interpolator = cubemap->GetInterpolationType();
+                bool interpolate = (current_interpolator != RES::InterpolationType::NEAREST);
+                static RES::InterpolationType prev_interpolator = interpolate ? current_interpolator : RES::InterpolationType::BILINEAR;
 
-                bool interpolation = (cubemap->GetInterpolationType() == RES::InterpolationType::BILINEAR);
-                if (GUI::CheckBox("Interpolate", &interpolation)) {
-                    cubemap->SetInterpolationType(interpolation ? RES::InterpolationType::BILINEAR : RES::InterpolationType::NEAREST);
+                if (GUI::CheckBox("Interpolate skybox", &interpolate)) {
+                    cubemap->SetInterpolationType(interpolate ? prev_interpolator : RES::InterpolationType::NEAREST);
                     made_changes = true;
                 }
+
+                if (!interpolate)
+                    ImGui::BeginDisabled();
+
+                static const size_t interpolators_count = 2;
+                static const char* interpolators[interpolators_count] =                { "Bilinear",                       "Bicubic"                       };
+                static RES::InterpolationType interpolators_LUT[interpolators_count] = { RES::InterpolationType::BILINEAR, RES::InterpolationType::BICUBIC };
+
+                int selected_interpolator = static_cast<int>(prev_interpolator) - static_cast<int>(RES::InterpolationType::BILINEAR);
+                if (GUI::ComboHeader("Interpolation type", interpolators, interpolators_count, &selected_interpolator)) {
+                    cubemap->SetInterpolationType(interpolators_LUT[selected_interpolator]);
+                    prev_interpolator = interpolators_LUT[selected_interpolator];
+                }
+
+                if (!interpolate)
+                    ImGui::EndDisabled();
 
                 break;
             }

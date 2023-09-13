@@ -29,7 +29,10 @@ namespace yart
         /// @brief Enumeration of possible image interpolation strategies
         enum class InterpolationType : uint8_t {
             NEAREST = 0, /// @brief Perform nearest neighbour interpolation
-            BILINEAR     /// @brief Perform bilinear interpolation
+            BILINEAR,    /// @brief Perform bilinear interpolation
+            BICUBIC,     /// @brief Perform bicubic interpolation
+            COUNT
+
         };
 
 
