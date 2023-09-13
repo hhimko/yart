@@ -75,6 +75,9 @@ namespace yart
         /// @return Color of the image at the sample point
         glm::vec3 SampleImageNorm(const Image* image, float u, float v, InterpolationType interpolation = InterpolationType::NEAREST);
 
+
+        void GetImageKernelWindow(const Image* image, float* buffer, int x, int y, int kernel_size);
+
         /// @brief Destroy a given image object
         /// @param image Result of RES::LoadImageFromFile()
         void DestroyImage(Image* image);

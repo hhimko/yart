@@ -78,10 +78,7 @@ namespace yart
         }
 
         /// @brief Bilinearly interpolate between 4 values
-        /// @param p00 Lower-left corner value, favored by tx=0, ty=0
-        /// @param p10 Lower-right corner value, favored by tx=1, ty=0
-        /// @param p01 Upper-left corner value, favored by tx=0, ty=1
-        /// @param p11 Upper-right corner value, favored by tx=1, ty=1
+        /// @param values A 2x2 kernel of color values to interpolate, starting at the upper-left corner and going column-first to the bottom-right corner
         /// @param tx Horizontal interpolation variable
         /// @param ty Vertical interpolation variable
         /// @tparam L Integer between 1 and 4 included that qualify the dimension of the vector
@@ -89,12 +86,47 @@ namespace yart
         /// @tparam Q Value from qualifier enum
         /// @return Bilinear interpolation result
         template<glm::length_t L, typename T, glm::qualifier Q>
-        GLM_FUNC_QUALIFIER glm::vec<L, T, Q> InterpolateBilinear(
-            const glm::vec<L, T, Q>& p00, const glm::vec<L, T, Q>& p10, const glm::vec<L, T, Q>& p01, const glm::vec<L, T, Q>& p11, float tx, float ty
-        ) {
-            glm::vec<L, T, Q> a = p00 * (1.0f - tx) + p10 * tx;
-            glm::vec<L, T, Q> b = p01 * (1.0f - tx) + p11 * tx;
+        GLM_FUNC_QUALIFIER glm::vec<L, T, Q> InterpolateBilinear(const glm::vec<L, T, Q> values[2*2], float tx, float ty) 
+        {
+            glm::vec<L, T, Q> a = values[0] * (1.0f - tx) + values[1] * tx;
+            glm::vec<L, T, Q> b = values[2] * (1.0f - tx) + values[3] * tx;
             return a * (1.0f - ty) + b * ty;
+        }
+
+        /// @brief Interpolate between 16 values using bicubic interpolation
+        /// @param values A 4x4 kernel of color values to interpolate, starting at the upper-left corner and going column-first to the bottom-right corner
+        /// @param tx Horizontal interpolation variable
+        /// @param ty Vertical interpolation variable
+        /// @tparam L Integer between 1 and 4 included that qualify the dimension of the vector
+        /// @tparam T Floating-point scalar types
+        /// @tparam Q Value from qualifier enum
+        /// @return Bilinear interpolation result
+        template<glm::length_t L, typename T, glm::qualifier Q>
+        GLM_FUNC_QUALIFIER glm::vec<L, T, Q> InterpolateBicubic(const glm::vec<L, T, Q> values[4*4], float tx, float ty) 
+        {
+            using vecT = glm::vec<L, T, Q>;
+
+            static class Helper {
+            public:
+                static vecT ComputeCubic(const vecT v0, const vecT v1, const vecT v2, const vecT v3, float t)
+                {
+                    return (v1 + (T)0.5 * t * (
+                        v2 - v0 + t * (
+                            (T)2.0 * v0 - (T)5.0 * v1 + (T)4.0 * v2 - v3 + t * (
+                                (T)3.0 * (v1 - v2) + v3 - v0
+                            )
+                        )
+                    ));
+                }
+
+            };
+
+            const vecT v0 = Helper::ComputeCubic(values[0 + 0], values[0 + 4], values[0 + 8], values[0 + 12], ty);
+            const vecT v1 = Helper::ComputeCubic(values[1 + 0], values[1 + 4], values[1 + 8], values[1 + 12], ty);
+            const vecT v2 = Helper::ComputeCubic(values[2 + 0], values[2 + 4], values[2 + 8], values[2 + 12], ty);
+            const vecT v3 = Helper::ComputeCubic(values[3 + 0], values[3 + 4], values[3 + 8], values[3 + 12], ty);
+
+            return Helper::ComputeCubic(v0, v1, v2, v3, tx);
         }
 
         /// @brief Compute a linearly interpolated gradient from an equally spaced array of values

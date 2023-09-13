@@ -84,6 +84,7 @@ namespace yart
                 if (GUI::ComboHeader("Interpolation type", interpolators, interpolators_count, &selected_interpolator)) {
                     cubemap->SetInterpolationType(interpolators_LUT[selected_interpolator]);
                     prev_interpolator = interpolators_LUT[selected_interpolator];
+                    made_changes = true;
                 }
 
                 if (!interpolate)
