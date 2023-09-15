@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @file
-/// @brief Definition of the platform specific Viewport class implemented for Vulkan
+/// @brief Definition of the Viewport class
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
@@ -10,9 +10,8 @@
 
 #include <imgui.h>
 
-#include "image.h"
 
-
+#if 0
 namespace yart
 {
     // Forward declaration for friend functions
@@ -20,46 +19,42 @@ namespace yart
     
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-    /// @brief Window viewport for rendering images onto
+    /// @brief Wrapper around a GPU texture for a writeable canvas-like structure 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     class Viewport {
     public:
-        /// @brief Create a new viewport from a given window
-        /// @param width Width of the viewport image in pixels
-        /// @param height Height of the viewport image in pixels
+        /// @brief Create a new viewport of a given size
+        /// @param width Width of the viewport image in display-space pixels
+        /// @param height Height of the viewport image in display-space pixels
         Viewport(uint32_t width, uint32_t height);
+
+        /// @brief Create a new viewport of a given size
+        /// @param width Width of the viewport image in display-space pixels
+        /// @param height Height of the viewport image in display-space pixels
+        /// @param scale Scale down factor of the underlying image
+        Viewport(uint32_t width, uint32_t height, uint8_t scale);
+
         ~Viewport();
 
-        /// @brief Get the current size of the viewport image in pixels
-        /// @param width Pointer to a variable to be set with the width of the viewport image or NULL
-        /// @param height Pointer to a variable to be set with the height of the viewport image or NULL
-        void GetImageSize(uint32_t* width, uint32_t* height);
+        /// @brief Get the current size of the viewport image in display-space pixels
+        /// @return The current size of the unscaled viewport image
+        ImVec2 GetImageSizeUnscaled();
 
-        /// @brief Resize the viewport
-        /// @param size New viewport size in pixels
+        /// @brief Get the current size of the underlying viewport image pixels
+        /// @return The current size of the scaled viewport image
+        ImVec2 GetImageSizeScaled();
+
+        /// @brief Set the scale down factor of the underlying image
         /// @param scale New viewport scaling factor
-        void Resize(ImVec2 size, int scale);
+        void SetImageScale(int scale);
 
         /// @brief Resize the viewport and keep the current scaling factor
         /// @param size New viewport size in pixels
         void Resize(ImVec2 size);
 
-        /// @brief Render the viewport image onto a Dear ImGui draw list
+        /// @brief Get the viewport's image Dear ImGui's texture ID
         /// @param draw_list Dear ImGui draw list to render to 
-        void Render(ImDrawList* draw_list);
-
-        /// @brief Set the viewport render position
-        /// @param pos New position in pixel coordinates
-        void SetPosition(ImVec2 pos) {
-            m_position = pos;
-        }
-
-        /// @brief Set the viewport's image scale factor
-        /// @param scale New image scale factor
-        void SetScale(int scale) {
-            m_imageScale = scale;
-            m_shouldResize = true;
-        }
+        ImTextureID GetImTextureID();
 
         /// @brief Set an internal flag to make sure the viewport image gets refreshed before the next render command
         /// @details Should be used when the image pixels have changed since the last Viewport::Render(), but the viewport size has not 
@@ -83,19 +78,13 @@ namespace yart
         /// @brief Apply changes made to the image data and update the underlying viewport image
         void Refresh();
 
-        /// @brief Issue Dear ImGui render commands to render the Viewport object context menu
-        /// @returns Whether any changes were made by the user since the last frame
-        bool OnImGui();
-
     private:
-        yart::Image m_image;
+        // yart::Image m_image;
         float* m_imageData = nullptr;
 
-        ImVec2 m_position = { 0.0f, 0.0f }; // Render position in screen pixel coordinates
         uint32_t m_imageWidth;  // Original width of the image (does not take image scale into account)
         uint32_t m_imageHeight; // Original height of the image (does not take image scale into account)
-        int m_imageScale = 1; // Should only ever be in the [1, +inf) range
-        bool m_shouldResize = false;
+        uint8_t m_imageScale = 1; // Should only ever be in the [1, +inf) range
         bool m_shouldRefresh = true;
 
 
@@ -105,3 +94,4 @@ namespace yart
     };
     
 } // namespace yart
+#endif

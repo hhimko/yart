@@ -36,7 +36,7 @@ namespace yart
             *height = m_imageHeight / m_imageScale;
     }
 
-    void Viewport::Render(ImDrawList *draw_list)
+    void Viewport::Render(ImDrawList* draw_list)
     {
         if (m_shouldRefresh)
             Refresh();
