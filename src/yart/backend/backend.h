@@ -18,6 +18,42 @@ namespace yart
         /// @brief Backend event handler callback type 
         using event_callback_t = std::function<void()>;
 
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        /// @brief Pure virtual Image base class, for managing and uploading 2D textures to the GPU  
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        class Image {
+        public:
+            /// @brief Upload and bind pixel data to the image  
+            /// @param data Pointer to pixel array to upload and bind. The size of the array must be equal to `(width * height * 4)`, 
+            ///     where 4 is the number of channels in the image (RGBA)
+            virtual void BindData(const void* data) = 0;
+
+            /// @brief Rebuild the image, without uploading and binding pixel data
+            /// @param width New image width in texels
+            /// @param height New image height in texels
+            virtual void Resize(uint32_t width, uint32_t height) = 0;
+
+            /// @brief Rebuild the image, with uploading and binding pixel data
+            /// @param width New image width in texels
+            /// @param height New image height in texels
+            /// @param data Pointer to pixel array to upload and bind. The size of the array must be equal to `(width * height * 4)`, 
+            ///     where 4 is the number of channels in the image (RGBA)
+            virtual void Resize(uint32_t width, uint32_t height, const void* data) = 0;
+
+            /// @brief Get the image ID, used by Dear ImGui for differentiating GPU textures
+            /// @return Dear ImGui's `ImTextureID` for this image
+            virtual ImTextureID GetImTextureID() const = 0;
+
+        private:
+            /// @brief Image destructor
+            virtual ~Image() = 0;
+
+        };
+
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        /// Backend module public API interface functions 
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
 
         /// @brief Initialize and open a backend window
         /// @param window_title Initial window title
@@ -56,6 +92,23 @@ namespace yart
         /// @brief Terminate the backend window and perform a resource cleanup
         /// @note This method is safe to be called even if the window has not been initialized successfully
         void Close();
+
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        /// Image class factory functions
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        /// @brief Allocate a new image without uploading and binding pixel data 
+        /// @param width Initial image width in texels
+        /// @param height Initial image height in texels
+        Image* CreateImage(uint32_t width, uint32_t height);
+
+        /// @brief Allocate a new image and upload and bind initial pixel data 
+        /// @param width Initial image width in texels
+        /// @param height Initial image height in texels
+        /// @param data Pointer to pixel array to upload and bind. The size of the array must be equal to `(width * height * 4)`,
+        ///     where 4 is the number of channels in the image (RGBA)
+        Image* CreateImage(uint32_t width, uint32_t height, const void* data);
 
     } // namespace Backend
 } // namespace yart
