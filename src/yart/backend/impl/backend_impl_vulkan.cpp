@@ -1,3 +1,8 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file
+/// @brief Backend module implementation for Vulkan and GLFW  
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #include "backend_impl_vulkan.h"
 
 
@@ -41,18 +46,27 @@ namespace yart
 {
     bool Backend::Init(const char* window_title, uint32_t window_width, uint32_t window_height)
     {
-        if (!InitGLFW(window_title, window_width, window_height)) {
+        bool success = true;
+
+        if (success && !InitGLFW(window_title, window_width, window_height)) {
             YART_LOG_ERR("Failed to initialize GLFW\n");
-            return false;
+            success = false;
         }
 
-        if (!InitVulkan()) {
+        if (success && !InitVulkan()) {
             YART_LOG_ERR("Failed to initialize Vulkan\n");
-            return false;
+            success = false;
         }
 
-        if (!InitImGui()) {
+        if (success && !InitImGui()) {
             YART_LOG_ERR("Failed to initialize Dear ImGui\n");
+            success = false;
+        }
+
+
+        if (!success) {
+            // Terminate and clean up just in case
+            Backend::Close();
             return false;
         }
 
@@ -76,7 +90,24 @@ namespace yart
         BackendContext& ctx = GetBackendContext();
         ctx.onWindowCloseCallback = callback;
     }
-    
+
+    ImVec2 Backend::GetMousePos()
+    {
+        BackendContext& ctx = GetBackendContext();
+
+        double x, y;
+        glfwGetCursorPos(ctx.window, &x, &y);
+
+        return { static_cast<float>(x), static_cast<float>(y) };
+    }
+
+    void Backend::SetMousePos(const ImVec2& pos)
+    {
+        BackendContext& ctx = GetBackendContext();
+
+        glfwSetCursorPos(ctx.window, static_cast<double>(pos.x), static_cast<double>(pos.y));
+    }
+
     void Backend::PollEvents()
     {
         glfwPollEvents();
@@ -127,6 +158,9 @@ namespace yart
 
     void Backend::Close()
     {
+        // Perform Vulkan/GLFW cleanup
+        Cleanup();
+
         // Clear the context data
         BackendContext& ctx = GetBackendContext();
         memset(&ctx, 0, sizeof(BackendContext));
@@ -919,6 +953,35 @@ namespace yart
             YART_ABORT("VULKAN: Failed to create swapchain frames in flight");
 
         ctx.currentFrameInFlightIndex = 0;
+    }
+
+    void Backend::Cleanup()
+    {
+        BackendContext& ctx = GetBackendContext();
+
+        // Wait for the GPU to finish execution 
+        VkResult res = vkDeviceWaitIdle(ctx.vkDevice);
+        CHECK_VK_RESULT_ABORT(res);
+
+        // Release all swapchain related objects
+        ctx.swapchainLT.Release();
+        if (ctx.vkSwapchain != VK_NULL_HANDLE)
+            vkDestroySwapchainKHR(ctx.vkDevice, ctx.vkSwapchain, DEFAULT_VK_ALLOC);
+
+        // Release viewport image
+        // m_viewport->m_image.Release(m_vkDevice);
+
+        // Release ImGui pipeline objects
+        ImGui_ImplVulkan_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
+
+        // Unwind all allocations from the LTStack
+        ctx.LT.Release();
+
+        // Quit GLFW
+        glfwDestroyWindow(ctx.window);
+        glfwTerminate();
     }
 
 } // namespace yart

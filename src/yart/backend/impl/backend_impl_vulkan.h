@@ -1,3 +1,8 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file
+/// @brief Backend module implementation for Vulkan and GLFW  
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 
 
@@ -216,6 +221,10 @@ namespace yart
         /// @param width Swapchain image extent width 
         /// @param height Swapchain image extent height
         void WindowResize(uint32_t width, uint32_t height);
+
+        /// @brief Wait for the GPU and destroy all allocated members
+        /// @note It is safe to call this function without prior initialization
+        void Cleanup();
 
     } // namespace Backend
 } // namespace yart

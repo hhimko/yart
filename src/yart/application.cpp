@@ -42,7 +42,7 @@ namespace yart
             yart::Backend::PollEvents();
 
             // Handle user input
-            yart::Input::Update();
+            yart::GUI::Input::Update();
             m_shouldRefresh |= yart::GUI::RendererView::HandleInputs(m_renderer);
 
             // Ray trace the scene on CPU onto the viewport image buffer
@@ -61,6 +61,7 @@ namespace yart
             yart::Backend::Render();
         }
 
+        yart::Backend::Close();
         return EXIT_SUCCESS;
     }
 
@@ -71,7 +72,8 @@ namespace yart
         yart::Backend::SetRenderCallback(std::bind(&yart::Application::OnRender, this));
         yart::Backend::SetWindowCloseCallback(std::bind(&yart::Application::Shutdown, this));
 
-        yart::Backend::Init(InDebugMode() ? YART_WINDOW_TITLE_DEBUG : YART_WINDOW_TITLE, YART_WINDOW_WIDTH, YART_WINDOW_HEIGHT);
+        if (!yart::Backend::Init(InDebugMode() ? YART_WINDOW_TITLE_DEBUG : YART_WINDOW_TITLE, YART_WINDOW_WIDTH, YART_WINDOW_HEIGHT))
+            return false;
 
         return true;
     }

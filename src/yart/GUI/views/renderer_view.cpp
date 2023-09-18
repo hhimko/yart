@@ -6,8 +6,8 @@
 #include "renderer_view.h"
 
 
-#include "yart/platform/input.h"
 #include "yart/core/renderer.h"
+#include "yart/GUI/input.h"
 #include "yart/GUI/gui.h"
 
 
@@ -58,14 +58,14 @@ namespace yart
 
             // -- TRANSLATION -- //
             // Forward/backward movement
-            float vertical_speed = yart::Input::GetVerticalAxis();
+            float vertical_speed = yart::GUI::Input::GetVerticalAxis();
             if (vertical_speed != 0) {
                 target.m_cameraPosition += target.m_cameraLookDirection * vertical_speed * s_cameraMoveSpeed;
                 made_changes = true;
             }
 
             // Side-to-side movement
-            float horizontal_speed = yart::Input::GetHorizontalAxis();
+            float horizontal_speed = yart::GUI::Input::GetHorizontalAxis();
             if (horizontal_speed != 0) {
                 const glm::vec3 u = -glm::normalize(glm::cross(target.m_cameraLookDirection, target.UP_DIRECTION)); // Camera view horizontal (right) direction vector
                 target.m_cameraPosition += u * horizontal_speed * s_cameraMoveSpeed;
@@ -83,8 +83,8 @@ namespace yart
 
             // -- ROTATION -- //
             if (GUI::IsMouseOverRenderViewport() && ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
-                yart::Input::SetCursorLocked(true); // Lock and hide the cursor
-                ImVec2 mouse_delta = yart::Input::GetMouseMoveDelta();
+                yart::GUI::Input::SetCursorLocked(true); // Lock and hide the cursor
+                ImVec2 mouse_delta = yart::GUI::Input::GetMouseMoveDelta();
 
                 if (mouse_delta.x != 0 || mouse_delta.y != 0) {
                     target.m_cameraYaw -= mouse_delta.x * 0.01f;
@@ -100,7 +100,7 @@ namespace yart
             return made_changes;
         }
 
-        bool RendererView::RenderCameraSection(yart::Renderer &target)
+        bool RendererView::RenderCameraSection(yart::Renderer& target)
         {
             bool made_changes = false;
 

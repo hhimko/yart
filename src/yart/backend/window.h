@@ -190,7 +190,7 @@ namespace yart
         friend yart::Viewport::Viewport(uint32_t width, uint32_t height);
         friend void yart::Viewport::Resize(ImVec2 size, int scale);
         friend void yart::Viewport::Refresh();
-        friend class yart::Input; // yart::Input implementation depends on GLFWwindow instance to handle OS events
+        friend class yart::GUI::Input; // yart::Input implementation depends on GLFWwindow instance to handle OS events
 
     };
 } // namespace yart

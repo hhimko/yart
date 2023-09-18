@@ -810,7 +810,7 @@ namespace yart
         ImGui::RenderNavHighlight(frame_bb, id);
         made_changes |= ImGui::DragBehavior(id, data_type, p_val, 1.0f, p_min, p_max, format, ImGuiSliderFlags_AlwaysClamp);
         if (g->ActiveId == id)
-            Input::SetCursorLocked();
+            yart::GUI::Input::SetCursorLocked();
 
         return made_changes;
     }
