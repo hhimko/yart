@@ -11,15 +11,15 @@
 
 namespace yart
 {
-    // yart::Application forward reference to avoid circular refs
-    class Application;
-
-
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     /// @brief Singleton class for handling user input 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     class Input {
     public:
+        /// @brief Update the input system
+        /// @note This method should be called once every frame
+        static void Update();
+
         // -- KEYBOARD CONTROLS -- //
 
         /// @brief Get the current frame horizontal velocity value mapped to arrow keys 
@@ -44,15 +44,6 @@ namespace yart
         /// @brief Get the amount of screen pixels the mouse cursor has moved since the previous frame
         /// @return Vector containing the amount of pixels moved
         static ImVec2 GetMouseMoveDelta();
-
-    private:
-        /// @brief Update the input system
-        /// @note This method should be called once every frame
-        static void Update();
-
-
-        // -- FRIEND DECLARATIONS -- // 
-        friend class yart::Application;
 
     };
 } // namespace yart

@@ -18,7 +18,7 @@
 
 #include "utils/platform_utils.h"
 #include "viewport.h"
-#include "input.h"
+#include "yart/GUI/input.h"
 
 
 namespace yart

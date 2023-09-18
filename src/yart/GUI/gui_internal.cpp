@@ -11,8 +11,8 @@
 
 #include "yart/core/utils/glm_utils.h"
 #include "yart/core/utils/yart_utils.h"
-#include "yart/platform/input.h"
 #include "font/IconsCodicons.h"
+#include "input.h"
 
 
 /// @brief Helper macro useful for opening `break`-able context scopes
