@@ -211,6 +211,11 @@ namespace yart
             uint32_t currentSemaphoreIndex = 0;
             bool shouldRebuildSwapchain = false;
 
+            // -- IMAGE SAMPLERS -- //
+            VkSampler vkSampler_Nearest = VK_NULL_HANDLE;
+            VkSampler vkSampler_Linear = VK_NULL_HANDLE;
+            VkSampler vkSampler_Cubic = VK_NULL_HANDLE;
+
             // -- EVENT CALLBACKS -- //
             event_callback_t onDearImGuiSetupCallback = nullptr;
             event_callback_t onRenderCallback = nullptr;
@@ -357,6 +362,9 @@ namespace yart
         /// @param width Swapchain image extent width 
         /// @param height Swapchain image extent height
         void WindowResize(uint32_t width, uint32_t height);
+
+
+        VkSampler CreateVulkanSampler(VkDevice device, ImageSampler sampler);
 
         /// @brief Get a Vulkan sampler from a given `Backend::ImageSampler`
         /// @param sampler Backend module image sampler type

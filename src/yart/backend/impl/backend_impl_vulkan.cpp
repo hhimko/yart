@@ -1268,14 +1268,72 @@ namespace yart
 
         // Create frame in flight objects 
         if (!CreateSwapchainFramesInFlight())
-            YART_ABORT("VULKAN: Failed to create swapchain frames in flight");
+            YART_ABORT("VULKAN: Failed to create swapchain frames in flight\n");
 
         ctx.currentFrameInFlightIndex = 0;
     }
 
+    VkSampler Backend::CreateVulkanSampler(VkDevice device, ImageSampler sampler)
+    {
+        VkSampler vk_sampler = VK_NULL_HANDLE;
+
+        VkFilter filter = (VkFilter)0;
+        switch (sampler) {
+        case ImageSampler::NEAREST:  filter = VK_FILTER_NEAREST; break;
+        case ImageSampler::BILINEAR: filter = VK_FILTER_LINEAR; break;
+        case ImageSampler::BICUBIC:  filter = VK_FILTER_CUBIC_IMG; break;
+        case ImageSampler::COUNT:
+        default:
+            YART_ABORT("Unknown ImageSampler value passed to `Backend::CreateVulkanSampler`\n");
+        }
+
+        VkSamplerCreateInfo sampler_ci = {};
+        sampler_ci.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        sampler_ci.magFilter = filter;
+        sampler_ci.minFilter = filter;
+        sampler_ci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+        sampler_ci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        sampler_ci.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        sampler_ci.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        sampler_ci.minLod = -1000;
+        sampler_ci.maxLod = 1000;
+        sampler_ci.maxAnisotropy = 1.0f;
+
+        VkResult res = vkCreateSampler(device, &sampler_ci, DEFAULT_VK_ALLOC, &vk_sampler);
+        CHECK_VK_RESULT_RETURN(res, VK_NULL_HANDLE);
+
+        return vk_sampler;
+    }
+
     VkSampler Backend::GetVulkanSampler(ImageSampler sampler)
     {
-        return VkSampler();
+        BackendContext& ctx = GetBackendContext();
+
+        VkSampler* vk_sampler = nullptr;
+        switch (sampler) {
+        case ImageSampler::NEAREST:  vk_sampler = &ctx.vkSampler_Nearest; break;
+        case ImageSampler::BILINEAR: vk_sampler = &ctx.vkSampler_Linear; break;
+        case ImageSampler::BICUBIC:  vk_sampler = &ctx.vkSampler_Cubic; break;
+        case ImageSampler::COUNT:
+        default:
+            YART_ABORT("Unknown ImageSampler value passed to `Backend::GetVulkanSampler`\n");
+        }
+
+        // Sanity check
+        YART_ASSERT(vk_sampler != nullptr);
+        
+        // The samplers are lazily initialized until the first usage
+        if (*vk_sampler == VK_NULL_HANDLE) {
+            *vk_sampler = CreateVulkanSampler(ctx.vkDevice, sampler);
+            if (*vk_sampler == VK_NULL_HANDLE)
+                YART_ABORT("Failed to create a Vulkan sampler\n");
+
+            ctx.LT.Push<VkSampler>(*vk_sampler, [&](VkSampler var){
+                vkDestroySampler(ctx.vkDevice, var, DEFAULT_VK_ALLOC);
+            });
+        }
+
+        return *vk_sampler;
     }
 
     void Backend::Cleanup()
