@@ -13,7 +13,7 @@
 #include <backends/imgui_impl_vulkan.h> // Renderer backend
 #include <vulkan/vulkan.h>
 
-#include "yart/backend/utils/platform_utils.h"
+#include "yart/backend/utils/backend_utils.h"
 #include "yart/backend/backend.h"
 
 
@@ -27,8 +27,143 @@ namespace yart
 {
     namespace Backend
     {
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        /// @brief Image class implementation for Vulkan, for managing and uploading 2D textures to the GPU  
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        class VulkanImage : public Image {
+        public:
+            /// @brief VulkanImage class destructor
+            ~VulkanImage();
+
+            /// @brief Upload and bind pixel data to the image  
+            /// @param data Pointer to pixel array to upload and bind. The size of the array must be equal to `(width * height * channels)`,
+            ///     where `channels` is the number of channels in the image, based on the image format used
+            void BindData(const void* data) override;
+
+            /// @brief Rebuild the image for a new given size
+            /// @param width New image width in texels
+            /// @param height New image height in texels
+            /// @warning Rebuilding essentially leads to the loss of previously bound image data, so Image::BindData() has to be called after the resize
+            void Resize(uint32_t width, uint32_t height) override;
+
+            /// @brief Set the image sampler type used for interpolation
+            /// @param sampler New sampler type 
+            void SetSampler(ImageSampler sampler) override;
+
+            /// @brief Get the image ID, used by Dear ImGui for differentiating GPU textures
+            /// @return Dear ImGui's `ImTextureID` for this image
+            ImTextureID GetImTextureID() const override
+            {
+                return static_cast<ImTextureID>(m_vkDescriptorSet);
+            }
+        
+        private:
+            /// @brief Construct a new image implemented for Vulkan, without uploading and binding pixel data 
+            /// @param width Initial image width in texels
+            /// @param height Initial image height in texels
+            /// @param format Image format from the `ImageFormat` enum
+            /// @param sampler Image sampler used for interpolation from the `ImageSampler` enum
+            VulkanImage(uint32_t width, uint32_t height, ImageFormat format, ImageSampler sampler = ImageSampler::NEAREST);
+
+            /// @brief Construct a new image implemented for Vulkan, and upload and bind initial pixel data 
+            /// @param width Initial image width in texels
+            /// @param height Initial image height in texels
+            /// @param data Pointer to pixel array to upload and bind. The size of the array must be equal to `(width * height * channels)`,
+            ///     where `channels` is the number of channels in the image, based on the image format used
+            /// @param format Image format from the `ImageFormat` enum
+            /// @param sampler Image sampler used for interpolation from the `ImageSampler` enum
+            VulkanImage(uint32_t width, uint32_t height, const void* data, ImageFormat format, ImageSampler sampler = ImageSampler::NEAREST);
+
+            /// @brief Release all Vulkan allocations made by this object
+            /// @warning VulkanImage::Release() stalls CPU execution until the GPU is idle
+            void Release();
+
+            static constexpr VkFormat GetVulkanFormatFromImageFormat(ImageFormat format)
+            {
+                switch (format) {
+                case ImageFormat::R32G32B32A32_FLOAT: return VK_FORMAT_R32G32B32A32_SFLOAT;
+                case ImageFormat::COUNT:
+                default:
+                    YART_ABORT("Unknown ImageFormat value passed to `Backend::VulkanImage::GetVulkanFormatFromImageFormat`\n");
+                }
+
+                YART_UNREACHABLE();
+                return (VkFormat)0;
+            }
+
+            // -- DESCRIPTOR SET CREATION -- //
+
+            /// @brief Create Vulkan's descriptor set for the image
+            void CreateDescriptorSet();
+
+            /// @brief Create a Vulkan's `VkImage` object
+            /// @param device Logical device on which to allocate the image
+            /// @param format Format of the image
+            /// @param width Width of the image
+            /// @param height Height of the image
+            /// @return `VkImage` handle or `VK_NULL_HANDLE` on failure
+            static VkImage CreateVulkanImage(VkDevice device, VkFormat format, uint32_t width, uint32_t height);
+
+            /// @brief Allocate and bind device memory for a Vulkan image
+            /// @param device Logical device on which to allocate memory 
+            /// @param physical_device Physical device used for querying memory type availability
+            /// @param image Vulkan's `VkImage` handle
+            /// @return `VkDeviceMemory` handle or `VK_NULL_HANDLE` on failure
+            static VkDeviceMemory BindVulkanImageDeviceMemory(VkDevice device, VkPhysicalDevice physical_device, VkImage image);
+
+            /// @brief Create a staging buffer for uploading image data to the device memory
+            /// @param device Logical device on which to allocate the buffer 
+            /// @param buffer_size Size of the buffer in bytes
+            /// @return `VkBuffer` handle or `VK_NULL_HANDLE` on failure
+            static VkBuffer CreateVulkanStagingBuffer(VkDevice device, VkDeviceSize buffer_size);
+
+            /// @brief Allocate and bind device memory for a Vulkan buffer
+            /// @param device Logical device on which to allocate memory 
+            /// @param physical_device Physical device used for querying memory type availability
+            /// @param buffer Vulkan's `VkBuffer` handle
+            /// @return `VkDeviceMemory` handle or `VK_NULL_HANDLE` on failure
+            static VkDeviceMemory BindVulkanBufferMemory(VkDevice device, VkPhysicalDevice physical_device, VkBuffer buffer);
+
+            // -- GPU MEMORY BINDING -- //
+
+            /// @brief Upload image data to a device staging buffer
+            /// @param device Logical device handle on which the staging buffer was allocated
+            /// @param staging_buffer_memory Staging buffer memory range to be mapped with the image data
+            /// @param data Image data array
+            /// @param data_size Size of the `data` array in bytes. Should to be equal to `(width * height * channels)`,
+            ///     where `channels` is the number of channels in the image, based on the image format used
+            /// @return Whether the data has been successfully uploaded to the staging buffer
+            static bool UploadDataToStagingBuffer(VkDevice device, VkDeviceMemory staging_buffer_memory, const void* data, VkDeviceSize data_size);
+
+            /// @brief Upload the staging buffer contents to Vulkan's `VkImage`
+            /// @param device Logical device handle on which the staging buffer was allocated
+            /// @param command_pool Vulkan's `VkCommandPool` handle used for submitting copy commands
+            /// @param queue Logical device's graphics queue
+            /// @param buffer Staging buffer from which to copy data
+            /// @param image Vulkan's `VkImage` handle
+            /// @param width Current image width in texels
+            /// @param height Current image height in texels
+            /// @return Whether the staging buffer data has been successfully copied to the GPU image
+            static bool CopyStagingBufferToImage(VkDevice device, VkCommandPool command_pool, VkQueue queue, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+
+        private:
+            VkDescriptorSet m_vkDescriptorSet = VK_NULL_HANDLE;
+            VkImage m_vkImage = VK_NULL_HANDLE;
+            VkDeviceMemory m_vkDeviceMemory = VK_NULL_HANDLE;
+            VkImageView m_vkImageView = VK_NULL_HANDLE;
+            VkBuffer m_vkStagingBuffer = VK_NULL_HANDLE;
+            VkDeviceMemory m_vkStagingBufferMemory = VK_NULL_HANDLE;
+
+            // -- FRIEND DECLARATIONS -- //
+            friend yart::Backend::Image* CreateImage(uint32_t, uint32_t, ImageFormat, ImageSampler);
+            friend yart::Backend::Image* CreateImage(uint32_t, uint32_t, const void*, ImageFormat, ImageSampler);
+
+        };
+
+
         /// @brief Container for per frame-in-flight related data
         struct FrameInFlight {
+        public:
             FrameInFlight() = default;
 
             VkFramebuffer vkFrameBuffer = VK_NULL_HANDLE;
@@ -47,6 +182,7 @@ namespace yart
 
         /// @brief Context struct for the Backend module Vulkan/GLFW implementation
         struct BackendContext {
+        public:
             utils::LTStack LT;
             utils::LTStack swapchainLT;
             std::unique_ptr<FrameInFlight[]> framesInFlight = nullptr;
@@ -221,6 +357,11 @@ namespace yart
         /// @param width Swapchain image extent width 
         /// @param height Swapchain image extent height
         void WindowResize(uint32_t width, uint32_t height);
+
+        /// @brief Get a Vulkan sampler from a given `Backend::ImageSampler`
+        /// @param sampler Backend module image sampler type
+        /// @return Vulkan's `VkSampler` handle 
+        VkSampler GetVulkanSampler(ImageSampler sampler);
 
         /// @brief Wait for the GPU and destroy all allocated members
         /// @note It is safe to call this function without prior initialization

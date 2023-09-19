@@ -935,7 +935,7 @@ namespace yart
             vkDestroySwapchainKHR(m_vkDevice, m_vkSwapchain, DEFAULT_VK_ALLOC);
 
         // Release viewport image
-        m_viewport->m_image.Release(m_vkDevice);
+        // m_viewport->m_image.Release(m_vkDevice);
 
         // Release ImGui pipeline objects
         ImGui_ImplVulkan_Shutdown();

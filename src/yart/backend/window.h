@@ -16,7 +16,7 @@
 #include <backends/imgui_impl_glfw.h> // Platform backend
 #include <backends/imgui_impl_vulkan.h> // Renderer backend
 
-#include "utils/platform_utils.h"
+#include "utils/backend_utils.h"
 #include "viewport.h"
 #include "yart/GUI/input.h"
 

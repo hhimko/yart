@@ -473,9 +473,6 @@ namespace yart
         if (picker_popup_window && g->ActiveId != 0 && g->ActiveIdWindow == picker_popup_window)
             g->LastItemData.ID = g->ActiveId;
 
-        if (made_changes && id != 0)
-            ImGui::MarkItemEdited(id);
-
         ImGui::RenderNavHighlight(frame_bb, id);
         return made_changes;
     }

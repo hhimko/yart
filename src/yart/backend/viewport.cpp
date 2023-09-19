@@ -13,7 +13,7 @@
 namespace yart
 {
     Viewport::Viewport(uint32_t width, uint32_t height)
-        : m_image(yart::Window::Get().m_vkDevice, yart::Window::Get().m_vkPhysicalDevice, yart::Window::Get().m_viewportImageSampler, width, height)
+        // : m_image(yart::Window::Get().m_vkDevice, yart::Window::Get().m_vkPhysicalDevice, yart::Window::Get().m_viewportImageSampler, width, height)
     { 
         m_imageWidth = width; 
         m_imageHeight = height;
@@ -41,12 +41,12 @@ namespace yart
         if (m_shouldRefresh)
             Refresh();
 
-        ImTextureID viewport_image = (ImTextureID)m_image.GetDescriptorSet();
+        // ImTextureID viewport_image = (ImTextureID)m_image.GetDescriptorSet();
 
         const ImVec2 p_min = m_position;
         const ImVec2 p_max = { static_cast<float>(m_imageWidth) + m_position.x, static_cast<float>(m_imageHeight) + m_position.y };
 
-        draw_list->AddImage(viewport_image, p_min, p_max);
+        // draw_list->AddImage(viewport_image, p_min, p_max);
     }
 
     void Viewport::Resize(ImVec2 size, int scale)
@@ -68,7 +68,7 @@ namespace yart
         delete[] m_imageData;
         m_imageData = new float[scaled_width * scaled_height * 4];
 
-        m_image.Resize(window.m_vkDevice, window.m_vkPhysicalDevice, window.m_viewportImageSampler, scaled_width, scaled_height);
+        // m_image.Resize(window.m_vkDevice, window.m_vkPhysicalDevice, window.m_viewportImageSampler, scaled_width, scaled_height);
         m_shouldResize = false;
         m_shouldRefresh = true;
     }
@@ -83,7 +83,7 @@ namespace yart
         yart::Window& window = yart::Window::Get();
 
         VkCommandPool command_pool = window.m_framesInFlight[window.m_currentFrameInFlight].vkCommandPool;
-        m_image.BindData(window.m_vkDevice, command_pool, window.m_vkQueue, m_imageData);
+        // m_image.BindData(window.m_vkDevice, command_pool, window.m_vkQueue, m_imageData);
         m_shouldRefresh = false;
     }
 

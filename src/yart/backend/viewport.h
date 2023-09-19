@@ -10,7 +10,7 @@
 
 #include <imgui.h>
 
-#include "image.h"
+// #include "image.h"
 
 
 namespace yart
@@ -88,7 +88,7 @@ namespace yart
         bool OnImGui();
 
     private:
-        yart::Image m_image;
+        // yart::Image m_image;
         float* m_imageData = nullptr;
 
         ImVec2 m_position = { 0.0f, 0.0f }; // Render position in screen pixel coordinates

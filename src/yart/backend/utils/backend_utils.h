@@ -1,13 +1,13 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @file
-/// @brief Implementation of YART platform helper utility classes and macros
+/// @brief Implementation of YART backend module helper utility functions and macros
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
 
 #include <functional>
-#include <assert.h>
+#include <cassert>
 #include <vector>
 #include <cstdio>
 

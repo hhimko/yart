@@ -44,29 +44,332 @@ static void on_glfw_window_close(GLFWwindow* window)
 
 namespace yart
 {
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// VulkanImage implementation
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    void Backend::VulkanImage::BindData(const void* data)
+    {
+        BackendContext& ctx = GetBackendContext();
+        VkDeviceSize memory_size = static_cast<VkDeviceSize>(m_width * m_height * GetFormatSize());
+
+        if (!UploadDataToStagingBuffer(ctx.vkDevice, m_vkStagingBufferMemory, data, memory_size))
+            YART_ABORT("Failed to bind image pixel data");
+
+        VkCommandPool command_pool = ctx.framesInFlight[ctx.currentFrameInFlightIndex].vkCommandPool; // Use whichever command pool
+        if (!CopyStagingBufferToImage(ctx.vkDevice, command_pool, ctx.vkQueue, m_vkStagingBuffer, m_vkImage, m_width, m_height))
+            YART_ABORT("Failed to bind image pixel data");
+    }
+
+    void Backend::VulkanImage::Resize(uint32_t width, uint32_t height)
+    {
+        m_width = width;
+        m_height = height;
+
+        Release();
+        CreateDescriptorSet();
+    }
+
+    void Backend::VulkanImage::SetSampler(ImageSampler sampler)
+    {
+        if (sampler == m_sampler)
+            return;
+
+        m_sampler = sampler;
+
+        // Recreate the descriptor set with a new sampler
+        ImGui_ImplVulkan_RemoveTexture(m_vkDescriptorSet);
+
+        VkSampler vk_sampler = Backend::GetVulkanSampler(m_sampler);
+        m_vkDescriptorSet = ImGui_ImplVulkan_AddTexture(vk_sampler, m_vkImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        if (m_vkDescriptorSet == VK_NULL_HANDLE)
+            YART_ABORT("`ImGui_ImplVulkan_AddTexture()` failed to create a `VkDescriptorSet`\n");
+    }
+
+    Backend::VulkanImage::~VulkanImage()
+    {
+        Release();
+    }
+
+    Backend::VulkanImage::VulkanImage(uint32_t width, uint32_t height, ImageFormat format, ImageSampler sampler)
+        : Backend::Image(width, height, format, sampler)
+    {
+        CreateDescriptorSet();
+    }
+
+    Backend::VulkanImage::VulkanImage(uint32_t width, uint32_t height, const void* data, ImageFormat format, ImageSampler sampler)
+        : Backend::Image(width, height, format, sampler)
+    {
+        CreateDescriptorSet();
+    }
+
+    void Backend::VulkanImage::Release() 
+    {
+        BackendContext& ctx = GetBackendContext();
+
+        // Release stalls CPU execution until the device is idle
+        VkResult res = vkDeviceWaitIdle(ctx.vkDevice);
+        CHECK_VK_RESULT_ABORT(res);
+
+        ImGui_ImplVulkan_RemoveTexture(m_vkDescriptorSet);
+
+        vkDestroyImageView(ctx.vkDevice, m_vkImageView, DEFAULT_VK_ALLOC);
+        m_vkImageView = VK_NULL_HANDLE;
+
+        vkDestroyImage(ctx.vkDevice, m_vkImage, DEFAULT_VK_ALLOC);
+        m_vkImage = VK_NULL_HANDLE;
+
+        vkFreeMemory(ctx.vkDevice, m_vkDeviceMemory, DEFAULT_VK_ALLOC);
+        m_vkDeviceMemory = VK_NULL_HANDLE;
+
+        vkDestroyBuffer(ctx.vkDevice, m_vkStagingBuffer, DEFAULT_VK_ALLOC);
+        m_vkStagingBuffer = VK_NULL_HANDLE;
+
+        vkFreeMemory(ctx.vkDevice, m_vkStagingBufferMemory, DEFAULT_VK_ALLOC);
+        m_vkStagingBufferMemory = VK_NULL_HANDLE;
+    }
+
+    void Backend::VulkanImage::CreateDescriptorSet()
+    {
+        BackendContext& ctx = GetBackendContext();
+
+        const VkFormat format = GetVulkanFormatFromImageFormat(m_format); 
+        m_vkImage = CreateVulkanImage(ctx.vkDevice, format, m_width, m_height);
+        if (m_vkImage == VK_NULL_HANDLE)
+            YART_ABORT("Failed to create Vulkan image\n");
+
+        m_vkDeviceMemory = BindVulkanImageDeviceMemory(ctx.vkDevice, ctx.vkPhysicalDevice, m_vkImage);
+        if (m_vkDeviceMemory == VK_NULL_HANDLE)
+            YART_ABORT("Failed to create Vulkan device memory\n");
+
+        m_vkImageView = Backend::CreateVulkanImageView(ctx.vkDevice, format, m_vkImage);
+        if (m_vkImageView == VK_NULL_HANDLE)
+            YART_ABORT("Failed to create Vulkan image view\n");
+
+        VkDeviceSize memory_size = static_cast<VkDeviceSize>(m_width * m_height * GetFormatSize());
+        m_vkStagingBuffer = CreateVulkanStagingBuffer(ctx.vkDevice, memory_size);
+        if (m_vkStagingBuffer == VK_NULL_HANDLE)
+            YART_ABORT("Failed to create Vulkan staging buffer\n");
+
+        m_vkStagingBufferMemory = BindVulkanBufferMemory(ctx.vkDevice, ctx.vkPhysicalDevice, m_vkStagingBuffer);
+        if (m_vkStagingBufferMemory == VK_NULL_HANDLE)
+            YART_ABORT("Failed to create Vulkan staging buffer memory\n");
+
+        // Descriptor set is the textureID passed into ImGUI commands 
+        VkSampler sampler = Backend::GetVulkanSampler(m_sampler);
+        m_vkDescriptorSet = ImGui_ImplVulkan_AddTexture(sampler, m_vkImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        if (m_vkDescriptorSet == VK_NULL_HANDLE)
+            YART_ABORT("`ImGui_ImplVulkan_AddTexture()` failed to create a `VkDescriptorSet`\n");
+    }
+
+    VkImage Backend::VulkanImage::CreateVulkanImage(VkDevice device, VkFormat format, uint32_t width, uint32_t height)
+    {
+        VkImage image = VK_NULL_HANDLE;
+
+        VkExtent3D image_extent = { };
+        image_extent.width = width;
+        image_extent.height = height;
+        image_extent.depth = 1;
+
+        VkImageCreateInfo image_ci = {};
+        image_ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        image_ci.imageType = VK_IMAGE_TYPE_2D;
+        image_ci.format = format;
+        image_ci.extent = image_extent;
+        image_ci.arrayLayers = 1;
+        image_ci.mipLevels = 1;
+        image_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        image_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+        image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+
+        VkResult res = vkCreateImage(device, &image_ci, DEFAULT_VK_ALLOC, &image);
+        CHECK_VK_RESULT_RETURN(res, VK_NULL_HANDLE);
+
+        return image;
+    }
+
+    VkDeviceMemory Backend::VulkanImage::BindVulkanImageDeviceMemory(VkDevice device, VkPhysicalDevice physical_device, VkImage image)
+    {
+        VkDeviceMemory memory = VK_NULL_HANDLE;
+        VkResult res;
+
+        // Query image memory requirements
+        VkMemoryRequirements mem_req;
+        vkGetImageMemoryRequirements(device, image, &mem_req);
+
+        // TODO: try implementing VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+        static constexpr VkMemoryPropertyFlags memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT; // Read more on memory types: https://asawicki.info/news_1740_vulkan_memory_types_on_pc_and_how_to_use_them
+        uint32_t memory_type_index = utils::FindVulkanMemoryType(physical_device, memory_properties, mem_req.memoryTypeBits);
+        if (memory_type_index == UINT32_MAX) {
+            YART_LOG_ERR("Failed to locate device memory of requested type\n");
+            return VK_NULL_HANDLE;
+        }
+
+        // Allocate image required memory on the GPU 
+        VkMemoryAllocateInfo alloc_info = {};
+        alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        alloc_info.allocationSize = mem_req.size;
+        alloc_info.memoryTypeIndex = memory_type_index;
+
+        res = vkAllocateMemory(device, &alloc_info, DEFAULT_VK_ALLOC, &memory);
+        CHECK_VK_RESULT_RETURN(res, VK_NULL_HANDLE);
+
+        res = vkBindImageMemory(device, image, memory, 0);
+        CHECK_VK_RESULT_RETURN(res, VK_NULL_HANDLE);
+
+        return memory;
+    }
+
+    VkBuffer Backend::VulkanImage::CreateVulkanStagingBuffer(VkDevice device, VkDeviceSize buffer_size)
+    {
+        VkBuffer buffer = VK_NULL_HANDLE;
+
+        VkBufferCreateInfo buffer_ci = {};
+        buffer_ci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        buffer_ci.size = buffer_size;
+        buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        VkResult res = vkCreateBuffer(device, &buffer_ci, DEFAULT_VK_ALLOC, &buffer);
+        CHECK_VK_RESULT_RETURN(res, VK_NULL_HANDLE);
+
+        return buffer;
+    }
+
+    VkDeviceMemory Backend::VulkanImage::BindVulkanBufferMemory(VkDevice device, VkPhysicalDevice physical_device, VkBuffer buffer)
+    {
+        VkDeviceMemory memory = VK_NULL_HANDLE;
+        VkResult res;
+
+        // Query buffer memory requirements
+        VkMemoryRequirements mem_req;
+        vkGetBufferMemoryRequirements(device, buffer, &mem_req);
+
+        static constexpr VkMemoryPropertyFlags memory_properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT; // Read more on memory types: https://asawicki.info/news_1740_vulkan_memory_types_on_pc_and_how_to_use_them
+        uint32_t memory_type_index = utils::FindVulkanMemoryType(physical_device, memory_properties, mem_req.memoryTypeBits);
+        if (memory_type_index == UINT32_MAX) {
+            YART_LOG_ERR("Failed to locate device memory of requested type\n");
+            return VK_NULL_HANDLE;
+        }
+
+        // Allocate buffer required memory on the GPU 
+        VkMemoryAllocateInfo alloc_info = {};
+        alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        alloc_info.allocationSize = mem_req.size;
+        alloc_info.memoryTypeIndex = utils::FindVulkanMemoryType(physical_device, memory_properties, mem_req.memoryTypeBits);
+
+        res = vkAllocateMemory(device, &alloc_info, DEFAULT_VK_ALLOC, &memory);
+        CHECK_VK_RESULT_RETURN(res, VK_NULL_HANDLE);
+
+        res = vkBindBufferMemory(device, buffer, memory, 0);
+        CHECK_VK_RESULT_RETURN(res, VK_NULL_HANDLE);
+
+        return memory;
+    }
+
+    bool Backend::VulkanImage::UploadDataToStagingBuffer(VkDevice device, VkDeviceMemory staging_buffer_memory, const void* data, VkDeviceSize data_size)
+    {
+        VkResult res;
+
+        void* mapped_data = nullptr;
+        res = vkMapMemory(device, staging_buffer_memory, (VkDeviceSize)0, data_size, (VkMemoryMapFlags)0, &mapped_data);
+        CHECK_VK_RESULT_RETURN(res, false);
+
+        // TODO: no need for memcpy without resizing. 
+        //  This should probably return mapped_data to the caller
+        memcpy(mapped_data, data, data_size);
+
+        // Flush mapped memory - guarantee the data is uploaded to device memory 
+        VkMappedMemoryRange ranges[1] = {};
+        ranges[0].sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+        ranges[0].memory = staging_buffer_memory;
+        ranges[0].size = data_size;
+
+        res = vkFlushMappedMemoryRanges(device, YART_ARRAYSIZE(ranges), ranges);
+        CHECK_VK_RESULT_RETURN(res, false);
+
+        vkUnmapMemory(device, staging_buffer_memory);
+        return true;
+    }
+
+    bool Backend::VulkanImage::CopyStagingBufferToImage(VkDevice device, VkCommandPool command_pool, VkQueue queue, VkBuffer staging_buffer, VkImage image, uint32_t width, uint32_t height)
+    {
+        VkCommandBuffer command_buffer = yart::utils::BeginSingleTimeVulkanCommandBuffer(device, command_pool);
+        
+        VkExtent3D image_extent = { };
+        image_extent.width = width;
+        image_extent.height = height;
+        image_extent.depth = 1;
+
+        VkImageMemoryBarrier copy_barriers[1] = {};
+        copy_barriers[0].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        copy_barriers[0].dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        copy_barriers[0].oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        copy_barriers[0].newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        copy_barriers[0].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        copy_barriers[0].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        copy_barriers[0].subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        copy_barriers[0].subresourceRange.levelCount = 1;
+        copy_barriers[0].subresourceRange.layerCount = 1;
+        copy_barriers[0].image = image;
+
+        vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, NULL, 0, NULL, YART_ARRAYSIZE(copy_barriers), copy_barriers);
+
+        VkBufferImageCopy region = {};
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.layerCount = 1;
+        region.imageExtent = image_extent;
+
+        vkCmdCopyBufferToImage(command_buffer, staging_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+        VkImageMemoryBarrier use_barriers[1] = {};
+        use_barriers[0].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        use_barriers[0].srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        use_barriers[0].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        use_barriers[0].oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        use_barriers[0].newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        use_barriers[0].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        use_barriers[0].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        use_barriers[0].subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        use_barriers[0].subresourceRange.levelCount = 1;
+        use_barriers[0].subresourceRange.layerCount = 1;
+        use_barriers[0].image = image;
+        
+        vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, NULL, 0, NULL, YART_ARRAYSIZE(use_barriers), use_barriers);
+
+        // Submit and free the command buffer
+        if (!yart::utils::EndSingleTimeVulkanCommandBuffer(device, command_pool, queue, command_buffer))
+            return false;
+
+        return true;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// Backend module public API interface implementation
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+
     bool Backend::Init(const char* window_title, uint32_t window_width, uint32_t window_height)
     {
-        bool success = true;
-
-        if (success && !InitGLFW(window_title, window_width, window_height)) {
+        if (!InitGLFW(window_title, window_width, window_height)) {
             YART_LOG_ERR("Failed to initialize GLFW\n");
-            success = false;
+
+            Backend::Close(); // Terminate and clean up just in case
+            return false;
         }
 
-        if (success && !InitVulkan()) {
+        if (!InitVulkan()) {
             YART_LOG_ERR("Failed to initialize Vulkan\n");
-            success = false;
+            
+            Backend::Close(); // Terminate and clean up just in case
+            return false;
         }
 
-        if (success && !InitImGui()) {
+        if (!InitImGui()) {
             YART_LOG_ERR("Failed to initialize Dear ImGui\n");
-            success = false;
-        }
-
-
-        if (!success) {
-            // Terminate and clean up just in case
-            Backend::Close();
+            
+            Backend::Close(); // Terminate and clean up just in case
             return false;
         }
 
@@ -166,13 +469,28 @@ namespace yart
         memset(&ctx, 0, sizeof(BackendContext));
     }
 
+    Backend::Image* Backend::CreateImage(uint32_t width, uint32_t height, ImageFormat format, ImageSampler sampler)
+    {
+        return new VulkanImage(width, height, format, sampler);
+    }
+
+    Backend::Image* Backend::CreateImage(uint32_t width, uint32_t height, const void* data, ImageFormat format, ImageSampler sampler)
+    {
+        return new VulkanImage(width, height, data, format, sampler);
+    }
+
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// Backend module private implementation for Vulkan/GLFW
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+
     Backend::BackendContext& Backend::GetBackendContext()
     {
         static BackendContext context = { }; // Lazily instantiated on first call
         return context;
     }
 
-    bool Backend::InitGLFW(const char *window_title, uint32_t window_width, uint32_t window_height)
+    bool Backend::InitGLFW(const char* window_title, uint32_t window_width, uint32_t window_height)
     {
         // Error callback can be set prior to calling `glfwInit`
         glfwSetErrorCallback(on_glfw_error);
@@ -953,6 +1271,11 @@ namespace yart
             YART_ABORT("VULKAN: Failed to create swapchain frames in flight");
 
         ctx.currentFrameInFlightIndex = 0;
+    }
+
+    VkSampler Backend::GetVulkanSampler(ImageSampler sampler)
+    {
+        return VkSampler();
     }
 
     void Backend::Cleanup()
