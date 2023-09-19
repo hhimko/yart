@@ -6,6 +6,7 @@
 #include "backend_impl_vulkan.h"
 
 
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 
@@ -429,10 +430,6 @@ namespace yart
         if (ctx.onRenderCallback)
             ctx.onRenderCallback();
 
-        // Render viewport image using ImGui
-        // ImDrawList* bg_draw_list = ImGui::GetBackgroundDrawList();
-        // m_viewport->Render(bg_draw_list);
-
         // Finalize ImGui frame and retrieve the render commands
         ImGui::Render();
         ImDrawData* draw_data = ImGui::GetDrawData();
@@ -471,15 +468,41 @@ namespace yart
 
     Backend::Image* Backend::CreateImage(uint32_t width, uint32_t height, ImageFormat format, ImageSampler sampler)
     {
-        return new VulkanImage(width, height, format, sampler);
+        BackendContext& ctx = GetBackendContext();
+
+        Image* image = new VulkanImage(width, height, format, sampler);
+        ctx.allocatedImages.push_back(image);
+
+        return image;
     }
 
     Backend::Image* Backend::CreateImage(uint32_t width, uint32_t height, const void* data, ImageFormat format, ImageSampler sampler)
     {
-        return new VulkanImage(width, height, data, format, sampler);
+        BackendContext& ctx = GetBackendContext();
+
+        Image* image = new VulkanImage(width, height, data, format, sampler);
+        ctx.allocatedImages.push_back(image);
+
+        return image;
     }
 
+    void Backend::DestroyImage(Image* image)
+    {
+        BackendContext& ctx = GetBackendContext();
+        if (image == nullptr)
+            return;
 
+        // Remove the image from the allocations stack
+        auto it = std::find(ctx.allocatedImages.begin(), ctx.allocatedImages.end(), image);
+        if (it != ctx.allocatedImages.end()) {
+            ctx.allocatedImages.erase(it);
+        }
+
+        // Free the image
+        delete image;
+    } 
+    
+    
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     /// Backend module private implementation for Vulkan/GLFW
     ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1349,8 +1372,11 @@ namespace yart
         if (ctx.vkSwapchain != VK_NULL_HANDLE)
             vkDestroySwapchainKHR(ctx.vkDevice, ctx.vkSwapchain, DEFAULT_VK_ALLOC);
 
-        // Release viewport image
-        // m_viewport->m_image.Release(m_vkDevice);
+        // Release all allocated images
+        for (Image* image : ctx.allocatedImages)
+            DestroyImage(image);
+
+        ctx.allocatedImages.clear();
 
         // Release ImGui pipeline objects
         ImGui_ImplVulkan_Shutdown();

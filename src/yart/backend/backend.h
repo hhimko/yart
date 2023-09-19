@@ -40,7 +40,9 @@ namespace yart
         /// @brief Abstract Image base class, for managing and uploading 2D textures to the GPU  
         ////////////////////////////////////////////////////////////////////////////////////////////////////
         class Image {
-        public:        
+        public:     
+            virtual ~Image() = default;
+
             /// @brief Upload and bind pixel data to the image  
             /// @param data Pointer to pixel array to upload and bind. The size of the array must be equal to `(width * height * channels)`,
             ///     where `channels` is the number of channels in the image, based on the image format used
@@ -190,6 +192,12 @@ namespace yart
         /// @param format Image format from the `ImageFormat` enum
         /// @param sampler Image sampler used for interpolation from the `ImageSampler` enum
         Image* CreateImage(uint32_t width, uint32_t height, const void* data, ImageFormat format, ImageSampler sampler = ImageSampler::NEAREST);
+
+        /// @brief Destroy a previously allocated image
+        /// @param image Pointer to the image
+        /// @note Backend images get automatically deallocated when the module gets shut down. 
+        ///     Use this method to free images manually during the runtime
+        void DestroyImage(Image* image);
 
     } // namespace Backend
 } // namespace yart

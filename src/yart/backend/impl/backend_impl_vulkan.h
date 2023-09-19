@@ -30,11 +30,8 @@ namespace yart
         ////////////////////////////////////////////////////////////////////////////////////////////////////
         /// @brief Image class implementation for Vulkan, for managing and uploading 2D textures to the GPU  
         ////////////////////////////////////////////////////////////////////////////////////////////////////
-        class VulkanImage : public Image {
+        class VulkanImage : Image {
         public:
-            /// @brief VulkanImage class destructor
-            ~VulkanImage();
-
             /// @brief Upload and bind pixel data to the image  
             /// @param data Pointer to pixel array to upload and bind. The size of the array must be equal to `(width * height * channels)`,
             ///     where `channels` is the number of channels in the image, based on the image format used
@@ -73,6 +70,9 @@ namespace yart
             /// @param format Image format from the `ImageFormat` enum
             /// @param sampler Image sampler used for interpolation from the `ImageSampler` enum
             VulkanImage(uint32_t width, uint32_t height, const void* data, ImageFormat format, ImageSampler sampler = ImageSampler::NEAREST);
+
+            /// @brief VulkanImage class destructor
+            ~VulkanImage();
 
             /// @brief Release all Vulkan allocations made by this object
             /// @warning VulkanImage::Release() stalls CPU execution until the GPU is idle
@@ -186,6 +186,7 @@ namespace yart
             utils::LTStack LT;
             utils::LTStack swapchainLT;
             std::unique_ptr<FrameInFlight[]> framesInFlight = nullptr;
+            std::vector<Backend::Image*> allocatedImages = { };
 
             // -- GLFW TYPES -- //
             GLFWwindow* window = nullptr;

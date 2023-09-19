@@ -35,6 +35,7 @@ namespace yart
     Viewport::~Viewport()
     {
         delete[] m_imageData;
+        Backend::DestroyImage(m_image);
     }
     
     void Viewport::Resize(uint32_t width, uint32_t height)
