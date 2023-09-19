@@ -52,13 +52,6 @@ namespace yart
             /// @warning Rebuilding essentially leads to the loss of previously bound image data, so Image::BindData() has to be called after the resize
             virtual void Resize(uint32_t width, uint32_t height) = 0;
 
-            /// @brief Get the sampler type currently used by the image 
-            /// @return Current sampler type
-            ImageSampler GetSampler() const 
-            {
-                return m_sampler;
-            }
-
             /// @brief Set the image sampler type used for interpolation
             /// @param sampler New sampler type 
             virtual void SetSampler(ImageSampler sampler) = 0;
@@ -67,15 +60,20 @@ namespace yart
             /// @return Dear ImGui's `ImTextureID` for this image
             virtual ImTextureID GetImTextureID() const = 0;
 
-        protected:
-            /// @brief Image base class constructor
-            /// @param width Initial width of the image in texels
-            /// @param height Initial height of the image in texels
-            /// @param format Format of the image
-            /// @param sampler Initial sampler type used by the image
-            Image(uint32_t width, uint32_t height, ImageFormat format, ImageSampler sampler)
-                : m_width(width), m_height(height), m_format(format), m_sampler(sampler)
-            { };
+            /// @brief Get the current size of the image in pixels
+            /// @return Image size in pixels
+            ImVec2 GetSize() const 
+            {
+                ImVec2 size = { static_cast<float>(m_width), static_cast<float>(m_height) };
+                return size;
+            }
+
+            /// @brief Get the sampler type currently used by the image 
+            /// @return Current sampler type
+            ImageSampler GetSampler() const 
+            {
+                return m_sampler;
+            }
 
             /// @brief Get this image's format size in bytes
             /// @return Size of a single pixel in the given format in bytes
@@ -106,6 +104,16 @@ namespace yart
                 YART_UNREACHABLE();
                 return 0;
             }
+
+        protected:
+            /// @brief Image base class constructor
+            /// @param width Initial width of the image in texels
+            /// @param height Initial height of the image in texels
+            /// @param format Format of the image
+            /// @param sampler Initial sampler type used by the image
+            Image(uint32_t width, uint32_t height, ImageFormat format, ImageSampler sampler)
+                : m_width(width), m_height(height), m_format(format), m_sampler(sampler)
+            { };
 
         protected:
             /// @brief Width of the image in texels

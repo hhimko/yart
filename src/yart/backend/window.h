@@ -17,7 +17,7 @@
 #include <backends/imgui_impl_vulkan.h> // Renderer backend
 
 #include "utils/backend_utils.h"
-#include "viewport.h"
+// #include "viewport.h"
 #include "yart/GUI/input.h"
 
 
@@ -70,10 +70,10 @@ namespace yart
 
         /// @brief Get the main window viewport instance
         /// @return Pointer to a Viewport instance
-        std::shared_ptr<yart::Viewport> GetViewport() const 
-        {
-            return m_viewport;
-        }
+        // std::shared_ptr<yart::Viewport> GetViewport() const 
+        // {
+        //     return m_viewport;
+        // }
 
     private:
         Window() = default;
@@ -150,7 +150,7 @@ namespace yart
         void Cleanup();
 
     private:
-        std::shared_ptr<yart::Viewport> m_viewport = nullptr; // Main window viewport
+        // std::shared_ptr<yart::Viewport> m_viewport = nullptr; // Main window viewport
         imgui_callback_t m_dearImGuiCallback;
         imgui_callback_t m_fontLoadCallback;
         utils::LTStack m_LTStack;
@@ -187,9 +187,9 @@ namespace yart
         
 
         // -- FRIEND FUNCTION DECLARATIONS -- //
-        friend yart::Viewport::Viewport(uint32_t width, uint32_t height);
-        friend void yart::Viewport::Resize(ImVec2 size, int scale);
-        friend void yart::Viewport::Refresh();
+        // friend yart::Viewport::Viewport(uint32_t width, uint32_t height);
+        // friend void yart::Viewport::Resize(ImVec2 size, int scale);
+        // friend void yart::Viewport::Refresh();
         friend class yart::GUI::Input; // yart::Input implementation depends on GLFWwindow instance to handle OS events
 
     };

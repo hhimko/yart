@@ -78,7 +78,8 @@ namespace yart
         ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
         ImGui::Text("Avg. %.3f ms/frame", 1000.0f / ImGui::GetIO().Framerate);
 
-        return m_viewport->OnImGui();
+        // return m_viewport->OnImGui();
+        return false;
     }
 
     void Window::Render()
@@ -94,7 +95,7 @@ namespace yart
 
         // Render viewport image using ImGui
         ImDrawList* bg_draw_list = ImGui::GetBackgroundDrawList();
-        m_viewport->Render(bg_draw_list);
+        // m_viewport->Render(bg_draw_list);
 
         // Finalize ImGui frame and retrieve the render commands
         ImGui::Render();
@@ -789,7 +790,7 @@ namespace yart
             vkDestroySampler(m_vkDevice, var, DEFAULT_VK_ALLOC);
         });
 
-        m_viewport = std::make_shared<yart::Viewport>(m_surfaceExtent.width, m_surfaceExtent.height);
+        // m_viewport = std::make_shared<yart::Viewport>(m_surfaceExtent.width, m_surfaceExtent.height);
 
         return true;
     }
