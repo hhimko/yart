@@ -44,6 +44,13 @@ namespace yart
         /// @param scale New viewport scale-down factor
         void SetImageScale(uint8_t scale);
 
+        /// @brief Get the current scale down factor of the underlying image
+        /// @return Viewport image scale down factor
+        uint8_t GetImageScale() const 
+        {
+            return m_imageScale;
+        }
+
         /// @brief Get the current size of the viewport in pixels
         /// @return The unscaled viewport size used for rendering to the display
         ImVec2 GetViewportSize() const 

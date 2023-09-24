@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @file
-/// @brief Definition of the WorldView class 
+/// @brief Definition of the ViewportView class 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
@@ -9,28 +9,28 @@
 namespace yart
 {
     /// @brief View target class forward declaration
-    class World;
+    class Viewport;
 
 
     namespace GUI
     {
         ////////////////////////////////////////////////////////////////////////////////////////////////////
-        /// @brief GUI view for the World class
+        /// @brief GUI view for the Viewport class
         ////////////////////////////////////////////////////////////////////////////////////////////////////
-        class WorldView {
+        class ViewportView {
         public:
-            /// @brief Issue GUI render commands to display the World object context menu
+            /// @brief Issue GUI render commands to display the Viewport object context menu
             /// @param target View target instance
             /// @returns Whether any changes were made by the user since the last frame
-            static bool OnRenderGUI(yart::World* target);
+            static bool OnRenderGUI(yart::Viewport* target);
 
         private:
-            WorldView() = delete;
+            ViewportView() = delete;
 
-            /// @brief Issue "Sky" section GUI render commands
+            /// @brief Issue "Output" section GUI render commands
             /// @param target View target instance
             /// @returns Whether any changes were made by the user since the last frame
-            static bool RenderSkySection(yart::World* target);
+            static bool RenderOutputSection(yart::Viewport* target);
 
         };   
 

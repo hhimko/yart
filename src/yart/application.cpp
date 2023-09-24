@@ -10,7 +10,9 @@
 #include <functional>
 
 #include "yart/GUI/views/renderer_view.h"
+#include "yart/GUI/views/viewport_view.h"
 #include "yart/backend/backend.h"
+#include "yart/core/viewport.h"
 #include "yart/GUI/input.h"
 #include "yart/GUI/gui.h"
 
@@ -41,7 +43,7 @@ namespace yart
         while (m_running) {
             // Poll and handle incoming events
             yart::Backend::PollEvents();
-            viewport_dirty |= yart::GUI::RendererView::HandleInputs(m_renderer);
+            viewport_dirty |= yart::GUI::RendererView::HandleInputs(&m_renderer);
 
             // Begin recording a new frame
             yart::Backend::NewFrame();
@@ -95,19 +97,19 @@ namespace yart
         yart::GUI::LoadFonts();
 
         // Register YART GUI callbacks
-        yart::GUI::RegisterCallback(std::bind(&yart::GUI::RendererView::OnRenderViewAxesWindow, std::ref(m_renderer)));
+        yart::GUI::RegisterCallback(std::bind(&yart::GUI::RendererView::OnRenderViewAxesWindow, &m_renderer));
 
         const ImU32 color_gray = 0xFF6F767D;
         yart::GUI::RegisterInspectorWindow("Renderer", ICON_CI_EDIT, color_gray, 
-            std::bind(&yart::GUI::RendererView::OnRenderGUI, std::ref(m_renderer))
+            std::bind(&yart::GUI::RendererView::OnRenderGUI, &m_renderer)
         );
 
         yart::GUI::RegisterInspectorWindow("World", ICON_CI_GLOBE, color_gray, 
-            std::bind(&yart::GUI::WorldView::OnRenderGUI, std::ref(m_renderer.GetWorld()))
+            std::bind(&yart::GUI::WorldView::OnRenderGUI, m_renderer.GetWorld())
         );
 
-        // yart::GUI::RegisterInspectorWindow("Window", ICON_CI_DEVICE_DESKTOP, color_gray, 
-        //     std::bind(&yart::Window::OnImGui, &window)
-        // );
+        yart::GUI::RegisterInspectorWindow("Viewport", ICON_CI_DEVICE_DESKTOP, color_gray, 
+            std::bind(&yart::GUI::ViewportView::OnRenderGUI, GUI::GetRenderViewport())
+        );
     }
 } // namespace yart

@@ -63,7 +63,6 @@ namespace yart
             return;
 
         m_imageScale = scale;
-        Resize(m_width, m_height);
     }
 
     void Viewport::Refresh()

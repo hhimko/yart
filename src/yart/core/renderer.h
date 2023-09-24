@@ -42,10 +42,10 @@ namespace yart
         bool Render(const yart::Viewport* viewport);
 
         /// @brief Get the renderer's world instance 
-        /// @return Renderer's world instance 
-        yart::World& GetWorld() const 
+        /// @return Renderer's world instance pointer
+        yart::World* GetWorld() const 
         {
-            return *m_world;
+            return m_world.get();
         }
 
     private:
