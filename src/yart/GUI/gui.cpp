@@ -171,7 +171,7 @@ namespace yart
     {
         // Uncomment to display Dear ImGui's debug window
         // ImGui::ShowDemoWindow();
-        
+
 
         float fps = ImGui::GetCurrentContext()->IO.Framerate;
         ImGui::Text("%f", fps);
@@ -194,7 +194,7 @@ namespace yart
         return ctx->renderViewport.get();
     }
 
-    bool GUI::RenderViewAxesWindow(const glm::vec3 &x_axis, const glm::vec3 &y_axis, const glm::vec3 &z_axis, glm::vec3& clicked_axis)
+    bool GUI::RenderViewAxesWindow(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis, glm::vec3& clicked_axis)
     {
         return GUI::RenderViewAxesWindowEx(x_axis, y_axis, z_axis, clicked_axis);
     }

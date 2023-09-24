@@ -78,7 +78,7 @@ namespace yart
         }        
 
         /// @brief Set an internal flag to make sure the viewport image gets refreshed before the next render command
-        /// @details Should be used when the image pixels have changed since the last Viewport::Render(), but the viewport size has not 
+        /// @details Should be used when the image data has changed since the last frame
         void EnsureRefresh() 
         {
             m_needsRefresh = true;

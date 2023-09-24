@@ -95,7 +95,7 @@ namespace yart
 
             // Render the viewport image
             ImTextureID viewport_texture = ctx->renderViewport->GetImTextureID();
-            viewport_window->DrawList->AddImage(viewport_texture, ctx->renderViewportArea.Min, ctx->renderViewportArea.Max);
+            ImGui::GetBackgroundDrawList()->AddImage(viewport_texture, ctx->renderViewportArea.Min, ctx->renderViewportArea.Max);
         }
         GUI::LayoutSeparator(horizontal_layout);
         {
