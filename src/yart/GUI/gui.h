@@ -14,6 +14,7 @@
 #include <glm/glm.hpp>
 
 #include "font/IconsCodicons.h"
+#include "yart/core/viewport.h"
 
 
 // -- YART APPLICATION COLOR PALETTE -- //
@@ -94,26 +95,17 @@ namespace yart
         };
 
 
-        ////////////////////////////////////////////////////////////////////////////////////////////////////
-        /// GUI module public interface 
-        ////////////////////////////////////////////////////////////////////////////////////////////////////
-
         /// @brief Get the current GUI context
         /// @return The currently active context object
         GuiContext* GetGuiContext();
 
-        /// @brief Issue Dear ImGui render commands for the current GUI context
-        /// @note This method should only be called after calling `ImGui::NewFrame()`
-        /// @returns Whether any changes were made by the user within this frame
-        bool Render();
 
-        /// @brief Render the view axes context window
-        /// @param x_axis View x-axis
-        /// @param y_axis View y-axis
-        /// @param z_axis View z-axis
-        /// @param clicked_axis Output variable set to a base axis clicked by the user
-        /// @return Whether the user has clicked on an axis and the `clicked_axis` output variable has been set 
-        bool RenderViewAxesWindow(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis, glm::vec3& clicked_axis);
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        /// GUI module setup and callback registering public functions 
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        /// @brief Initialize the GUI module
+        void Init();
 
         /// @brief Apply the default YART application GUI style and color palette
         void ApplyCustomStyle();
@@ -121,22 +113,6 @@ namespace yart
         /// @brief Load the YART application fonts into Dear ImGui
         /// @note Should only ever be called before uploading font textures to the GPU
         void LoadFonts();
-
-        /// @brief Push the icons font to the Dear ImGui font stack 
-        /// @note Call `ImGui::PopFont()` to return to the previous font in the stack
-        void PushIconsFont();
-
-        /// @brief Get the current position of the render viewport area
-        /// @return Position in screen pixel coordinates
-        ImVec2 GetRenderViewportAreaPosition();
-
-        /// @brief Get the current size of the render viewport area
-        /// @return Size in screen pixels
-        ImVec2 GetRenderViewportAreaSize();
-
-        /// @brief Test whether the mouse cursor is currently directly over the render viewport
-        /// @return Whether mouse is over viewport
-        bool IsMouseOverRenderViewport();
 
         /// @brief Register a global Dear ImGui render function
         /// @param callback Callback function pointer
@@ -148,6 +124,41 @@ namespace yart
         /// @param color Nav bar icon color
         /// @param callback Callback function pointer to the nav bar item contents
         void RegisterInspectorWindow(const char* name, const char* icon, ImU32 color, imgui_callback_t callback);
+
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        /// GUI module public interface 
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        /// @brief Update the GUI module state
+        /// @details Should be called once every frame
+        void Update();
+
+        /// @brief Issue Dear ImGui render commands for the current GUI context
+        /// @note This method should only be called after calling `ImGui::NewFrame()`
+        /// @returns Whether any changes were made by the user within this frame
+        bool Render();
+
+        /// @brief Get the main application render viewport
+        /// @return Main render viewport
+        yart::Viewport* GetRenderViewport();
+
+        /// @brief Render the view axes context window
+        /// @param x_axis View x-axis
+        /// @param y_axis View y-axis
+        /// @param z_axis View z-axis
+        /// @param clicked_axis Output variable set to a base axis clicked by the user
+        /// @return Whether the user has clicked on an axis and the `clicked_axis` output variable has been set 
+        bool RenderViewAxesWindow(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis, glm::vec3& clicked_axis);
+
+        /// @brief Test whether the mouse cursor is currently directly over the render viewport
+        /// @return Whether mouse is over viewport
+        bool IsMouseOverRenderViewport();
+
+        /// @brief Push the icons font to the Dear ImGui font stack 
+        /// @note Call `ImGui::PopFont()` to return to the previous font in the stack
+        void PushIconsFont();
+
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
         /// Custom GUI widgets rendering public interface

@@ -383,12 +383,6 @@ namespace yart
         ctx.onDearImGuiSetupCallback = callback;
     }
 
-    void Backend::SetRenderCallback(event_callback_t callback)
-    {
-        BackendContext& ctx = GetBackendContext();
-        ctx.onRenderCallback = callback;
-    }
-
     void Backend::SetWindowCloseCallback(event_callback_t callback)
     {
         BackendContext& ctx = GetBackendContext();
@@ -417,24 +411,22 @@ namespace yart
         glfwPollEvents();
     }
 
-    void Backend::Render()
+    void Backend::NewFrame()
     {
-        BackendContext& ctx = GetBackendContext();
-
         // Begin a new Dear ImGui frame
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+    }
 
-        // Issue application-defined render commands 
-        if (ctx.onRenderCallback)
-            ctx.onRenderCallback();
-
-        // Finalize ImGui frame and retrieve the render commands
+    void Backend::Render()
+    {
+        // Finalize Dear ImGui frame and retrieve the render commands
         ImGui::Render();
         ImDrawData* draw_data = ImGui::GetDrawData();
 
         // Render and present the frame to a platform window
+        BackendContext& ctx = GetBackendContext();
         if (!ctx.shouldRebuildSwapchain) {
             ctx.shouldRebuildSwapchain = FrameRender(draw_data);
 

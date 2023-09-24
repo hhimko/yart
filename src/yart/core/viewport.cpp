@@ -45,7 +45,7 @@ namespace yart
 
         uint32_t scaled_width = width / m_imageScale;
         uint32_t scaled_height = height / m_imageScale;
-        ImVec2 image_size = GetViewportImageSize();
+        ImVec2 image_size = GetImageSize();
         if (image_size.x == scaled_width && image_size.y == scaled_height)
             return; // When the underlying image is down scaled, scaling the viewport does not necessarily mean the image has to be recreated
 

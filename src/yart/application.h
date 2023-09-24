@@ -42,7 +42,8 @@ namespace yart
         /// @return Application exit status code 
         int Run();
 
-        /// @brief Request application shutdown and cleanup
+        /// @brief Request application shutdown
+        /// @details This method essentially just terminates the application's mainloop
         void Shutdown()
         {
             m_running = false;
@@ -60,14 +61,9 @@ namespace yart
         /// @brief Initialize GUI rendering and register custom views
         void SetupGUI();
 
-        /// @brief Issue GUI render commands  
-        /// @details Should be called each frame by the platform window
-        void OnRender();
-
     private:
         yart::Renderer m_renderer;
         bool m_running = false;
-        bool m_shouldRefresh = false; // Whether the viewport image should be rerendered next frame
 
     };
 } // namespace yart

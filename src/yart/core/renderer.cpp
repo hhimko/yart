@@ -50,6 +50,13 @@ namespace yart
         return dirty;
     }
 
+    bool Renderer::Render(const yart::Viewport *viewport)
+    {
+        float* image_data = viewport->GetImageData();
+        ImVec2 image_size = viewport->GetImageSize();
+        return Render(image_data, image_size.x, image_size.y);
+    }
+
     void Renderer::Resize(uint32_t width, uint32_t height)
     {
         // Resize and fill pixel iterators

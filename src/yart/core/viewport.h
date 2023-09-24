@@ -53,7 +53,7 @@ namespace yart
 
         /// @brief Get the current size of the underlying viewport image in pixels
         /// @return The current size of the scaled viewport image
-        ImVec2 GetViewportImageSize() const
+        ImVec2 GetImageSize() const
         {
             return m_image->GetSize();
         }

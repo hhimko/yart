@@ -219,7 +219,6 @@ namespace yart
 
             // -- EVENT CALLBACKS -- //
             event_callback_t onDearImGuiSetupCallback = nullptr;
-            event_callback_t onRenderCallback = nullptr;
             event_callback_t onWindowCloseCallback = nullptr;
 
         private:

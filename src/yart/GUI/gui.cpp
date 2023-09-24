@@ -17,37 +17,10 @@ namespace yart
         return &s_context;
     }
 
-    bool GUI::Render()
+    void GUI::Init()
     {
-        // Uncomment to display Dear ImGui's debug window
-        // ImGui::ShowDemoWindow();
-
-
-        // Refresh and update the context state
         GuiContext* ctx = GUI::GetGuiContext();
-        ctx->madeChanges = false;
-
-        static ImVec2 last_display_size = ImGui::GetIO().DisplaySize;
-        ImVec2 display_size = ImGui::GetIO().DisplaySize;
-
-        ctx->displaySizeDelta = { display_size.x - last_display_size.x, display_size.y - last_display_size.y};
-        last_display_size = display_size;
-
-
-        // Render the static layout
-        GUI::RenderMainMenuBar();
-        GUI::RenderMainContentFrame();
-
-        // Render registered global callbacks
-        for (auto callback : ctx->registeredCallbacks)
-            ctx->madeChanges |= callback();
-
-        return ctx->madeChanges;
-    }   
-
-    bool GUI::RenderViewAxesWindow(const glm::vec3 &x_axis, const glm::vec3 &y_axis, const glm::vec3 &z_axis, glm::vec3& clicked_axis)
-    {
-        return GUI::RenderViewAxesWindowEx(x_axis, y_axis, z_axis, clicked_axis);
+        ctx->renderViewport = std::make_unique<yart::Viewport>(1, 1);
     }
 
     void GUI::ApplyCustomStyle()
@@ -156,39 +129,6 @@ namespace yart
         ctx->iconsFont = icons_font;
     }
 
-    void GUI::PushIconsFont()
-    {
-        GuiContext* ctx = GUI::GetGuiContext();
-        ImGui::PushFont(ctx->iconsFont);
-    }
-
-    ImVec2 GUI::GetRenderViewportAreaPosition()
-    {
-        GuiContext* ctx = GetGuiContext();
-        return ctx->renderViewportAreaPos;
-    }
-
-    ImVec2 GUI::GetRenderViewportAreaSize()
-    {
-        GuiContext* ctx = GetGuiContext();
-
-        float w = ctx->renderViewportAreaWidth;
-        float h = ctx->renderViewportAreaHeight;
-
-        return { w > 0 ? w : 1, h > 0 ? h : 1 }; 
-    }
-
-    bool GUI::IsMouseOverRenderViewport()
-    {
-        ImGuiContext* g = ImGui::GetCurrentContext();
-        if (g->HoveredWindow != nullptr) {
-            GuiContext* ctx = GUI::GetGuiContext();
-            return g->HoveredWindow->ID == ctx->renderViewportWindowID;
-        }
-
-        return false;
-    }
-
     void GUI::RegisterCallback(imgui_callback_t callback)
     {
         GuiContext* ctx = GetGuiContext();
@@ -207,6 +147,73 @@ namespace yart
 
         ctx->inspectorWindows.push_back(item);
         ctx->activeInspectorWindow = &ctx->inspectorWindows.front();
+    }
+
+    void GUI::Update()
+    {
+        // Refresh and update the context state
+        GuiContext* ctx = GUI::GetGuiContext();
+        ctx->madeChanges = false;
+
+        static ImVec2 last_display_size = ImGui::GetIO().DisplaySize;
+        ImVec2 display_size = ImGui::GetIO().DisplaySize;
+
+        ctx->displaySizeDelta = { display_size.x - last_display_size.x, display_size.y - last_display_size.y};
+        last_display_size = display_size;
+
+        // Resize the render viewport
+        uint32_t viewport_width = ctx->renderViewportArea.GetWidth();
+        uint32_t viewport_height = ctx->renderViewportArea.GetHeight();
+        ctx->renderViewport->Resize(viewport_width > 0 ? viewport_width : 1, viewport_height > 0 ? viewport_height : 1);
+    }
+
+    bool GUI::Render()
+    {
+        // Uncomment to display Dear ImGui's debug window
+        // ImGui::ShowDemoWindow();
+        
+
+        float fps = ImGui::GetCurrentContext()->IO.Framerate;
+        ImGui::Text("%f", fps);
+
+        // Render the static layout
+        float menu_bar_height = GUI::RenderMainMenuBar();
+        GUI::RenderMainContentArea(menu_bar_height);
+
+        // Render registered global callbacks
+        GuiContext* ctx = GUI::GetGuiContext();
+        for (auto callback : ctx->registeredCallbacks)
+            ctx->madeChanges |= callback();
+
+        return ctx->madeChanges;
+    }
+
+    yart::Viewport* GUI::GetRenderViewport()
+    {
+        GuiContext* ctx = GUI::GetGuiContext();
+        return ctx->renderViewport.get();
+    }
+
+    bool GUI::RenderViewAxesWindow(const glm::vec3 &x_axis, const glm::vec3 &y_axis, const glm::vec3 &z_axis, glm::vec3& clicked_axis)
+    {
+        return GUI::RenderViewAxesWindowEx(x_axis, y_axis, z_axis, clicked_axis);
+    }
+
+    bool GUI::IsMouseOverRenderViewport()
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        if (g->HoveredWindow != nullptr) {
+            GuiContext* ctx = GUI::GetGuiContext();
+            return g->HoveredWindow->ID == ctx->renderViewportWindowID;
+        }
+
+        return false;
+    }
+
+    void GUI::PushIconsFont()
+    {
+        GuiContext* ctx = GUI::GetGuiContext();
+        ImGui::PushFont(ctx->iconsFont);
     }
 
     bool GUI::SliderInt(const char* name, int* p_val, const char* format, int arrow_step)

@@ -35,7 +35,7 @@
 
 namespace yart
 {
-    void GUI::RenderMainMenuBar()
+    float GUI::RenderMainMenuBar()
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
 
@@ -51,25 +51,22 @@ namespace yart
             ImGui::EndMenu();
 		}
 
-        // Store the size of the main menu bar for content area computation
-        GuiContext* ctx = GUI::GetGuiContext();
-        ctx->mainMenuBarHeight = ImGui::GetWindowSize().y;
+        // Store and return the menu bar height, used for determining content area sizes
+        float menu_bar_height = g->CurrentWindow->Size.y;
 
         ImGui::EndMainMenuBar();
+        return menu_bar_height;
     }
 
-    void GUI::RenderMainContentFrame()
+    void GUI::RenderMainContentArea(float menu_bar_height)
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
         GuiContext* ctx = GUI::GetGuiContext();
 
-        ImVec2 display_size = ImGui::GetIO().DisplaySize;
-        float menu_bar_height = ctx->mainMenuBarHeight;
-
-        ctx->renderViewportAreaPos = { 0.0f, menu_bar_height };
-        ctx->renderViewportAreaHeight = display_size.y - menu_bar_height;
-        ImGui::SetNextWindowPos(ctx->renderViewportAreaPos, ImGuiCond_None, { 0.0f, 0.0f });
-        ImGui::SetNextWindowSize({ display_size.x, display_size.y - menu_bar_height }, ImGuiCond_None);
+        // Main content window area is essentially the display area minus the main menu bar size 
+        ImVec2 display_size = g->IO.DisplaySize;
+        ImGui::SetNextWindowPos({ 0.0f, menu_bar_height });
+        ImGui::SetNextWindowSize({ display_size.x, display_size.y - menu_bar_height });
 
         static constexpr ImGuiWindowFlags flags = (
             ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration | 
@@ -77,7 +74,7 @@ namespace yart
         );
         
         ImVec2 backup_padding = g->Style.WindowPadding;
-        g->Style.WindowPadding = {0,0};
+        g->Style.WindowPadding = { 0.0f, 0.0f };
         ImGui::Begin("YART_MainContentFrame", nullptr, flags);
         g->Style.WindowPadding = backup_padding;
 
@@ -89,19 +86,24 @@ namespace yart
         horizontal_layout.window_flags = ImGuiWindowFlags_NoBackground;
 
         GUI::BeginLayout(horizontal_layout);
+        {
+            ImGuiWindow* viewport_window = g->CurrentWindow;
 
-        // Store the viewport window ID 
-        ctx->renderViewportWindowID = g->CurrentWindow->ID;
+            // Store the viewport window ID and bounding box
+            ctx->renderViewportWindowID = viewport_window->ID;
+            ctx->renderViewportArea = viewport_window->Rect();
 
+            // Render the viewport image
+            ImTextureID viewport_texture = ctx->renderViewport->GetImTextureID();
+            viewport_window->DrawList->AddImage(viewport_texture, ctx->renderViewportArea.Min, ctx->renderViewportArea.Max);
+        }
         GUI::LayoutSeparator(horizontal_layout);
-
-        GUI::RenderContextWindow();
-
+        {
+            GUI::RenderContextWindow();
+        }
         GUI::EndLayout(horizontal_layout);
-        ImGui::End();
 
-        // Store the viewport area size for renderer 
-        ctx->renderViewportAreaWidth = horizontal_layout.size;
+        ImGui::End();
     }
 
     void GUI::RenderContextWindow()
@@ -445,10 +447,11 @@ namespace yart
 
         // Set a constant window size and position
         GuiContext* ctx = GUI::GetGuiContext();
-        ImVec2 viewport_pos = ctx->renderViewportAreaPos;
+        ImRect viewport_area = ctx->renderViewportArea;
+
         ImVec2 window_center = {
-            viewport_pos.x + ctx->renderViewportAreaWidth - window_size.x / 2 - window_margin.x, 
-            viewport_pos.y + window_size.y / 2 + window_margin.y 
+            viewport_area.Min.x + viewport_area.GetWidth() - window_size.x / 2 - window_margin.x, 
+            viewport_area.Min.y + window_size.y / 2 + window_margin.y 
         };
 
         ImGui::SetNextWindowPos(window_center, ImGuiCond_None, { 0.5f, 0.5f });

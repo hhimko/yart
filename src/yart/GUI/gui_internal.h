@@ -11,6 +11,7 @@
 
 #include <imgui_internal.h>
 
+#include "yart/core/viewport.h"
 #include "gui.h"
 
 
@@ -65,25 +66,22 @@ namespace yart
             std::vector<imgui_callback_t> registeredCallbacks;
             /// @brief Inspector nav bar items registered by the application 
             std::vector<InspectorWindow> inspectorWindows;
+            /// @brief The main render viewport used for rendering the scene
+            std::unique_ptr<yart::Viewport> renderViewport = nullptr;
             /// @brief Currently open inspector nav bar window
             InspectorWindow* activeInspectorWindow = nullptr;
 
             /// @brief Whether any changes were made by the user within the last frame
             bool madeChanges;
             /// @brief Amount of pixels the OS window size has changed since last frame
+            /// @details Used for updating layout sizes 
             ImVec2 displaySizeDelta;
-            /// @brief Current render viewport area position on screen in pixel coordinates
-            ImVec2 renderViewportAreaPos;
-            /// @brief Current width of the render viewport area in pixels
-            float renderViewportAreaWidth;
-            /// @brief Current height of the render viewport area in pixels
-            float renderViewportAreaHeight;
+            /// @brief Current render viewport area bounding box
+            ImRect renderViewportArea;
             /// @brief Dear ImGui window ID of the render viewport window
             ImGuiID renderViewportWindowID;
             /// @brief Cached size of the main context window vertical separator
             float mainContextSeparatorHeight;
-            /// @brief Current visible height of the main menu bar body 
-            float mainMenuBarHeight;
 
             /// @brief Pointer to a Dear ImGui icon Font object 
             ImFont* iconsFont = nullptr; 
@@ -114,10 +112,12 @@ namespace yart
         ////////////////////////////////////////////////////////////////////////////////////////////////////
 
         /// @brief Issue main menu bar render commands 
-        void RenderMainMenuBar();
+        /// @return Height of the menu bar, used for determining the content area size
+        float RenderMainMenuBar();
 
-        /// @brief Issue the application's main content render commands 
-        void RenderMainContentFrame();
+        /// @brief Issue the application's main content area render commands 
+        /// @param menu_bar_height Height of the menu bar, returned by GUI::RenderMainMenuBar()
+        void RenderMainContentArea(float menu_bar_height);
 
         /// @brief Issue the application's context window render commands
         void RenderContextWindow();

@@ -145,10 +145,6 @@ namespace yart
         /// @param callback A callback function, or `nullptr` to remove the current callback 
         void SetDearImGuiSetupCallback(event_callback_t callback);
 
-        /// @brief Set a custom callback function for rendering a new frame using Dear ImGui commands 
-        /// @param callback A callback function, or `nullptr` to remove the current callback 
-        void SetRenderCallback(event_callback_t callback);
-
         /// @brief Set a custom callback function to be called when the platform window is closed by the user
         /// @param callback A callback function, or `nullptr` to remove the current callback 
         void SetWindowCloseCallback(event_callback_t callback);
@@ -165,7 +161,12 @@ namespace yart
         /// @note This function should be called at the beginning of each frame 
         void PollEvents();
 
+        /// @brief Begin recording draw commands for a new frame
+        /// @details Should be called once every frame and finalized with Backend::Render()
+        void NewFrame();
+
         /// @brief Submit and present the next frame to the backend window
+        /// @note Backend::NewFrame() has to always be called before calling this method
         void Render();
 
         /// @brief Terminate the backend window and perform a resource cleanup

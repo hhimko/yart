@@ -13,6 +13,7 @@
 #include <glm/glm.hpp>
 
 #include "yart/GUI/views/renderer_view.h"
+#include "yart/core/viewport.h"
 #include "world.h"
 #include "ray.h"
 
@@ -34,6 +35,11 @@ namespace yart
         /// @param height Height in pixels of the output image
         /// @return Whether the current frame has changed visually from the previous rendered frame (used for conditional viewport refreshing) 
         bool Render(float buffer[], uint32_t width, uint32_t height);
+
+        /// @brief Render scene directly to a given viewport
+        /// @param viewport Viewport to render to
+        /// @return Whether the current frame has changed visually from the previous rendered frame (used for conditional viewport refreshing) 
+        bool Render(const yart::Viewport* viewport);
 
         /// @brief Get the renderer's world instance 
         /// @return Renderer's world instance 
