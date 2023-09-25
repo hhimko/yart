@@ -27,22 +27,10 @@ namespace yart
 {
     namespace GUI
     {
-        /// @brief Flags for GUI::CalculateItemSizes()
-        typedef uint32_t ItemSizesFlags; 
-
-        /// @brief Internal flags enum for GUI::CalculateItemSizes()
-        enum ItemSizesFlags_: ItemSizesFlags {
-            ItemSizesFlags_None        = 0,      /// @brief No flags
-            ItemSizesFlags_NoLabel     = 1 << 0, /// @brief Don't display the widget's label. Sets the width of `text_bb` to 0
-            ItemSizesFlags_SquareFrame = 1 << 1, /// @brief Make the widget's frame bounding box a square 
-            
-        };
-
         /// @brief Layout direction enum
         enum class LayoutDir : uint8_t {
             HORIZONTAL,
             VERTICAL
-
         };
 
         /// @brief Structure containing data required to render a inspector nav bar window 
@@ -56,7 +44,6 @@ namespace yart
             const char* name; 
             /// @brief Nav bar item contents immediate rendering callback  
             imgui_callback_t callback;
-
         };
 
         /// @brief GUI context, holding all state required to render a specific UI layout
@@ -73,6 +60,10 @@ namespace yart
 
             /// @brief Whether any changes were made by the user within the last frame
             bool madeChanges;
+            /// @brief Flags for the current GUI item
+            GuiItemFlags currentItemFlags;
+            /// @brief Flags for the next GUI item
+            GuiItemFlags nextItemFlags;
             /// @brief Amount of pixels the OS window size has changed since last frame
             /// @details Used for updating layout sizes 
             ImVec2 displaySizeDelta;
@@ -85,7 +76,6 @@ namespace yart
 
             /// @brief Pointer to a Dear ImGui icon Font object 
             ImFont* iconsFont = nullptr; 
-
         };
 
         /// @brief Layout specification object used to store state of layout widgets
@@ -103,7 +93,6 @@ namespace yart
             float size;
             /// @brief The minimum possible size 
             float min_size = 100.0f;
-            
         };
 
 
@@ -261,6 +250,12 @@ namespace yart
         /// Various helper & utility functions for the GUI module
         ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+        /// @brief Validate, fix and return the current GUI item flags
+        /// @details Additionally sets the `currentItemFlags` GuiContext variable and clears `nextItemFlags`
+        /// @note Should be called at the very top of every widget rendering function 
+        /// @return Flags for the current GUI item
+        GuiItemFlags GetCurrentItemFlags();
+
         /// @brief Helper function for getting a Dear ImGui ID from a formatted string
         /// @param fmt Format of the string
         /// @return Dear ImGui ID
@@ -269,9 +264,9 @@ namespace yart
         /// @brief Compute standard YART GUI bounding boxes for the next widget
         /// @param text_bb Bounding box of the label area
         /// @param frame_bb Bounding box of the widget frame area
-        /// @param flags Optional flags from the `ItemSizesFlags_` enum
+        /// @param square_frame Whether the item frame should be a square. Used for combo box rendering
         /// @return The total bounding box 
-        ImRect CalculateItemSizes(ImRect& text_bb, ImRect& frame_bb, ItemSizesFlags flags = ItemSizesFlags_None);
+        ImRect CalculateItemSizes(ImRect& text_bb, ImRect& frame_bb, bool square_frame = false);
 
         /// @brief Check whether the mouse cursor lies within a given circle
         /// @param pos Circle position on the screen

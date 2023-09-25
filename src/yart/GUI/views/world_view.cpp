@@ -39,6 +39,7 @@ namespace yart
             static SkyType items_LUT[items_size] = { SkyType::SOLID_COLOR, SkyType::GRADIENT, SkyType::CUBEMAP };
 
             static int selected_item = static_cast<uint8_t>(target->m_skyType);
+            GUI::SetNextItemFlags(GuiItemFlags_FullWidth);
             if (GUI::ComboHeader("Sky type", items, items_size, &selected_item, false)) 
                 made_changes = true;
 

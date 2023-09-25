@@ -23,6 +23,12 @@ namespace yart
         {
             bool section_open, made_changes = false;
 
+            section_open = GUI::BeginCollapsableSection("View Transform");
+            if (section_open) {
+                made_changes |= RenderViewTransformSection(target);
+            }
+            GUI::EndCollapsableSection(section_open);
+
             section_open = GUI::BeginCollapsableSection("Camera");
             if (section_open) {
                 made_changes |= RenderCameraSection(target);
@@ -96,6 +102,20 @@ namespace yart
                     made_changes = true;
                 }
             }
+
+            return made_changes;
+        }
+
+        bool RendererView::RenderViewTransformSection(yart::Renderer* target)
+        {
+            bool made_changes = false;
+
+            static const char* position_labels[3] = { "Position X", "Y", "Z" };
+            if (GUI::SliderVec3(position_labels, &target->m_cameraPosition, "%.3fm", 0.1f))
+                made_changes = true;
+
+            static const char* rotation_labels[3] = { "Rotation X", "Y", "Z" };
+
 
             return made_changes;
         }

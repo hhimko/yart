@@ -42,6 +42,11 @@ namespace yart
         private:
             RendererView() = delete;
 
+            /// @brief Issue "View Transform" section GUI render commands
+            /// @param target View target instance
+            /// @returns Whether any changes were made by the user since the last frame
+            static bool RenderViewTransformSection(yart::Renderer* target);
+
             /// @brief Issue "Camera" section GUI render commands
             /// @param target View target instance
             /// @returns Whether any changes were made by the user since the last frame

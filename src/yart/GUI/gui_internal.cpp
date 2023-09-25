@@ -675,6 +675,9 @@ namespace yart
     template<typename T, typename SignedT>
     bool SliderExT(const char* name, ImGuiDataType data_type, T* p_val, const T* p_min, const T* p_max, const char *format, T arrow_step) 
     {
+        // Retrieve current item flags
+        GuiItemFlags flags = GUI::GetCurrentItemFlags(); 
+
         ImGuiContext* g = ImGui::GetCurrentContext();
         ImGuiWindow* window = g->CurrentWindow;
         if (window->SkipItems)
@@ -921,6 +924,9 @@ namespace yart
 
     bool GUI::GradientEditorEx(GradientEditorContext& ctx)
     {
+        // Retrieve current item flags
+        GuiItemFlags flags = GetCurrentItemFlags(); 
+
         ImGuiContext* g = ImGui::GetCurrentContext();
         ImGuiWindow* window = g->CurrentWindow;
         ImDrawList* draw_list = window->DrawList;
@@ -1173,7 +1179,30 @@ namespace yart
         draw_list->PathStroke(col, ImDrawFlags_None, 1.0f);
     }
 
-    ImGuiID GUI::GetIDFormatted(const char* fmt, ...)
+    GuiItemFlags GUI::GetCurrentItemFlags()
+    {
+        GuiContext* ctx = GetGuiContext();
+        GuiItemFlags flags = ctx->nextItemFlags;
+
+        // Validate and fix flags
+        if (flags != GuiItemFlags_None) {
+            // Validate 
+            static constexpr GuiItemFlags rounding_flags = GuiItemFlags_CornersRoundTop | GuiItemFlags_CornersRoundBottom;
+            if ((flags & GuiItemFlags_NoCornerRounding) && (flags & rounding_flags))
+                YART_ABORT("Invalid GuiItemFlags: Rounding flags mix-up\n");
+
+            // Fix
+            if (flags & GuiItemFlags_FullWidth)
+                flags |= GuiItemFlags_HideLabel;
+        }
+
+        ctx->currentItemFlags = flags;
+        ctx->nextItemFlags = GuiItemFlags_None;
+        
+        return flags;
+    }
+
+    ImGuiID GUI::GetIDFormatted(const char *fmt, ...)
     {
         ImGuiWindow* window = ImGui::GetCurrentWindow();
         va_list args;
@@ -1186,24 +1215,31 @@ namespace yart
         return window->GetID(str);
     }
 
-    ImRect GUI::CalculateItemSizes(ImRect& text_bb, ImRect& frame_bb, ItemSizesFlags flags) 
+    ImRect GUI::CalculateItemSizes(ImRect& text_bb, ImRect& frame_bb, bool square_frame) 
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
         ImGuiWindow* window = g->CurrentWindow;
+
+        GuiItemFlags flags = GetGuiContext()->currentItemFlags; 
+        const bool hide_name = flags & GuiItemFlags_HideLabel; 
+        const bool is_full_width = flags & GuiItemFlags_FullWidth; 
 
         // Calculate the total bounding box of the widget
         const ImRect total_bb = { window->DC.CursorPos, { window->WorkRect.Max.x, window->DC.CursorPos.y + ImGui::GetFrameHeight() }};
         static const float text_width_percent = 0.4f; // TODO: This value should be calculated based on the current indent at some point
 
-        const bool display_name = (flags & ItemSizesFlags_NoLabel) == 0; 
+        const bool display_name = (flags & GuiItemFlags_HideLabel) == 0; 
         const float frame_spacing = display_name ? g->Style.ItemInnerSpacing.x : 0.0f;
-        const float text_frame_width = display_name ? IM_ROUND(total_bb.GetWidth() * text_width_percent) : 0.0f;
-        const float max_frame_width = (flags & ItemSizesFlags_SquareFrame) ? total_bb.GetHeight() : 0.0f;
+        const float text_frame_width = !is_full_width ? IM_ROUND(total_bb.GetWidth() * text_width_percent) : 0.0f;
+        const float max_frame_width = square_frame ? total_bb.GetHeight() : 0.0f;
 
         text_bb.Min = total_bb.Min;
         text_bb.Max = { total_bb.Min.x + text_frame_width - frame_spacing, total_bb.Max.y };
         frame_bb.Min = { text_bb.Max.x + frame_spacing, total_bb.Min.y };
         frame_bb.Max = (max_frame_width <= 0) ? total_bb.Max : ImVec2(ImMin(frame_bb.Min.x + max_frame_width, total_bb.Max.x), total_bb.Max.y);
+
+        if (hide_name)
+            text_bb.Max.x = text_bb.Min.x;
 
         // Return the total bounding box of the widget
         return total_bb;

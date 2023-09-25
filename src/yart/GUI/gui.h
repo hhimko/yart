@@ -58,12 +58,27 @@
 #endif // ifndef DOXYGEN_EXCLUDE 
 
 
+/// @brief GUI item flags type for the GuiItemFlags_ enum
+using GuiItemFlags = uint16_t; 
+
+/// @brief Common flags enum for specifying GUI items appearance/behavior
+enum GuiItemFlags_ : GuiItemFlags {
+    GuiItemFlags_None =               (0),      /// @brief No flags
+    GuiItemFlags_HideLabel =          (1 << 0), /// @brief Don't display a text label next to the item's frame 
+    GuiItemFlags_FullWidth =          (1 << 1), /// @brief Display the item over the full content width. Hides item's label in result
+    GuiItemFlags_CornersRoundTop =    (1 << 2), /// @brief Only round the top corners of the item's frame
+    GuiItemFlags_CornersRoundBottom = (1 << 3), /// @brief Only round the bottom corners of the item's frame
+    GuiItemFlags_NoCornerRounding =   (1 << 4), /// @brief Don't use any rounding on the item's frame
+};
+
+
 namespace yart
 {
     namespace GUI
     {
         /// @brief Callback function for rendering custom Dear ImGui windows  
         using imgui_callback_t = std::function<bool()>;
+
 
         /// @brief GUI context, holding all state required to render a specific UI layout
         struct GuiContext; // Opaque type without including `gui_internal.h`
@@ -91,7 +106,6 @@ namespace yart
             uint8_t selectedItemIndex = std::numeric_limits<uint8_t>::max();
             /// @brief Internal member, storing identifying IDs of color picker handles
             std::unique_ptr<ImGuiID[]> ids = nullptr;
-
         };
 
 
@@ -139,10 +153,6 @@ namespace yart
         /// @returns Whether any changes were made by the user within this frame
         bool Render();
 
-        /// @brief Get the main application render viewport
-        /// @return Main render viewport
-        yart::Viewport* GetRenderViewport();
-
         /// @brief Render the view axes context window
         /// @param x_axis View x-axis
         /// @param y_axis View y-axis
@@ -150,6 +160,14 @@ namespace yart
         /// @param clicked_axis Output variable set to a base axis clicked by the user
         /// @return Whether the user has clicked on an axis and the `clicked_axis` output variable has been set 
         bool RenderViewAxesWindow(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis, glm::vec3& clicked_axis);
+
+        /// @brief Get the main application render viewport
+        /// @return Main render viewport
+        yart::Viewport* GetRenderViewport();
+
+        /// @brief Set custom flags for the next GUI item 
+        /// @param flags Flags to be set
+        void SetNextItemFlags(GuiItemFlags flags);
 
         /// @brief Test whether the mouse cursor is currently directly over the render viewport
         /// @return Whether mouse is over viewport
@@ -199,6 +217,14 @@ namespace yart
         /// @param arrow_step The step of change in value when using the frame arrows
         /// @return Whether the input value has changed
         bool SliderFloat(const char* name, float* p_val, float min, float max, const char* format = "%.2f", float arrow_step = 1.0f);
+
+        /// @brief Render a YART GUI style slider widget for a `glm::vec3` variable
+        /// @param names Array of individual component labels. Expected to be of size 3
+        /// @param p_vals Pointer to the controlled value
+        /// @param format Format in which to display all the vector values
+        /// @param arrow_step The step of change in value when using the frame arrows
+        /// @return Whether the input value has changed
+        bool SliderVec3(const char* names[3], glm::vec3* p_vals, const char* format = "%.2f", float arrow_step = 1.0f);
 
         /// @brief Render a YART GUI style checkbox widget
         /// @param name Label text displayed next to the checkbox

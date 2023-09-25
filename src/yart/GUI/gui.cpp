@@ -188,15 +188,21 @@ namespace yart
         return ctx->madeChanges;
     }
 
+    bool GUI::RenderViewAxesWindow(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis, glm::vec3& clicked_axis)
+    {
+        return GUI::RenderViewAxesWindowEx(x_axis, y_axis, z_axis, clicked_axis);
+    }
+
     yart::Viewport* GUI::GetRenderViewport()
     {
         GuiContext* ctx = GUI::GetGuiContext();
         return ctx->renderViewport.get();
     }
 
-    bool GUI::RenderViewAxesWindow(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis, glm::vec3& clicked_axis)
+    void GUI::SetNextItemFlags(GuiItemFlags flags)
     {
-        return GUI::RenderViewAxesWindowEx(x_axis, y_axis, z_axis, clicked_axis);
+        GuiContext* ctx = GUI::GetGuiContext();
+        ctx->nextItemFlags = flags;
     }
 
     bool GUI::IsMouseOverRenderViewport()
@@ -236,8 +242,29 @@ namespace yart
         return GUI::SliderEx(name, ImGuiDataType_Float, (void*)p_val, (float*)&min, (float*)&max, format, (void*)&arrow_step);
     }
 
+    bool GUI::SliderVec3(const char* names[3], glm::vec3* p_vals, const char* format, float arrow_step)
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        bool made_changes = false;
+
+        const float backup_spacing = g->Style.ItemSpacing.y;
+        g->Style.ItemSpacing.y = 1.0f;
+
+        for (int i = 0; i < 3; ++i) {
+            static_assert(sizeof(glm::vec3) == 3 * sizeof(float));
+            made_changes |= GUI::SliderFloat(names[i], &((float*)p_vals)[i], format, arrow_step);
+        }
+
+        g->Style.ItemSpacing.y = backup_spacing;
+
+        return made_changes;
+    }
+
     bool GUI::CheckBox(const char* name, bool* val)
     {
+        // Retrieve current item flags
+        GuiItemFlags flags = GetCurrentItemFlags(); 
+
         ImGuiContext* g = ImGui::GetCurrentContext();
         ImGuiWindow* window = g->CurrentWindow;
         if (window->SkipItems)
@@ -245,7 +272,7 @@ namespace yart
 
 
         ImRect text_bb, frame_bb;
-        const ImRect total_bb = CalculateItemSizes(text_bb, frame_bb, ItemSizesFlags_SquareFrame);
+        const ImRect total_bb = CalculateItemSizes(text_bb, frame_bb, true);
 
         const ImGuiID id = window->GetID(name);
         ImGui::ItemSize(total_bb);
@@ -296,6 +323,9 @@ namespace yart
 
     bool GUI::ComboHeader(const char* name, const char* items[], size_t items_size, int* selected_item, bool display_name)
     {
+        // Retrieve current item flags
+        GuiItemFlags flags = GetCurrentItemFlags(); 
+
         ImGuiContext* g = ImGui::GetCurrentContext();
         ImGuiWindow* window = g->CurrentWindow;
         if (window->SkipItems)
@@ -303,8 +333,7 @@ namespace yart
 
 
         ImRect text_bb, frame_bb;
-        ItemSizesFlags flags = display_name ? ItemSizesFlags_None : ItemSizesFlags_NoLabel;
-        const ImRect total_bb = CalculateItemSizes(text_bb, frame_bb, flags);
+        const ImRect total_bb = CalculateItemSizes(text_bb, frame_bb);
 
         ImGuiID id = GUI::GetIDFormatted("##ComboHeader/%s", name);
         ImGui::ItemSize(total_bb);
@@ -396,6 +425,9 @@ namespace yart
 
     bool GUI::ColorEdit(const char* name, float color[3])
     {
+        // Retrieve current item flags
+        GuiItemFlags flags = GetCurrentItemFlags(); 
+
         ImGuiContext* g = ImGui::GetCurrentContext();
         ImGuiWindow* window = g->CurrentWindow;
         if (window->SkipItems)
