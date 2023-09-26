@@ -31,8 +31,8 @@ namespace yart
             bool made_changes = false;
 
             ImVec2 image_size = target->GetImageSize();
-            ImGui::Text("Width: %dpx", static_cast<uint32_t>(image_size.x));
-            ImGui::Text("Height: %dpx", static_cast<uint32_t>(image_size.y));
+            GUI::Label("Width", "%dpx", static_cast<uint32_t>(image_size.x));
+            GUI::Label("Height", "%dpx", static_cast<uint32_t>(image_size.y));
 
             int scale = target->GetImageScale();
             if (GUI::SliderInt("Scale", &scale, 1, 10)) {

@@ -624,6 +624,41 @@ namespace yart
         ImGui::EndGroup();
     }
 
+    void GUI::LabelEx(const char* name, const char* text)
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        GuiContext* ctx = GetGuiContext();
+
+        // Retrieve current item flags
+        GuiItemFlags flags = GetCurrentItemFlags(); 
+
+        ImGuiWindow* window = g->CurrentWindow;
+        if (window->SkipItems)
+            return;
+
+
+        ImRect text_bb, frame_bb;
+        const ImRect total_bb = CalculateItemSizes(text_bb, frame_bb);
+
+        const ImGuiID id = window->GetID(name);
+        ImGui::ItemSize(total_bb);
+        if (!ImGui::ItemAdd(total_bb, id))
+            return;
+
+
+        const bool total_hovered = g->ActiveId != id && (ImGui::ItemHoverable(total_bb, id) || g->NavId == id);
+        const bool text_hovered = total_hovered && ImGui::IsMouseHoveringRect(text_bb.Min, text_bb.Max);
+
+        // Render the widget name text
+        if (GUI::DrawText(window->DrawList, text_bb.Min, text_bb.Max, name) && text_hovered)
+            ImGui::SetTooltip(name);
+
+        // Render the frame with label text
+        DrawItemFrame(window->DrawList, frame_bb.Min, frame_bb.Max, false, false);
+        if (GUI::DrawText(window->DrawList, frame_bb.Min, frame_bb.Max, text, YART_GUI_TEXT_ALIGN_LEFT, true) && text_hovered)
+            ImGui::SetTooltip(text);
+    }
+
     bool GUI::BeginTabBar(const char* item_name)
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
@@ -673,7 +708,7 @@ namespace yart
     /// @tparam SignedT Signed version of the generic `T` param    
     /// @return Whether the input value has changed  
     template<typename T, typename SignedT>
-    bool SliderExT(const char* name, ImGuiDataType data_type, T* p_val, const T* p_min, const T* p_max, const char *format, T arrow_step) 
+    bool SliderExT(const char* name, ImGuiDataType data_type, T* p_val, const T* p_min, const T* p_max, const char* format, T arrow_step) 
     {
         // Retrieve current item flags
         GuiItemFlags flags = GUI::GetCurrentItemFlags(); 
@@ -725,7 +760,7 @@ namespace yart
         }
 
         // Render the label text
-        if (GUI::DrawText(window->DrawList, text_bb.Min, text_bb.Max, YART_GUI_DEFAULT_TEXT_ALIGN, name) && text_hovered)
+        if (GUI::DrawText(window->DrawList, text_bb.Min, text_bb.Max, name) && text_hovered)
             ImGui::SetTooltip(name);
 
         // During temp input, skip drawing the custom frame 
@@ -785,13 +820,11 @@ namespace yart
         const ImVec2 arrow_padding = { 5.0f, g->Style.FramePadding.y + 3.0f };
         const bool frame_drag_nav = (g->NavId != 0 && g->NavId == id && g->NavDisableMouseHover);
 
-        ImU32 col = ImGui::GetColorU32(left_arrow_active ? ImGuiCol_FrameBgActive : (left_arrow_hovered || frame_drag_nav) ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg);
-        window->DrawList->AddRectFilled(left_arrow_bb.Min, left_arrow_bb.Max, col, frame_rounding, ImDrawFlags_RoundCornersLeft);
+        GUI::DrawItemFrame(window->DrawList, left_arrow_bb.Min, left_arrow_bb.Max, left_arrow_hovered || frame_drag_nav, left_arrow_active, ImDrawFlags_RoundCornersLeft);
         GUI::DrawLeftArrow(window->DrawList, left_arrow_bb.Min, left_arrow_bb.Max, arrow_padding, text_col);
 
         // - Drag frame
-        col = ImGui::GetColorU32(g->ActiveId == id ? ImGuiCol_FrameBgActive : (frame_drag_hovered || frame_drag_nav) ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg);
-        window->DrawList->AddRectFilled(frame_drag_bb.Min, frame_drag_bb.Max, col);
+        GUI::DrawItemFrame(window->DrawList, frame_drag_bb.Min, frame_drag_bb.Max, frame_drag_hovered || frame_drag_nav, g->ActiveId == id, ImDrawFlags_RoundCornersNone);
 
         // - Drag frame slider highlight (only if clamped)
         if (p_min != nullptr && p_max != nullptr) {
@@ -799,12 +832,11 @@ namespace yart
             const ImVec2 highlight_p_min = frame_drag_bb.Min;
             const ImVec2 highlight_p_max = { highlight_p_min.x + t * frame_drag_bb.GetWidth(), frame_drag_bb.Max.y };
 
-            GUI::DrawHighlightRect(window->DrawList, highlight_p_min, highlight_p_max, t, (frame_drag_hovered || frame_drag_nav), g->ActiveId == id);
+            GUI::DrawFrameHighlight(window->DrawList, highlight_p_min, highlight_p_max, t, (frame_drag_hovered || frame_drag_nav), g->ActiveId == id);
         }
 
         // - Right arrow frame
-        col = ImGui::GetColorU32(right_arrow_active ? ImGuiCol_FrameBgActive : (right_arrow_hovered || frame_drag_nav) ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg);
-        window->DrawList->AddRectFilled(right_arrow_bb.Min, right_arrow_bb.Max, col, frame_rounding, ImDrawFlags_RoundCornersRight);
+        GUI::DrawItemFrame(window->DrawList, right_arrow_bb.Min, right_arrow_bb.Max, right_arrow_hovered || frame_drag_nav, right_arrow_active, ImDrawFlags_RoundCornersRight);
         GUI::DrawRightArrow(window->DrawList, right_arrow_bb.Min, right_arrow_bb.Max, arrow_padding, text_col);
 
 
@@ -813,7 +845,7 @@ namespace yart
         const char* value_buf_end = value_buf + ImFormatString(value_buf, IM_ARRAYSIZE(value_buf), format, *p_val);
         ImGui::RenderTextClipped(frame_drag_bb.Min, frame_drag_bb.Max, value_buf, value_buf_end, nullptr, { 0.5f, 0.5f });
 
-        ImGui::RenderNavHighlight(frame_bb, id);
+        ImGui::RenderNavHighlight(frame_bb, id, ImGuiNavHighlightFlags_TypeThin);
         made_changes |= ImGui::DragBehavior(id, data_type, p_val, 1.0f, p_min, p_max, format, ImGuiSliderFlags_AlwaysClamp);
         if (g->ActiveId == id)
             yart::GUI::Input::SetCursorLocked();
@@ -1036,19 +1068,57 @@ namespace yart
         ImGui::EndGroup();
         return state_updated;
     }
-    
-    bool GUI::DrawText(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, float align, const char* text)
+
+    void GUI::DrawItemFrame(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, bool hovered, bool active, ImDrawFlags draw_flags)
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
+        GuiContext* ctx = GetGuiContext();
+
+        // GuiItemFlags enum rounding flags have higher priority over ImDrawFlags 
+        if (ctx->currentItemFlags & GuiItemFlags_NoCornerRounding) {
+            draw_flags &= ~ImDrawFlags_RoundCornersAll;
+            draw_flags |= ImDrawFlags_RoundCornersNone;
+        } else {
+            // If frame rounding is requested by both flags, take their union 
+            if (ctx->currentItemFlags & GuiItemFlags_CornersRoundTop)
+                draw_flags &= (~ImDrawFlags_RoundCornersAll | ImDrawFlags_RoundCornersTop);
+            if (ctx->currentItemFlags & GuiItemFlags_CornersRoundBottom)
+                draw_flags &= (~ImDrawFlags_RoundCornersAll | ImDrawFlags_RoundCornersBottom);
+        }
+
+        const float rounding = g->Style.FrameRounding;
+        const ImU32 bg_col = ImGui::GetColorU32(active ? ImGuiCol_FrameBgActive : hovered ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg);
+        draw_list->AddRectFilled(p_min, p_max, bg_col, rounding, draw_flags);
+
+        if (ctx->currentItemFlags & GuiItemFlags_FrameBorder) {
+            const ImU32 border_col = ImGui::GetColorU32(ImGuiCol_Border);
+            draw_list->AddRect(p_min, p_max, border_col, rounding, draw_flags);
+        }
+    }
+
+    bool GUI::DrawText(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, const char* text, float align, bool frame_padding)
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+
+        const float width = p_max.x - p_min.x;
+        if (width <= 0.0f)
+            return false;
 
         // Calculate offset based on the alignment value
         const ImVec2 text_size = ImGui::CalcTextSize(text);
         const float offset_x = ImMax(0.0f, (p_max.x - p_min.x) * align - text_size.x * align);
         const float offset_y = (p_max.y - p_min.y - g->FontSize) / 2.0f;
 
-        const ImVec2 p0 = { p_min.x + offset_x, p_min.y + offset_y }; 
-        ImGui::RenderTextEllipsis(draw_list, p0, p_max, p_max.x, p_max.x, text, nullptr, &text_size);
+        ImVec2 p0 = { p_min.x + offset_x, p_min.y + offset_y }; 
+        ImVec2 p1 = p_max; 
 
+        if (frame_padding) {
+            const float adaptive_pad = ImClamp(width - text_size.x, 0.0f, 2.0f * g->Style.FramePadding.x) / 2.0f;
+            p0.x += adaptive_pad;
+            p1.x -= adaptive_pad;
+        }
+
+        ImGui::RenderTextEllipsis(draw_list, p0, p1, p1.x, p1.x, text, nullptr, &text_size);
         return text_size.x > (p_max.x - p_min.x);
     }
 
@@ -1103,19 +1173,17 @@ namespace yart
                 flags |= ImDrawFlags_RoundCornersAll;
 
             if (flags & ImDrawFlags_RoundCornersLeft) {
-                p_min.x += rounding + 1.0f;
+                p_min.x = ImCeil(p_min.x + rounding + 1.0f);
 
                 const ImVec2 p1 = { p_min.x - rounding - 1.0f, p_min.y };
-                p_min.x += 1.0f;
                 const ImVec2 p2 = { p_min.x, p_max.y };
                 draw_list->AddRectFilled(p1, p2, min_col, rounding, ImDrawFlags_RoundCornersLeft);
             }
 
             if (flags & ImDrawFlags_RoundCornersRight) {
-                p_max.x -= rounding + 1.0f;
+                p_max.x = ImFloor(p_max.x - rounding - 1.0f);
 
                 const ImVec2 p2 = { p_max.x + rounding + 1.0f, p_max.y };
-                p_min.x -= 1.0f;
                 const ImVec2 p1 = { p_max.x, p_min.y };
                 draw_list->AddRectFilled(p1, p2, max_col, rounding, ImDrawFlags_RoundCornersRight);
             }
@@ -1124,8 +1192,11 @@ namespace yart
         draw_list->AddRectFilledMultiColor(p_min, p_max, min_col, max_col, max_col, min_col);
     }
 
-    void GUI::DrawHighlightRect(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, float t, bool hovered, bool active, float rounding, ImDrawFlags flags)
+    void GUI::DrawFrameHighlight(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, float t, bool hovered, bool active, ImDrawFlags flags)
     {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        GuiContext* ctx = GetGuiContext();
+
         // Compute the color values for each side
         glm::vec3 colors[2] = {
             // Start color
@@ -1146,7 +1217,16 @@ namespace yart
         const ImU32 min_col = ImGui::GetColorU32({ colors[0].x, colors[0].y, colors[0].z, YART_GUI_ALPHA_OPAQUE });
         const ImU32 max_col = ImGui::GetColorU32({ colors[1].x, colors[1].y, colors[1].z, YART_GUI_ALPHA_OPAQUE });
 
-        DrawGradientRect(draw_list, p_min, p_max, min_col, max_col, rounding, flags);
+        const float rounding = g->Style.FrameRounding;
+        if (ctx->currentItemFlags & GuiItemFlags_FrameBorder) {
+            // A offset of 0.5 seems to work much better for alignment with border than 1.0 does 
+            const ImVec2 p1 = { p_min.x + 0.5f, p_min.y + 0.5f };
+            const ImVec2 p2 = { p_max.x - 0.5f, p_max.y - 0.5f };
+            DrawGradientRect(draw_list, p1, p2, min_col, max_col, rounding, flags);
+            draw_list->AddRect(p_min, p_max, ImGui::GetColorU32(ImGuiCol_Border), rounding, flags);
+        } else {
+            DrawGradientRect(draw_list, p_min, p_max, min_col, max_col, rounding, flags);
+        }
     }
 
     void GUI::DrawLeftArrow(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, const ImVec2& padding, ImU32 col)
@@ -1202,7 +1282,7 @@ namespace yart
         return flags;
     }
 
-    ImGuiID GUI::GetIDFormatted(const char *fmt, ...)
+    ImGuiID GUI::GetIDFormatted(const char* fmt, ...)
     {
         ImGuiWindow* window = ImGui::GetCurrentWindow();
         va_list args;

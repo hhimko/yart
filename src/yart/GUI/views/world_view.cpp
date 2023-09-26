@@ -40,7 +40,7 @@ namespace yart
 
             static int selected_item = static_cast<uint8_t>(target->m_skyType);
             GUI::SetNextItemFlags(GuiItemFlags_FullWidth);
-            if (GUI::ComboHeader("Sky type", items, items_size, &selected_item, false)) 
+            if (GUI::ComboHeader("Sky type", items, items_size, &selected_item)) 
                 made_changes = true;
 
 

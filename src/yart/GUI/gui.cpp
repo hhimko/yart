@@ -35,7 +35,7 @@ namespace yart
         style.FrameBorderSize = 0.0f;
         style.PopupBorderSize = 1.0f;
         style.PopupRounding = 0.0f;
-        style.FrameRounding = 3.0f;
+        style.FrameRounding = 4.0f;
         style.WindowRounding = 2.0f;
         style.ScrollbarSize = 10.0f;
         style.ScrollbarRounding = 10.0f;
@@ -170,7 +170,7 @@ namespace yart
     bool GUI::Render()
     {
         // Uncomment to display Dear ImGui's debug window
-        // ImGui::ShowDemoWindow();
+        ImGui::ShowDemoWindow();
 
 
         float fps = ImGui::GetCurrentContext()->IO.Framerate;
@@ -222,7 +222,20 @@ namespace yart
         ImGui::PushFont(ctx->iconsFont);
     }
 
-    bool GUI::SliderInt(const char* name, int* p_val, const char* format, int arrow_step)
+    void GUI::Label(const char* name, const char* text, ...)
+    {
+        va_list args;
+        va_start(args, text);
+
+        char text_buffer[32];
+        ImFormatStringV(text_buffer, YART_ARRAYSIZE(text_buffer), text, args);
+
+        va_end(args);
+
+        return LabelEx(name, text_buffer);
+    }
+
+    bool GUI::SliderInt(const char *name, int *p_val, const char *format, int arrow_step)
     {
         return GUI::SliderEx(name, ImGuiDataType_S32, (void*)p_val, nullptr, nullptr, format, (void*)&arrow_step);
     }
@@ -245,13 +258,23 @@ namespace yart
     bool GUI::SliderVec3(const char* names[3], glm::vec3* p_vals, const char* format, float arrow_step)
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
+        GuiContext* ctx = GetGuiContext();
         bool made_changes = false;
+
+        GuiItemFlags original_flags = GetCurrentItemFlags();
 
         const float backup_spacing = g->Style.ItemSpacing.y;
         g->Style.ItemSpacing.y = 1.0f;
 
-        for (int i = 0; i < 3; ++i) {
-            static_assert(sizeof(glm::vec3) == 3 * sizeof(float));
+        static constexpr size_t items = 3;
+        for (int i = 0; i < items; ++i) {
+            GuiItemFlags flags = original_flags | (
+                i == 0 ? GuiItemFlags_CornersRoundTop : i == items - 1 ? GuiItemFlags_CornersRoundBottom : GuiItemFlags_NoCornerRounding
+            );
+
+            SetNextItemFlags(flags);
+
+            static_assert(sizeof(glm::vec3) == items * sizeof(float));
             made_changes |= GUI::SliderFloat(names[i], &((float*)p_vals)[i], format, arrow_step);
         }
 
@@ -262,10 +285,13 @@ namespace yart
 
     bool GUI::CheckBox(const char* name, bool* val)
     {
-        // Retrieve current item flags
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        GuiContext* ctx = GetGuiContext();
+
+        // Retrieve current item flags and add the default frame border flag
+        ctx->nextItemFlags |= GuiItemFlags_FrameBorder;
         GuiItemFlags flags = GetCurrentItemFlags(); 
 
-        ImGuiContext* g = ImGui::GetCurrentContext();
         ImGuiWindow* window = g->CurrentWindow;
         if (window->SkipItems)
             return false;
@@ -298,30 +324,29 @@ namespace yart
         }
 
         // Render label text
-        if (GUI::DrawText(window->DrawList, text_bb.Min, text_bb.Max, YART_GUI_DEFAULT_TEXT_ALIGN, name) && text_hovered)
+        if (GUI::DrawText(window->DrawList, text_bb.Min, text_bb.Max, name) && text_hovered)
             ImGui::SetTooltip(name);
 
         // Handle frame inputs
         bool hovered, active;
-        if (ImGui::ButtonBehavior(frame_bb, id, &hovered, &active)) {
+        if (ImGui::ButtonBehavior(frame_bb, id, &hovered, &active, ImGuiButtonFlags_PressedOnClick)) {
             *val ^= 1; // Toggle the checkbox state
             item_changed = true;
         }
 
         // Render frame
-        const float rounding = g->Style.FrameRounding;
         if (*val) {
-            DrawHighlightRect(window->DrawList, frame_bb.Min, frame_bb.Max, 1.0f, hovered, active, rounding);
+            static constexpr ImDrawFlags draw_flags = ImDrawFlags_RoundCornersAll;
+            DrawFrameHighlight(window->DrawList, frame_bb.Min, frame_bb.Max, 1.0f, hovered, active, draw_flags);
         } else {
-            const ImU32 col = ImGui::GetColorU32(active ? ImGuiCol_FrameBgActive : hovered ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg); 
-            window->DrawList->AddRectFilled(frame_bb.Min, frame_bb.Max, col, rounding);
+            DrawItemFrame(window->DrawList, frame_bb.Min, frame_bb.Max, hovered, active);
         }
 
-        ImGui::RenderNavHighlight(frame_bb, id);
+        ImGui::RenderNavHighlight(frame_bb, id, ImGuiNavHighlightFlags_TypeThin);
         return item_changed;
     }
 
-    bool GUI::ComboHeader(const char* name, const char* items[], size_t items_size, int* selected_item, bool display_name)
+    bool GUI::ComboHeader(const char* name, const char* items[], size_t items_size, int* selected_item)
     {
         // Retrieve current item flags
         GuiItemFlags flags = GetCurrentItemFlags(); 
@@ -366,14 +391,10 @@ namespace yart
 
         // Render the label text
         const bool text_hovered = ImGui::IsItemHovered() && ImGui::IsMouseHoveringRect(text_bb.Min, text_bb.Max);
-        if (GUI::DrawText(window->DrawList, text_bb.Min, text_bb.Max, YART_GUI_DEFAULT_TEXT_ALIGN, name) && text_hovered)
+        if (GUI::DrawText(window->DrawList, text_bb.Min, text_bb.Max, name) && text_hovered)
             ImGui::SetTooltip(name);
 
         // Render the individual header items
-        const ImU32 frame_col = ImGui::GetColorU32(ImGuiCol_FrameBg);
-        const ImU32 frame_hovered_col = ImGui::GetColorU32(ImGuiCol_FrameBgHovered);
-        const float rounding = g->Style.FrameRounding;
-
         ImVec2 p_min = frame_bb.Min;
         ImVec2 p_max = frame_bb.Max;
         for (int i = 0; i < items_size; ++i) {
@@ -395,17 +416,17 @@ namespace yart
 
             const bool hovered = ImGui::IsItemHovered();
             const bool hovered_or_nav = (hovered || (g->NavId != 0 && g->NavId == id && g->NavDisableMouseHover));
+            bool held = hovered && ImGui::IsMouseDown(ImGuiMouseButton_Left);
+            
             const ImDrawFlags flags = i == 0 ? ImDrawFlags_RoundCornersLeft : i == items_size - 1 ? ImDrawFlags_RoundCornersRight : ImDrawFlags_RoundCornersNone;
             if (i == *selected_item) {
-                bool held = hovered && ImGui::IsMouseDown(ImGuiMouseButton_Left);
-                GUI::DrawHighlightRect(window->DrawList, p_min, p_max, 1.0f, hovered_or_nav, held, rounding, flags);
+                GUI::DrawFrameHighlight(window->DrawList, p_min, p_max, 1.0f, hovered_or_nav, held, flags);
             } else {
-                const ImU32 col = hovered_or_nav ? frame_hovered_col : frame_col;
-                window->DrawList->AddRectFilled(p_min, p_max, col, rounding, flags);
+                DrawItemFrame(window->DrawList, p_min, p_max, hovered_or_nav, held, flags);
             }
 
             // Render header text
-            if (GUI::DrawText(window->DrawList, { p_min.x + 2.0f, p_min.y }, { p_max.x - 2.0f, p_max.y }, YART_GUI_TEXT_ALIGN_CENTER, items[i]) && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
+            if (GUI::DrawText(window->DrawList, { p_min.x + 2.0f, p_min.y }, { p_max.x - 2.0f, p_max.y }, items[i], YART_GUI_TEXT_ALIGN_CENTER) && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
                 ImGui::SetTooltip(items[i]);
         }
 
@@ -419,7 +440,7 @@ namespace yart
             window->DrawList->AddRectFilled(p_min, p_max, separator_col);
         }
 
-        ImGui::RenderNavHighlight(frame_bb, id);
+        ImGui::RenderNavHighlight(frame_bb, id, ImGuiNavHighlightFlags_TypeThin);
         return item_changed;
     }
 
@@ -478,7 +499,7 @@ namespace yart
 
 
         // Render the label text
-        if (GUI::DrawText(window->DrawList, text_bb.Min, text_bb.Max, YART_GUI_DEFAULT_TEXT_ALIGN, name) && text_hovered)
+        if (GUI::DrawText(window->DrawList, text_bb.Min, text_bb.Max, name) && text_hovered)
             ImGui::SetTooltip(name);
 
         // Render the color button frame
@@ -512,7 +533,7 @@ namespace yart
         if (picker_popup_window && g->ActiveId != 0 && g->ActiveIdWindow == picker_popup_window)
             g->LastItemData.ID = g->ActiveId;
 
-        ImGui::RenderNavHighlight(frame_bb, id);
+        ImGui::RenderNavHighlight(frame_bb, id, ImGuiNavHighlightFlags_TypeThin);
         return made_changes;
     }
 

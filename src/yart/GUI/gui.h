@@ -69,6 +69,7 @@ enum GuiItemFlags_ : GuiItemFlags {
     GuiItemFlags_CornersRoundTop =    (1 << 2), /// @brief Only round the top corners of the item's frame
     GuiItemFlags_CornersRoundBottom = (1 << 3), /// @brief Only round the bottom corners of the item's frame
     GuiItemFlags_NoCornerRounding =   (1 << 4), /// @brief Don't use any rounding on the item's frame
+    GuiItemFlags_FrameBorder =        (1 << 5), /// @brief Display the item's frame border 
 };
 
 
@@ -182,6 +183,11 @@ namespace yart
         /// Custom GUI widgets rendering public interface
         ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+        /// @brief Render a YART GUI style label widget
+        /// @param name Name of the widget, displayed next to the label 
+        /// @param text Formatted label text
+        void Label(const char* name, const char* text, ...);
+
         /// @brief Render a YART GUI style slider widget for an int variable 
         /// @param name Label text displayed next to the widget
         /// @param p_val Pointer to the controlled value
@@ -239,7 +245,7 @@ namespace yart
         /// @param selected_item The currently selected combo item index
         /// @param display_name Whether the name should be displayed next to the widget
         /// @returns Whether the selected item has changed since last frame
-        bool ComboHeader(const char* name, const char* items[], size_t items_size, int* selected_item, bool display_name = true); 
+        bool ComboHeader(const char* name, const char* items[], size_t items_size, int* selected_item); 
 
         /// @brief Render a YART GUI style color edit widget
         /// @param name Label text displayed next to the widget

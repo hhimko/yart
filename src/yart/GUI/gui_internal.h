@@ -156,6 +156,11 @@ namespace yart
         /// Custom GUI widgets rendering internal functions
         ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+        /// @brief Render a YART GUI style label widget
+        /// @param name Name of the widget, displayed next to the label 
+        /// @param text Label text
+        void LabelEx(const char* name, const char* text);
+
         /// @brief Begin a YART GUI style tab bar with an initial tab item
         /// @details Subsequent tab items can be issued calling `ImGui::BeginTabItem()`
         /// @param item_name First tab item name
@@ -188,14 +193,24 @@ namespace yart
         ///  - Designed to extend the Dear ImGui's ImDrawList object  
         ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+        /// @brief Add a YART GUI style item frame to a given Dear ImGui draw list
+        /// @param draw_list Dear ImGui draw list on which to draw the frame
+        /// @param p_min Frame rectangle upper-left corner in screen space coordinates
+        /// @param p_max Frame rectangle lower-right corner in screen space coordinates
+        /// @param draw_flag Additional Dear ImGui draw flags
+        /// @param hovered Whether the item is currently hovered
+        /// @param active Whether the item is currently active 
+        void DrawItemFrame(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, bool hovered, bool active, ImDrawFlags draw_flags = ImDrawFlags_None);
+
         /// @brief Add a width aware text to a given Dear ImGui draw list
         /// @param draw_list Dear ImGui draw list on which to draw the text
         /// @param p_min Text rectangle upper-left corner in screen space coordinates
         /// @param p_max Text rectangle lower-right corner in screen space coordinates
-        /// @param align Y-axis text alignment. Expected to be in the [0..1] range
         /// @param text String to render
+        /// @param align Y-axis text alignment. Expected to be in the [0..1] range
+        /// @param frame_padding Whether to use horizontal frame padding for offset from the bounding box edges
         /// @return Whether the text had been clipped. Useful for showing tooltips
-        bool DrawText(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, float align, const char* text);
+        bool DrawText(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, const char* text, float align = YART_GUI_DEFAULT_TEXT_ALIGN, bool frame_padding = false);
 
         /// @brief Add a rectangle filled with a linear gradient to a given Dear ImGui draw list
         /// @param draw_list Dear ImGui draw list on which to draw the rectangle
@@ -216,7 +231,7 @@ namespace yart
         /// @param max_col End color of the gradient
         /// @param rounding Optional edge rounding value 
         /// @param flags Additional Dear ImGui draw flags 
-        void DrawGradientRect(ImDrawList* draw_list, ImVec2 p_min, ImVec2 p_max, ImU32 min_col, ImU32 max_col, float rounding = 0.0f, ImDrawFlags flags = (ImDrawFlags)0);
+        void DrawGradientRect(ImDrawList* draw_list, ImVec2 p_min, ImVec2 p_max, ImU32 min_col, ImU32 max_col, float rounding = 0.0f, ImDrawFlags flags = ImDrawFlags_None);
 
         /// @brief Add a YART GUI style highlight rect to a given Dear ImGui draw list
         /// @param draw_list Dear ImGui's draw list on which to render
@@ -225,9 +240,8 @@ namespace yart
         /// @param t Max gradient color interpolation value. Expected to be in the [0..1] range
         /// @param hovered Whether the highlight is currently hovered
         /// @param active Whether the highlight is currently active 
-        /// @param rounding Optional edge rounding value 
         /// @param flags Additional Dear ImGui draw flags 
-        void DrawHighlightRect(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, float t, bool hovered, bool active, float rounding = 0.0f, ImDrawFlags flags = (ImDrawFlags)0);
+        void DrawFrameHighlight(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, float t, bool hovered, bool active, ImDrawFlags flags = ImDrawFlags_RoundCornersNone);
 
         /// @brief Add a left facing arrow to a given Dear ImGui draw list
         /// @param draw_list Dear ImGui draw list on which to draw the arrow
