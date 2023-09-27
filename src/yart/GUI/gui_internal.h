@@ -64,6 +64,10 @@ namespace yart
             GuiItemFlags currentItemFlags;
             /// @brief Flags for the next GUI item
             GuiItemFlags nextItemFlags;
+            /// @brief Whether the next GUI item begins a multi-item group
+            bool startMultiItems;
+            /// @brief Count of remaining items inside a multi-item group
+            uint8_t multiItemsCount;
             /// @brief Amount of pixels the OS window size has changed since last frame
             /// @details Used for updating layout sizes 
             ImVec2 displaySizeDelta;
@@ -197,10 +201,9 @@ namespace yart
         /// @param draw_list Dear ImGui draw list on which to draw the frame
         /// @param p_min Frame rectangle upper-left corner in screen space coordinates
         /// @param p_max Frame rectangle lower-right corner in screen space coordinates
+        /// @param color Frame background color. Usually the return value of GUI::GetFrameColor()
         /// @param draw_flag Additional Dear ImGui draw flags
-        /// @param hovered Whether the item is currently hovered
-        /// @param active Whether the item is currently active 
-        void DrawItemFrame(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, bool hovered, bool active, ImDrawFlags draw_flags = ImDrawFlags_None);
+        void DrawItemFrame(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, ImU32 color, ImDrawFlags draw_flags = ImDrawFlags_None);
 
         /// @brief Add a width aware text to a given Dear ImGui draw list
         /// @param draw_list Dear ImGui draw list on which to draw the text
@@ -281,6 +284,12 @@ namespace yart
         /// @param square_frame Whether the item frame should be a square. Used for combo box rendering
         /// @return The total bounding box 
         ImRect CalculateItemSizes(ImRect& text_bb, ImRect& frame_bb, bool square_frame = false);
+
+        /// @brief Helper function for retrieving the frame background color for the current item
+        /// @param hovered Whether the current item is currently hovered
+        /// @param active Whether the current item is currently active
+        /// @return Item frame background color
+        ImU32 GetFrameColor(bool hovered, bool active);
 
         /// @brief Check whether the mouse cursor lies within a given circle
         /// @param pos Circle position on the screen

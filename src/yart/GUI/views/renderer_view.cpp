@@ -29,9 +29,9 @@ namespace yart
             }
             GUI::EndCollapsableSection(section_open);
 
-            section_open = GUI::BeginCollapsableSection("Camera");
+            section_open = GUI::BeginCollapsableSection("Camera Properties");
             if (section_open) {
-                made_changes |= RenderCameraSection(target);
+                made_changes |= RenderCameraPropertiesSection(target);
             }
             GUI::EndCollapsableSection(section_open);
 
@@ -110,17 +110,20 @@ namespace yart
         {
             bool made_changes = false;
 
-            static const char* position_labels[3] = { "Position X", "Y", "Z" };
-            if (GUI::SliderVec3(position_labels, &target->m_cameraPosition, "%.3fm", 0.1f))
-                made_changes = true;
-
-            static const char* rotation_labels[3] = { "Rotation X", "Y", "Z" };
+            // Camera position
+            GUI::BeginMultiItem(3);
+            {
+                made_changes |= GUI::SliderFloat("Position X", &target->m_cameraPosition.x, "%.3fm", 0.1f);
+                made_changes |= GUI::SliderFloat(         "Y", &target->m_cameraPosition.y, "%.3fm", 0.1f);
+                made_changes |= GUI::SliderFloat(         "Z", &target->m_cameraPosition.z, "%.3fm", 0.1f);
+            }
+            GUI::EndMultiItem();
 
 
             return made_changes;
         }
 
-        bool RendererView::RenderCameraSection(yart::Renderer* target)
+        bool RendererView::RenderCameraPropertiesSection(yart::Renderer* target)
         {
             bool made_changes = false;
 

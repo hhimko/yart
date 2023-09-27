@@ -170,7 +170,7 @@ namespace yart
     bool GUI::Render()
     {
         // Uncomment to display Dear ImGui's debug window
-        ImGui::ShowDemoWindow();
+        // ImGui::ShowDemoWindow();
 
 
         float fps = ImGui::GetCurrentContext()->IO.Framerate;
@@ -339,7 +339,8 @@ namespace yart
             static constexpr ImDrawFlags draw_flags = ImDrawFlags_RoundCornersAll;
             DrawFrameHighlight(window->DrawList, frame_bb.Min, frame_bb.Max, 1.0f, hovered, active, draw_flags);
         } else {
-            DrawItemFrame(window->DrawList, frame_bb.Min, frame_bb.Max, hovered, active);
+            const ImU32 frame_col = GetFrameColor(hovered, active);
+            DrawItemFrame(window->DrawList, frame_bb.Min, frame_bb.Max, frame_col);
         }
 
         ImGui::RenderNavHighlight(frame_bb, id, ImGuiNavHighlightFlags_TypeThin);
@@ -422,7 +423,8 @@ namespace yart
             if (i == *selected_item) {
                 GUI::DrawFrameHighlight(window->DrawList, p_min, p_max, 1.0f, hovered_or_nav, held, flags);
             } else {
-                DrawItemFrame(window->DrawList, p_min, p_max, hovered_or_nav, held, flags);
+                const ImU32 frame_col = GetFrameColor(hovered_or_nav, held);
+                DrawItemFrame(window->DrawList, p_min, p_max, frame_col, flags);
             }
 
             // Render header text
@@ -446,10 +448,13 @@ namespace yart
 
     bool GUI::ColorEdit(const char* name, float color[3])
     {
-        // Retrieve current item flags
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        GuiContext* ctx = GetGuiContext();
+
+        // Retrieve current item flags and add the default border flag
+        ctx->nextItemFlags |= GuiItemFlags_FrameBorder; 
         GuiItemFlags flags = GetCurrentItemFlags(); 
 
-        ImGuiContext* g = ImGui::GetCurrentContext();
         ImGuiWindow* window = g->CurrentWindow;
         if (window->SkipItems)
             return false;
@@ -503,10 +508,8 @@ namespace yart
             ImGui::SetTooltip(name);
 
         // Render the color button frame
-        const ImU32 col = ImGui::ColorConvertFloat4ToU32({ color[0], color[1], color[2], 1.0f });
-        const ImU32 border_col = ImGui::GetColorU32(frame_hovered ? ImGuiCol_SliderGrabActive : ImGuiCol_SliderGrab);
-        window->DrawList->AddRectFilled({ frame_bb.Min.x, frame_bb.Min.y }, { frame_bb.Max.x, frame_bb.Max.y}, col, g->Style.FrameRounding);
-        window->DrawList->AddRect(frame_bb.Min, frame_bb.Max, border_col, g->Style.FrameRounding);
+        const ImU32 frame_col = ImGui::ColorConvertFloat4ToU32({ color[0], color[1], color[2], 1.0f });
+        DrawItemFrame(window->DrawList, frame_bb.Min, frame_bb.Max, frame_col);
 
         // Drag and Drop Target
         // if (BeginDragDropTarget())
@@ -705,6 +708,42 @@ namespace yart
     void GUI::EndFrame()
     {
         ImGui::EndChild();
+    }
+
+    void GUI::BeginMultiItem(uint8_t count)
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        GuiContext* ctx = GetGuiContext();
+
+        YART_ASSERT(!ctx->startMultiItems && "A multi-items group has already been started\n");
+        ctx->startMultiItems = true;
+
+        YART_ASSERT(ctx->multiItemsCount <= 0 && "Trying to begin a multi-items group within another group\n");
+        YART_ASSERT(count > 1 && "Invalid item count passed to GUI::BeginMultiItem\n");
+        ctx->multiItemsCount = count;
+
+        // Push a small y spacing value for tighter packing of inner items
+        const float x_spacing = g->Style.ItemSpacing.x;
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, { x_spacing, 1.0f });
+
+        ImGui::BeginGroup();
+    }
+
+    void GUI::EndMultiItem()
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        GuiContext* ctx = GetGuiContext();
+
+        YART_ASSERT(ctx->multiItemsCount == 0 && "Premature or overdue multi-item group ending\n");
+
+        // Pop the vertical item spacing pushed in `GUI::BeginMultiItem`
+        ImGui::PopStyleVar();
+
+        // Fix the spacing after the last item
+        const float y_spacing = g->Style.ItemSpacing.y;
+        g->CurrentWindow->DC.CursorPos.y += y_spacing - 1.0f;
+
+        ImGui::EndGroup();
     }
 
 } // namespace yart

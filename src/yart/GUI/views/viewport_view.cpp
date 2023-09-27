@@ -30,9 +30,13 @@ namespace yart
         {
             bool made_changes = false;
 
-            ImVec2 image_size = target->GetImageSize();
-            GUI::Label("Width", "%dpx", static_cast<uint32_t>(image_size.x));
-            GUI::Label("Height", "%dpx", static_cast<uint32_t>(image_size.y));
+            GUI::BeginMultiItem(2);
+            {
+                ImVec2 image_size = target->GetImageSize();
+                GUI::Label("Resolution X", "%dpx", static_cast<uint32_t>(image_size.x));
+                GUI::Label("Y",            "%dpx", static_cast<uint32_t>(image_size.y));
+            }
+            GUI::EndMultiItem();
 
             int scale = target->GetImageScale();
             if (GUI::SliderInt("Scale", &scale, 1, 10)) {

@@ -70,6 +70,7 @@ enum GuiItemFlags_ : GuiItemFlags {
     GuiItemFlags_CornersRoundBottom = (1 << 3), /// @brief Only round the bottom corners of the item's frame
     GuiItemFlags_NoCornerRounding =   (1 << 4), /// @brief Don't use any rounding on the item's frame
     GuiItemFlags_FrameBorder =        (1 << 5), /// @brief Display the item's frame border 
+    GuiItemFlags_FrameStyleDark =     (1 << 6), /// @brief Use a dark style for rendering the item's frame
 };
 
 
@@ -278,6 +279,13 @@ namespace yart
 
         /// @brief Finish recording a frame window
         void EndFrame();
+
+        /// @brief Record the next `count` of elements in a single tightly-packed group
+        /// @param count Number of GUI widgets inside the group
+        void BeginMultiItem(uint8_t count);
+
+        /// @brief Finish recording a multi item group 
+        void EndMultiItem();
         
     } // namespace GUI
 } // namespace yart

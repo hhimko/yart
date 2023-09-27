@@ -47,10 +47,10 @@ namespace yart
             /// @returns Whether any changes were made by the user since the last frame
             static bool RenderViewTransformSection(yart::Renderer* target);
 
-            /// @brief Issue "Camera" section GUI render commands
+            /// @brief Issue "Camera Properties" section GUI render commands
             /// @param target View target instance
             /// @returns Whether any changes were made by the user since the last frame
-            static bool RenderCameraSection(yart::Renderer* target);
+            static bool RenderCameraPropertiesSection(yart::Renderer* target);
 
         private:
             /// @brief Smallest valid value for camera's FOV in degrees

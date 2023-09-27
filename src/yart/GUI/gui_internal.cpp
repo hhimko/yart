@@ -629,7 +629,8 @@ namespace yart
         ImGuiContext* g = ImGui::GetCurrentContext();
         GuiContext* ctx = GetGuiContext();
 
-        // Retrieve current item flags
+        // Retrieve current item flags and add the default dark style flag
+        ctx->nextItemFlags |= GuiItemFlags_FrameStyleDark;
         GuiItemFlags flags = GetCurrentItemFlags(); 
 
         ImGuiWindow* window = g->CurrentWindow;
@@ -648,14 +649,16 @@ namespace yart
 
         const bool total_hovered = g->ActiveId != id && (ImGui::ItemHoverable(total_bb, id) || g->NavId == id);
         const bool text_hovered = total_hovered && ImGui::IsMouseHoveringRect(text_bb.Min, text_bb.Max);
+        const bool frame_hovered = total_hovered && ImGui::IsMouseHoveringRect(frame_bb.Min, frame_bb.Max);
 
         // Render the widget name text
         if (GUI::DrawText(window->DrawList, text_bb.Min, text_bb.Max, name) && text_hovered)
             ImGui::SetTooltip(name);
 
         // Render the frame with label text
-        DrawItemFrame(window->DrawList, frame_bb.Min, frame_bb.Max, false, false);
-        if (GUI::DrawText(window->DrawList, frame_bb.Min, frame_bb.Max, text, YART_GUI_TEXT_ALIGN_LEFT, true) && text_hovered)
+        const ImU32 frame_col = GetFrameColor(false, false); // Label is not responsive to the mouse cursor
+        DrawItemFrame(window->DrawList, frame_bb.Min, frame_bb.Max, frame_col);
+        if (GUI::DrawText(window->DrawList, frame_bb.Min, frame_bb.Max, text, YART_GUI_TEXT_ALIGN_LEFT, true) && frame_hovered)
             ImGui::SetTooltip(text);
     }
 
@@ -820,11 +823,13 @@ namespace yart
         const ImVec2 arrow_padding = { 5.0f, g->Style.FramePadding.y + 3.0f };
         const bool frame_drag_nav = (g->NavId != 0 && g->NavId == id && g->NavDisableMouseHover);
 
-        GUI::DrawItemFrame(window->DrawList, left_arrow_bb.Min, left_arrow_bb.Max, left_arrow_hovered || frame_drag_nav, left_arrow_active, ImDrawFlags_RoundCornersLeft);
+        ImU32 frame_col = GUI::GetFrameColor(left_arrow_hovered || frame_drag_nav, left_arrow_active);
+        GUI::DrawItemFrame(window->DrawList, left_arrow_bb.Min, left_arrow_bb.Max, frame_col, ImDrawFlags_RoundCornersLeft);
         GUI::DrawLeftArrow(window->DrawList, left_arrow_bb.Min, left_arrow_bb.Max, arrow_padding, text_col);
 
         // - Drag frame
-        GUI::DrawItemFrame(window->DrawList, frame_drag_bb.Min, frame_drag_bb.Max, frame_drag_hovered || frame_drag_nav, g->ActiveId == id, ImDrawFlags_RoundCornersNone);
+        frame_col = GUI::GetFrameColor(frame_drag_hovered || frame_drag_nav, g->ActiveId == id);
+        GUI::DrawItemFrame(window->DrawList, frame_drag_bb.Min, frame_drag_bb.Max, frame_col, ImDrawFlags_RoundCornersNone);
 
         // - Drag frame slider highlight (only if clamped)
         if (p_min != nullptr && p_max != nullptr) {
@@ -836,7 +841,8 @@ namespace yart
         }
 
         // - Right arrow frame
-        GUI::DrawItemFrame(window->DrawList, right_arrow_bb.Min, right_arrow_bb.Max, right_arrow_hovered || frame_drag_nav, right_arrow_active, ImDrawFlags_RoundCornersRight);
+        frame_col = GUI::GetFrameColor(right_arrow_hovered || frame_drag_nav, right_arrow_active);
+        GUI::DrawItemFrame(window->DrawList, right_arrow_bb.Min, right_arrow_bb.Max, frame_col, ImDrawFlags_RoundCornersRight);
         GUI::DrawRightArrow(window->DrawList, right_arrow_bb.Min, right_arrow_bb.Max, arrow_padding, text_col);
 
 
@@ -1069,10 +1075,15 @@ namespace yart
         return state_updated;
     }
 
-    void GUI::DrawItemFrame(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, bool hovered, bool active, ImDrawFlags draw_flags)
+    void GUI::DrawItemFrame(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, ImU32 color, ImDrawFlags draw_flags)
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
         GuiContext* ctx = GetGuiContext();
+
+        // Fix ImGui corner flags
+        if ((draw_flags & ImDrawFlags_RoundCornersMask_) == 0)
+            draw_flags |= ImDrawFlags_RoundCornersDefault_;
+
 
         // GuiItemFlags enum rounding flags have higher priority over ImDrawFlags 
         if (ctx->currentItemFlags & GuiItemFlags_NoCornerRounding) {
@@ -1086,13 +1097,20 @@ namespace yart
                 draw_flags &= (~ImDrawFlags_RoundCornersAll | ImDrawFlags_RoundCornersBottom);
         }
 
+        // Render frame
         const float rounding = g->Style.FrameRounding;
-        const ImU32 bg_col = ImGui::GetColorU32(active ? ImGuiCol_FrameBgActive : hovered ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg);
-        draw_list->AddRectFilled(p_min, p_max, bg_col, rounding, draw_flags);
-
         if (ctx->currentItemFlags & GuiItemFlags_FrameBorder) {
+            // Frame border requires the background to shrink for a better visual effect     
+            const ImVec2 p1 = { p_min.x + 0.5f, p_min.y + 0.5f };
+            const ImVec2 p2 = { p_max.x - 0.5f, p_max.y - 0.5f };
+            if (p2.x >= p1.x && p2.y >= p1.y)
+                draw_list->AddRectFilled(p1, p2, color, rounding, draw_flags);
+
+            // Render frame border
             const ImU32 border_col = ImGui::GetColorU32(ImGuiCol_Border);
             draw_list->AddRect(p_min, p_max, border_col, rounding, draw_flags);
+        } else {
+            draw_list->AddRectFilled(p_min, p_max, color, rounding, draw_flags);
         }
     }
 
@@ -1264,14 +1282,30 @@ namespace yart
         GuiContext* ctx = GetGuiContext();
         GuiItemFlags flags = ctx->nextItemFlags;
 
+        // Handle multi item group flags
+        if (ctx->multiItemsCount > 0) {
+            if (ctx->startMultiItems) {
+                flags |= GuiItemFlags_CornersRoundTop;
+                ctx->startMultiItems = false;
+            } else if (ctx->multiItemsCount == 1) {
+                flags |= GuiItemFlags_CornersRoundBottom;
+            } else {
+                flags |= GuiItemFlags_NoCornerRounding;
+            }
+
+            ctx->multiItemsCount--;
+        }
+
         // Validate and fix flags
         if (flags != GuiItemFlags_None) {
             // Validate 
+            // - Corner rounding flags should not be used with `GuiItemFlags_NoCornerRounding`
             static constexpr GuiItemFlags rounding_flags = GuiItemFlags_CornersRoundTop | GuiItemFlags_CornersRoundBottom;
             if ((flags & GuiItemFlags_NoCornerRounding) && (flags & rounding_flags))
                 YART_ABORT("Invalid GuiItemFlags: Rounding flags mix-up\n");
 
             // Fix
+            // - Full frame width makes the label hidden
             if (flags & GuiItemFlags_FullWidth)
                 flags |= GuiItemFlags_HideLabel;
         }
@@ -1323,6 +1357,22 @@ namespace yart
 
         // Return the total bounding box of the widget
         return total_bb;
+    }
+
+    ImU32 GUI::GetFrameColor(bool hovered, bool active)
+    {
+        GuiContext* ctx = GetGuiContext();
+
+        // Dark frame style 
+        if (ctx->currentItemFlags & GuiItemFlags_FrameStyleDark) {
+            static constexpr ImVec4 hovered_col = { YART_GUI_COLOR_DARKER_GRAY, YART_GUI_ALPHA_OPAQUE };
+            static constexpr ImVec4 bg_col = { YART_GUI_COLOR_DARKEST_GRAY, YART_GUI_ALPHA_OPAQUE };
+
+            return ImGui::GetColorU32((hovered || active) ? hovered_col : bg_col);
+        }
+
+        // Light (default) frame style
+        return ImGui::GetColorU32(active ? ImGuiCol_FrameBgActive : hovered ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg);
     }
 
     bool GUI::IsMouseHoveringCircle(const ImVec2& pos, float radius)
