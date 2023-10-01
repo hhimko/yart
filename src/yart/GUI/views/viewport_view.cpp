@@ -44,6 +44,14 @@ namespace yart
                 made_changes = true;
             }
 
+            static constexpr size_t samplers_count = 2;
+            static const char* sampler_names_LUT[samplers_count] =            { "Nearest",                      "Bilinear"                      };
+            static constexpr Backend::ImageSampler samplers[samplers_count] = { Backend::ImageSampler::NEAREST, Backend::ImageSampler::BILINEAR };
+
+            int selected_sampler = (target->GetImageSampler() == samplers[0]) ? 0 : 1;
+            if (GUI::ComboHeader("Interpolation", sampler_names_LUT, samplers_count, &selected_sampler))
+                target->SetImageSampler(samplers[selected_sampler]);
+
             return made_changes;
         }
 

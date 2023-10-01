@@ -174,7 +174,7 @@ namespace yart
 
 
         float fps = ImGui::GetCurrentContext()->IO.Framerate;
-        ImGui::Text("%f", fps);
+        ImGui::Text("%.1f FPS", fps);
 
         // Render the static layout
         float menu_bar_height = GUI::RenderMainMenuBar();

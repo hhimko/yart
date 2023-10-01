@@ -77,9 +77,9 @@ namespace yart
                 if (!interpolate)
                     ImGui::BeginDisabled();
 
-                static const size_t interpolators_count = 2;
-                static const char* interpolators[interpolators_count] =                { "Bilinear",                       "Bicubic"                       };
-                static RES::InterpolationType interpolators_LUT[interpolators_count] = { RES::InterpolationType::BILINEAR, RES::InterpolationType::BICUBIC };
+                static constexpr size_t interpolators_count = 2;
+                static const char* interpolators[interpolators_count] =                          { "Bilinear",                       "Bicubic"                       };
+                static constexpr RES::InterpolationType interpolators_LUT[interpolators_count] = { RES::InterpolationType::BILINEAR, RES::InterpolationType::BICUBIC };
 
                 int selected_interpolator = static_cast<int>(prev_interpolator) - static_cast<int>(RES::InterpolationType::BILINEAR);
                 if (GUI::ComboHeader("Interpolation type", interpolators, interpolators_count, &selected_interpolator)) {

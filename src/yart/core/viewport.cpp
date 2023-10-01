@@ -14,7 +14,7 @@ namespace yart
     Viewport::Viewport(uint32_t width, uint32_t height)
         : m_width(width), m_height(height)
     {
-        m_image = yart::Backend::CreateImage(width, height, m_imageFormat, m_imageSampler);
+        m_image = yart::Backend::CreateImage(width, height, IMAGE_FORMAT, DEFAULT_IMAGE_SAMPLER);
         YART_ASSERT(m_image != nullptr);
 
         m_imageData = new float[width * height * m_image->GetFormatChannelsCount()];
@@ -26,7 +26,7 @@ namespace yart
         uint32_t scaled_width = m_width / m_imageScale;
         uint32_t scaled_height = m_height / m_imageScale;
 
-        m_image = yart::Backend::CreateImage(scaled_width, scaled_height, m_imageFormat, m_imageSampler);
+        m_image = yart::Backend::CreateImage(scaled_width, scaled_height, IMAGE_FORMAT, DEFAULT_IMAGE_SAMPLER);
         YART_ASSERT(m_image != nullptr);
 
         m_imageData = new float[scaled_width * scaled_height * m_image->GetFormatChannelsCount()];

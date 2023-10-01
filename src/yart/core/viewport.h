@@ -40,15 +40,11 @@ namespace yart
         /// @param height New height of the viewport in pixels
         void Resize(uint32_t width, uint32_t height);
 
-        /// @brief Set the scale down factor of the underlying image
-        /// @param scale New viewport scale-down factor
-        void SetImageScale(uint8_t scale);
-
-        /// @brief Get the current scale down factor of the underlying image
-        /// @return Viewport image scale down factor
-        uint8_t GetImageScale() const 
+        /// @brief Set an internal flag to make sure the viewport image gets refreshed before the next render command
+        /// @details Should be used when the image data has changed since the last frame
+        void EnsureRefresh() 
         {
-            return m_imageScale;
+            m_needsRefresh = true;
         }
 
         /// @brief Get the current size of the viewport in pixels
@@ -58,11 +54,45 @@ namespace yart
             return { static_cast<float>(m_width), static_cast<float>(m_height) };
         }
 
+        /// @brief Get the current scale down factor of the underlying image
+        /// @return Viewport image scale down factor
+        uint8_t GetImageScale() const 
+        {
+            return m_imageScale;
+        }
+
+        /// @brief Set the scale down factor of the underlying image
+        /// @param scale New viewport scale-down factor
+        void SetImageScale(uint8_t scale);
+
         /// @brief Get the current size of the underlying viewport image in pixels
         /// @return The current size of the scaled viewport image
         ImVec2 GetImageSize() const
         {
             return m_image->GetSize();
+        }
+
+        /// @brief Get the sampler type currently used by the viewport's image
+        /// @return Current image sampler type
+        Backend::ImageSampler GetImageSampler() const
+        {
+            return m_image->GetSampler();
+        }
+
+        /// @brief Set the viewport's image sampler type used for interpolation
+        /// @param sampler New sampler type
+        void SetImageSampler(Backend::ImageSampler sampler) 
+        {
+            m_image->SetSampler(sampler);
+        }
+
+        /// @brief Get the viewport's image pixel array
+        /// @details The size of the array is equal to `width * height * channels` where `width` and `height` can be 
+        ///     retrieved by Viewport::GetViewportImageSize(), and `channels` is the number of channels in the image format used
+        /// @return Pointer to the viewport's image pixel data
+        float* GetImageData() const 
+        {
+            return m_imageData;
         }
 
         /// @brief Get the viewport's image Dear ImGui texture ID
@@ -75,22 +105,6 @@ namespace yart
             return m_image->GetImTextureID();
         }
 
-        /// @brief Get the viewport's image pixel array
-        /// @details The size of the array is equal to `width * height * channels` where `width` and `height` can be 
-        ///     retrieved by Viewport::GetViewportImageSize(), and `channels` is the number of channels in the image format used
-        /// @return Pointer to the viewport's image pixel data
-        float* GetImageData() const 
-        {
-            return m_imageData;
-        }        
-
-        /// @brief Set an internal flag to make sure the viewport image gets refreshed before the next render command
-        /// @details Should be used when the image data has changed since the last frame
-        void EnsureRefresh() 
-        {
-            m_needsRefresh = true;
-        }
-
     private:
         Viewport(const Viewport&) = delete;
         Viewport& operator=(Viewport const&) = delete;
@@ -99,8 +113,8 @@ namespace yart
         void Refresh();
 
     private:
-        static constexpr yart::Backend::ImageFormat m_imageFormat = Backend::ImageFormat::R32G32B32A32_FLOAT;
-        yart::Backend::ImageSampler m_imageSampler = Backend::ImageSampler::NEAREST;
+        static constexpr yart::Backend::ImageFormat IMAGE_FORMAT = Backend::ImageFormat::R32G32B32A32_FLOAT;
+        static constexpr yart::Backend::ImageSampler DEFAULT_IMAGE_SAMPLER = Backend::ImageSampler::NEAREST;
         yart::Backend::Image* m_image = nullptr;
 
         uint32_t m_width;  // Width of the viewport in pixels (does not take image scale into account)

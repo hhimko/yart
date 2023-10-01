@@ -1296,7 +1296,7 @@ namespace yart
         switch (sampler) {
         case ImageSampler::NEAREST:  filter = VK_FILTER_NEAREST; break;
         case ImageSampler::BILINEAR: filter = VK_FILTER_LINEAR; break;
-        case ImageSampler::BICUBIC:  filter = VK_FILTER_CUBIC_IMG; break;
+        case ImageSampler::BICUBIC:  filter = VK_FILTER_CUBIC_EXT; break;
         case ImageSampler::COUNT:
         default:
             YART_ABORT("Unknown ImageSampler value passed to `Backend::CreateVulkanSampler`\n");
@@ -1307,9 +1307,9 @@ namespace yart
         sampler_ci.magFilter = filter;
         sampler_ci.minFilter = filter;
         sampler_ci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-        sampler_ci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-        sampler_ci.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-        sampler_ci.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        sampler_ci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        sampler_ci.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        sampler_ci.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
         sampler_ci.minLod = -1000;
         sampler_ci.maxLod = 1000;
         sampler_ci.maxAnisotropy = 1.0f;
