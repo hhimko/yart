@@ -54,10 +54,14 @@ namespace yart
 
 
         /// @brief Construct a new mesh type object 
-        Object(MeshData& data);
+        /// @param name Display name of the object
+        /// @param data Mesh object type data
+        Object(const char* name, MeshData& data);
 
         /// @brief Construct a new light type object 
-        Object(LightData& data);
+        /// @param name Display name of the object
+        /// @param data Light object type data
+        Object(const char* name, LightData& data);
 
         /// @brief Generate a new unique ID
         /// @return Unique ID
