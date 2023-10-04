@@ -9,6 +9,7 @@
 #include <memory>
 
 #include "yart/core/renderer.h"
+#include "yart/core/scene.h"
 
 
 namespace yart
@@ -62,7 +63,9 @@ namespace yart
         void SetupGUI();
 
     private:
-        yart::Renderer m_renderer;
+        std::unique_ptr<yart::Renderer> m_renderer = std::make_unique<yart::Renderer>();
+        std::shared_ptr<yart::Scene> m_scene = std::make_shared<yart::Scene>();
+
         bool m_running = false;
 
     };

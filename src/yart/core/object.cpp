@@ -8,13 +8,13 @@
 
 namespace yart
 {
-    Object::Object(const char* name, MeshData& data)
+    Object::Object(const char* name, Object::MeshData& data)
         : m_type(ObjectType::MESH), id(GenerateID()), name(name)
     {
         m_meshData = data;
     }
 
-    Object::Object(const char* name, LightData& data)
+    Object::Object(const char* name, Object::LightData& data)
         : m_type(ObjectType::LIGHT), id(GenerateID()), name(name)
     {
         m_lightData = data;

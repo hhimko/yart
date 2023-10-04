@@ -14,6 +14,7 @@
 
 #include "yart/GUI/views/renderer_view.h"
 #include "yart/core/viewport.h"
+#include "scene.h"
 #include "world.h"
 #include "ray.h"
 
@@ -28,7 +29,7 @@ namespace yart
         Renderer() = default;
         ~Renderer() = default;
 
-        /// @brief Render scene to a given buffer
+        /// @brief Render the active scene to a given buffer
         /// @param buffer Pointer to a pixel array to be rendered onto. 
         ///     The size of the array should be equal to width*height*4, where 4 denotes the number of channels in the output image (RGBA)
         /// @param width Width in pixels of the output image
@@ -36,10 +37,17 @@ namespace yart
         /// @return Whether the current frame has changed visually from the previous rendered frame (used for conditional viewport refreshing) 
         bool Render(float buffer[], uint32_t width, uint32_t height);
 
-        /// @brief Render scene directly to a given viewport
+        /// @brief Render the active scene directly to a given viewport
         /// @param viewport Viewport to render to
         /// @return Whether the current frame has changed visually from the previous rendered frame (used for conditional viewport refreshing) 
         bool Render(const yart::Viewport* viewport);
+
+        /// @brief Set a scene to be used for rendering by this renderer
+        /// @param scene New scene instance
+        void SetScene(std::shared_ptr<yart::Scene> scene) 
+        {
+            m_scene = scene;
+        }
 
         /// @brief Get the renderer's world instance 
         /// @return Renderer's world instance pointer
@@ -92,6 +100,7 @@ namespace yart
 
     private:
         std::unique_ptr<yart::World> m_world = std::make_unique<World>();
+        std::shared_ptr<yart::Scene> m_scene;
         uint32_t m_width = 0; // Width of the render output in pixels 
         uint32_t m_height = 0; // Height of the render output in pixels 
 

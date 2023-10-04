@@ -7,6 +7,10 @@
 
 
 #include <string>
+#include <vector>
+#include <memory>
+
+#include <glm/glm.hpp>
 
 
 namespace yart
@@ -36,14 +40,7 @@ namespace yart
         /// @brief Structure containing data required to render a mesh object
         struct MeshData {
         public:
-            /// @brief First mesh vertex index into the scenes' vertices heap memory
-            size_t vertHeapIndex;
-            /// @brief Count of mesh vertices 
-            size_t vertsCount;
-            /// @brief First mesh triangle index into the scenes' triangle indices heap memory
-            size_t triHeapIndex;
-            /// @brief Count of mesh triangles 
-            size_t trisCount;
+            int x;
         };
 
         /// @brief Structure containing data required to render a light object
@@ -80,9 +77,14 @@ namespace yart
             LightData m_lightData;
         };
 
+        // Temporary mesh variables 
+        std::vector<glm::vec3> verts;
+        std::vector<glm::u32vec3> tris;
+
 
         // -- FRIEND DECLARATIONS -- //
         friend class yart::Scene;
+        friend class Scene;
 
     };
 } // namespace yart

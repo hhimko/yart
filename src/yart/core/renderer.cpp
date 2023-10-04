@@ -21,6 +21,7 @@ namespace yart
     bool Renderer::Render(float buffer[], uint32_t width, uint32_t height)
     {
         YART_ASSERT(buffer != nullptr);
+        YART_ASSERT(m_scene != nullptr);
 
         bool dirty = false;
         if (width != m_width || height != m_height) {
@@ -77,10 +78,11 @@ namespace yart
 
     void Renderer::TraceRay(const Ray& ray, HitPayload& payload)
     {
-        float t, u, v;
-        if (yart::Ray::IntersectTriangle(ray, {-1, 0, 0}, {0, 1, 0}, {1, 0, 0}, t, u, v) && t > m_nearClippingPlane && t < m_farClippingPlane) {
-            payload.resultColor = glm::vec3{u,v,1-u-v};
-            return; // ClosestHit(ray, payload);
+        yart::Object* hit_object;
+        float hit_distance = m_scene->IntersectRay(ray, hit_object);
+        if (hit_distance > m_nearClippingPlane && hit_distance < m_farClippingPlane) {
+            payload.hitDistance = hit_distance;
+            return ClosestHit(ray, payload);
         }
 
         return Miss(ray, payload);
@@ -89,7 +91,7 @@ namespace yart
     void Renderer::ClosestHit(const Ray& ray, HitPayload& payload)
     {
         YART_UNUSED(ray);
-        payload.resultColor = glm::vec3{0,0,0};
+        payload.resultColor = { 0.0f, 0.0f, 0.0f };
     }
 
     void Renderer::Miss(const Ray& ray, HitPayload& payload)

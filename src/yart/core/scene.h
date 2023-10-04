@@ -11,23 +11,33 @@
 #include <glm/glm.hpp>
 
 #include "object.h"
+#include "ray.h"
 
 
 namespace yart
 {
     class Scene {
     public:
-        /// @brief Construct a new default scene 
+        /// @brief Construct a new empty scene 
         Scene();
 
         /// @brief Scene class custom destructor
         ~Scene();
 
-        /// @brief 
-        /// @param name 
-        /// @param verts 
-        /// @param tris 
-        /// @return 
+        /// @brief Load the default scene objects
+        void LoadDefault();
+
+        /// @brief Test for ray-scene intersections
+        /// @param ray Ray to be intersected with the scene 
+        /// @param hit_obj Pointer to the nearest hit object, or `nullptr` on miss
+        /// @return Distance to the closest object hit, or a negative value on miss 
+        float IntersectRay(const Ray& ray, Object* hit_obj);
+
+        /// @brief Add a new mesh type object to the scene 
+        /// @param name Name of the object
+        /// @param verts Object's mesh vertices
+        /// @param tris Object's mesh triangle indices 
+        /// @return The newly created object 
         Object* AddMeshObject(const char* name, std::vector<glm::vec3> verts, std::vector<glm::u32vec3> tris);
 
     private:
