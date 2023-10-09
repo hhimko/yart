@@ -10,6 +10,7 @@
 
 #include <glm/glm.hpp>
 
+#include "yart/common/classes/mesh_factory.h"
 #include "object.h"
 #include "ray.h"
 
@@ -35,10 +36,9 @@ namespace yart
 
         /// @brief Add a new mesh type object to the scene 
         /// @param name Name of the object
-        /// @param verts Object's mesh vertices
-        /// @param tris Object's mesh triangle indices 
+        /// @param mesh Object's mesh 
         /// @return The newly created object 
-        Object* AddMeshObject(const char* name, std::vector<glm::vec3> verts, std::vector<glm::u32vec3> tris);
+        Object* AddMeshObject(const char* name, Mesh* mesh);
 
     private:
         /// @brief Jagged array of vertices from all objects in the scene 

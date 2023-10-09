@@ -26,7 +26,12 @@ namespace yart
 
     void Scene::LoadDefault()
     {
-        AddMeshObject("Default object", {{-0.5f, -0.5f, 0}, {-0.5f, 0.5f, 0}, {0.5f, 0.5f, 0}, {0.5f, -0.5f, 0}}, {{0, 1, 2}, {0, 2, 3}});
+        Mesh* mesh = MeshFactory::CubeMesh({ 0, 0, 0 });
+        AddMeshObject("Default object", mesh);
+
+        delete[] mesh->vertices;
+        delete[] mesh->triangleIndices;
+        delete mesh;
     }
 
     float Scene::IntersectRay(const Ray& ray, Object* hit_obj)
@@ -48,13 +53,13 @@ namespace yart
         return -1.0f;
     }
 
-    Object* Scene::AddMeshObject(const char* name, std::vector<glm::vec3> verts, std::vector<glm::u32vec3> tris)
+    Object* Scene::AddMeshObject(const char* name, Mesh* mesh)
     {
         Object::MeshData mesh_data = { };
 
         Object object(name, mesh_data);
-        object.verts = verts;
-        object.tris = tris;
+        object.verts = { mesh->vertices, mesh->vertices + mesh->verticesCount };
+        object.tris = { mesh->triangleIndices, mesh->triangleIndices + mesh->triangleIndicesCount };
 
         m_objects.push_back(object);
         return &object;
