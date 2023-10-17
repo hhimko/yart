@@ -31,7 +31,7 @@ namespace yart
         /// @param v Output parameter set on valid intersection with barycentric v parameter value
         /// @return Whether there was a valid intersection and the output parameters were populated
         static bool IntersectTriangle(const Ray& ray, 
-            const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, float& t, float& u, float& v
+            const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, float* t, float* u, float* v
         );
 
     };

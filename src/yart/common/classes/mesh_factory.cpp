@@ -24,8 +24,8 @@ namespace yart
             { origin.x + 0.5f, origin.y + 0.5f, origin.z - 0.5f }
         };
 
-        mesh->triangleIndicesCount = 12;
-        mesh->triangleIndices = new glm::u32vec3[mesh->triangleIndicesCount] {
+        mesh->trianglesCount = 12;
+        mesh->triangleIndices = new glm::u32vec3[mesh->trianglesCount] {
             { 0, 1, 7 }, // Front face
             { 7, 6, 0 },
             { 2, 3, 1 }, // Left face
@@ -38,6 +38,29 @@ namespace yart
             { 5, 7, 1 },
             { 2, 0, 6 }, // Bottom face
             { 6, 4, 2 }
+        };
+
+        mesh->uvsCount = 4;
+        mesh->uvs = new glm::vec2[mesh->uvsCount] {
+            { 0.0f, 0.0f },
+            { 0.0f, 1.0f },
+            { 1.0f, 0.0f },
+            { 1.0f, 1.0f }
+        };
+
+        mesh->triangleVerticesUvs = new glm::u32vec3[mesh->trianglesCount] {
+            { 0, 1, 3 }, // Front face
+            { 3, 2, 0 },
+            { 0, 1, 3 }, // Left face
+            { 3, 2, 0 },
+            { 0, 1, 3 }, // Back face
+            { 3, 2, 0 },
+            { 0, 1, 3 }, // Right face
+            { 3, 2, 0 },
+            { 0, 1, 3 }, // Top face
+            { 3, 2, 0 },
+            { 0, 1, 3 }, // Bottom face
+            { 3, 2, 0 }
         };
 
         return mesh;

@@ -79,9 +79,13 @@ namespace yart
     void Renderer::TraceRay(const Ray& ray, HitPayload& payload)
     {
         yart::Object* hit_object;
-        float hit_distance = m_scene->IntersectRay(ray, hit_object);
+        float u, v;
+
+        float hit_distance = m_scene->IntersectRay(ray, hit_object, &u, &v);
         if (hit_distance > m_nearClippingPlane && hit_distance < m_farClippingPlane) {
             payload.hitDistance = hit_distance;
+            payload.resultColor = { u, v, 0.0f };
+            return;
             return ClosestHit(ray, payload);
         }
 

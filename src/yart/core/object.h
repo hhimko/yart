@@ -40,7 +40,7 @@ namespace yart
         /// @brief Structure containing data required to render a mesh object
         struct MeshData {
         public:
-            int x;
+
         };
 
         /// @brief Structure containing data required to render a light object
@@ -80,6 +80,8 @@ namespace yart
         // Temporary mesh variables 
         std::vector<glm::vec3> verts;
         std::vector<glm::u32vec3> tris;
+        std::vector<glm::vec2> UVs;
+        std::vector<glm::u32vec3> triangleUVs;
 
 
         // -- FRIEND DECLARATIONS -- //

@@ -31,8 +31,10 @@ namespace yart
         /// @brief Test for ray-scene intersections
         /// @param ray Ray to be intersected with the scene 
         /// @param hit_obj Pointer to the nearest hit object, or `nullptr` on miss
+        /// @param u Output parameter set on valid intersection with the `u` coordinate in texture space
+        /// @param u Output parameter set on valid intersection with the `v` coordinate in texture space
         /// @return Distance to the closest object hit, or a negative value on miss 
-        float IntersectRay(const Ray& ray, Object* hit_obj);
+        float IntersectRay(const Ray& ray, Object* hit_obj, float* u, float* v);
 
         /// @brief Add a new mesh type object to the scene 
         /// @param name Name of the object
