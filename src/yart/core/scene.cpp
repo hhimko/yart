@@ -44,7 +44,7 @@ namespace yart
                 const glm::vec3& v2 = obj.verts[obj.tris[i].z];
 
                 if (yart::Ray::IntersectTriangle(ray, v0, v1, v2, &t, u, v)) {
-                    float w = 1 - (*u) - (*v);
+                    const float w = 1 - (*u) - (*v);
                     const glm::u32vec3& uv_indices = obj.triangleUVs[i];
                     const glm::vec2 tex_uv = w * obj.UVs[uv_indices.x] + (*u) * obj.UVs[uv_indices.y] + (*v) * obj.UVs[uv_indices.z];
                     

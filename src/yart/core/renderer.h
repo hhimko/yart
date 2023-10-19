@@ -81,6 +81,12 @@ namespace yart
         /// @param payload HitPayload structure, where the ray tracing results will be stored
         void TraceRay(const yart::Ray& ray, HitPayload& payload);
 
+        /// @brief Sample the overlays/gizmos layer from a given ray
+        /// @param ray Traced ray
+        /// @param color Output parameter set to the color at the hit point, or a transparent color on miss
+        /// @return Distance from the ray origin to the closest hit, or a negative value on miss
+        float SampleOverlaysView(const yart::Ray& ray, glm::vec4& color);
+
         /// @brief Simulated `ClosestHit()` shader, executed on the closest scene geometry hit by the ray
         /// @param ray Traced ray
         /// @param payload HitPayload structure, where the ray tracing results will be stored

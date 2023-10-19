@@ -79,17 +79,42 @@ namespace yart
     void Renderer::TraceRay(const Ray& ray, HitPayload& payload)
     {
         yart::Object* hit_object;
+        glm::vec4 overlay_color = { 0.0f, 0.0f, 0.0f, 0.0f };
         float u, v;
 
+        // Intersect the ray with the active scene and gizmos view
+        float overlay_distance = SampleOverlaysView(ray, overlay_color);
         float hit_distance = m_scene->IntersectRay(ray, hit_object, &u, &v);
+        payload.hitDistance = hit_distance;
+
         if (hit_distance > m_nearClippingPlane && hit_distance < m_farClippingPlane) {
-            payload.hitDistance = hit_distance;
-            payload.resultColor = { u, v, 0.0f };
-            return;
-            return ClosestHit(ray, payload);
+            if (overlay_distance > hit_distance) {
+                overlay_color.a = 0.0f; // Fix color ordering
+            }
+
+            const glm::vec3 mat_col = { u, v, 0.0f };
+            payload.resultColor = mat_col * (1.0f - overlay_color.a) + glm::vec3(overlay_color) * overlay_color.a;
+            return; //return ClosestHit(ray, payload);
         }
 
-        return Miss(ray, payload);
+        Miss(ray, payload);
+        payload.resultColor = payload.resultColor * (1.0f - overlay_color.a) + glm::vec3(overlay_color) * overlay_color.a;
+    }
+
+    float Renderer::SampleOverlaysView(const yart::Ray& ray, glm::vec4& color)
+    {
+        // Grid plane
+        float grid_plane_distance = (0.01f - ray.origin.y) / ray.direction.y;
+        if (grid_plane_distance > 0.0f) {
+            const glm::vec3 hit_pos = ray.origin + ray.direction * grid_plane_distance;
+            const glm::vec2 uv = { hit_pos.x, hit_pos.z };
+
+
+            const glm::vec2 a = glm::step(glm::fract(uv), glm::vec2(0.01f, 0.01f));
+            color = glm::vec4(0.02f, 0.02f, 0.02f, 1.0f - (1.0f - a.x) * (1.0f - a.y));
+        }
+
+        return grid_plane_distance;
     }
 
     void Renderer::ClosestHit(const Ray& ray, HitPayload& payload)
