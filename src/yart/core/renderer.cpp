@@ -16,8 +16,16 @@
 #include "yart/application.h"
 
 
+#define GRID_PLANE_HEIGHT 0.0f // @brief Height of the gizmos view grid plane
+
 namespace yart
 {
+    Renderer::Renderer()
+    {
+        m_cameraLookDirection = yart::utils::SphericalToCartesianUnitVector(m_cameraYaw, m_cameraPitch);
+        RecalculateCameraTransformationMatrix();
+    }
+
     bool Renderer::Render(float buffer[], uint32_t width, uint32_t height)
     {
         YART_ASSERT(buffer != nullptr);
@@ -104,14 +112,13 @@ namespace yart
     float Renderer::SampleOverlaysView(const yart::Ray& ray, glm::vec4& color)
     {
         // Grid plane
-        float grid_plane_distance = (0.01f - ray.origin.y) / ray.direction.y;
+        float grid_plane_distance = (GRID_PLANE_HEIGHT - ray.origin.y) / ray.direction.y;
         if (grid_plane_distance > 0.0f) {
             const glm::vec3 hit_pos = ray.origin + ray.direction * grid_plane_distance;
             const glm::vec2 uv = { hit_pos.x, hit_pos.z };
 
-
-            const glm::vec2 a = glm::step(glm::fract(uv), glm::vec2(0.01f, 0.01f));
-            color = glm::vec4(0.02f, 0.02f, 0.02f, 1.0f - (1.0f - a.x) * (1.0f - a.y));
+            const glm::vec2 a = glm::step(glm::fract(uv), glm::vec2(0.005f, 0.005f));
+            color = glm::vec4(0.01f, 0.01f, 0.01f, 1.0f - (1.0f - a.x) * (1.0f - a.y));
         }
 
         return grid_plane_distance;

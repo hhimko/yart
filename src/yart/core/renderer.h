@@ -26,7 +26,7 @@ namespace yart
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     class Renderer {
     public:
-        Renderer() = default;
+        Renderer();
         ~Renderer() = default;
 
         /// @brief Render the active scene to a given buffer
@@ -117,12 +117,12 @@ namespace yart
         // -- CAMERA DATA -- // 
         static constexpr glm::vec3 UP_DIRECTION = { .0f, 1.0f, .0f }; // World up vector used for camera positioning
 
-        glm::vec3 m_cameraPosition = { .0f, .0f, -5.0f }; // World space position 
+        glm::vec3 m_cameraPosition = { 2.0f, 2.0f, -4.0f }; // World space position 
         glm::vec3 m_cameraLookDirection = { .0f, .0f, 1.0f }; // Normalized look-at vector, calculated from camera's yaw and pitch rotations
-        float m_cameraYaw = 90.0f * yart::utils::DEG_TO_RAD; // Horizontal camera rotation in radians (around the y axis)
-        float m_cameraPitch = 0.0f; // Vertical camera rotation in radians (around the x axis)
+        float m_cameraYaw = 120.0f * yart::utils::DEG_TO_RAD; // Horizontal camera rotation in radians (around the y axis)
+        float m_cameraPitch = -25.0f * yart::utils::DEG_TO_RAD; // Vertical camera rotation in radians (around the x axis)
         
-        float m_fieldOfView = 90.0f; // Horizontal camera FOV in degrees
+        float m_fieldOfView = 60.0f; // Horizontal camera FOV in degrees
         float m_nearClippingPlane = 0.1f;
         float m_farClippingPlane = 1000.0f;
 
