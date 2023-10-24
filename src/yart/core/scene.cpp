@@ -26,12 +26,14 @@ namespace yart
 
     void Scene::LoadDefault()
     {
-        Mesh* mesh = MeshFactory::CubeMesh({ 0, 0, 0 });
-        AddMeshObject("Default object", mesh);
+        Mesh* cube_mesh = MeshFactory::CubeMesh({ 0, 0, 0 });
+        AddMeshObject("Default Cube", cube_mesh);
 
-        delete[] mesh->vertices;
-        delete[] mesh->triangleIndices;
-        delete mesh;
+        delete[] cube_mesh->vertices;
+        delete[] cube_mesh->triangleIndices;
+        delete[] cube_mesh->uvs;
+        delete[] cube_mesh->triangleVerticesUvs;
+        delete cube_mesh;
     }
 
     float Scene::IntersectRay(const Ray& ray, Object* hit_obj, float* u, float* v)

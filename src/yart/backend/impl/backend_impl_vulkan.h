@@ -155,8 +155,8 @@ namespace yart
             VkDeviceMemory m_vkStagingBufferMemory = VK_NULL_HANDLE;
 
             // -- FRIEND DECLARATIONS -- //
-            friend yart::Backend::Image* CreateImage(uint32_t, uint32_t, ImageFormat, ImageSampler);
-            friend yart::Backend::Image* CreateImage(uint32_t, uint32_t, const void*, ImageFormat, ImageSampler);
+            friend yart::Backend::Image* CreateImage(uint32_t width, uint32_t height, ImageFormat format, ImageSampler sampler);
+            friend yart::Backend::Image* CreateImage(uint32_t width, uint32_t height, const void* data, ImageFormat format, ImageSampler sampler);
 
         };
 
@@ -166,13 +166,13 @@ namespace yart
         public:
             FrameInFlight() = default;
 
-            VkFramebuffer vkFrameBuffer = VK_NULL_HANDLE;
-            VkCommandPool vkCommandPool = VK_NULL_HANDLE;
-            VkCommandBuffer vkCommandBuffer = VK_NULL_HANDLE;
+            VkFramebuffer vkFrameBuffer = VK_NULL_HANDLE; /// @brief Vulkan frame buffer handle
+            VkCommandPool vkCommandPool = VK_NULL_HANDLE; /// @brief Vulkan command pool handle 
+            VkCommandBuffer vkCommandBuffer = VK_NULL_HANDLE; /// @brief Vulkan command buffer handle
 
-            VkSemaphore vkImageAcquiredSemaphore = VK_NULL_HANDLE;
-            VkSemaphore vkRenderCompleteSemaphore = VK_NULL_HANDLE;
-            VkFence vkFence = VK_NULL_HANDLE;
+            VkSemaphore vkImageAcquiredSemaphore = VK_NULL_HANDLE; /// @brief Vulkan semaphore handle for device image access
+            VkSemaphore vkRenderCompleteSemaphore = VK_NULL_HANDLE; /// @brief Vulkan semaphore handle for rendering to the surface
+            VkFence vkFence = VK_NULL_HANDLE; /// @brief Vulkan multipurpose fence handle 
 
         private:
             FrameInFlight(const FrameInFlight&) = delete;
@@ -183,43 +183,43 @@ namespace yart
         /// @brief Context struct for the Backend module Vulkan/GLFW implementation
         struct BackendContext {
         public:
-            utils::LTStack LT;
-            utils::LTStack swapchainLT;
-            std::unique_ptr<FrameInFlight[]> framesInFlight = nullptr;
-            std::vector<Backend::Image*> allocatedImages = { };
+            utils::LTStack LT; /// @brief Lifetime stack for backend module allocations
+            utils::LTStack swapchainLT; /// @brief Lifetime stack for swapchain allocations
+            std::unique_ptr<FrameInFlight[]> framesInFlight = nullptr; /// @brief Swapchain frames in flight array
+            std::vector<Backend::Image*> allocatedImages = { }; /// @brief Vector of all allocated backend Images
 
             // -- GLFW TYPES -- //
-            GLFWwindow* window = nullptr;
+            GLFWwindow* window = nullptr; /// @brief GLFW window instance 
 
             // -- VULKAN TYPES -- //
-            VkInstance vkInstance = VK_NULL_HANDLE;
-            VkSurfaceKHR vkSurface = VK_NULL_HANDLE;
-            VkPhysicalDevice vkPhysicalDevice = VK_NULL_HANDLE;
-            uint32_t vkQueueFamily = 0U;
-            VkDevice vkDevice = VK_NULL_HANDLE;
-            VkQueue vkQueue = VK_NULL_HANDLE;
-            VkDescriptorPool vkDescriptorPool = VK_NULL_HANDLE;
+            VkInstance vkInstance = VK_NULL_HANDLE; /// @brief Vulkan instance handle
+            VkSurfaceKHR vkSurface = VK_NULL_HANDLE; /// @brief Vulkan render surface handle
+            VkPhysicalDevice vkPhysicalDevice = VK_NULL_HANDLE; /// @brief Vulkan physical device handle
+            uint32_t vkQueueFamily = 0U; /// @brief Vulkan render/present queue family index
+            VkDevice vkDevice = VK_NULL_HANDLE; /// @brief Vulkan logical device handle
+            VkQueue vkQueue = VK_NULL_HANDLE; /// @brief Vulkan device queue handle
+            VkDescriptorPool vkDescriptorPool = VK_NULL_HANDLE; /// @brief Vulkan descriptor pool handle
 
-            VkSurfaceFormatKHR vkSurfaceFormat = { };
-            VkPresentModeKHR vkSurfacePresentMode = (VkPresentModeKHR)0;
-            VkExtent2D vkSurfaceExtent = { };
-            VkRenderPass vkRenderPass = VK_NULL_HANDLE;
-            VkSwapchainKHR vkSwapchain = VK_NULL_HANDLE;
-            uint32_t minImageCount = 0;
-            uint32_t maxImageCount = 0;
-            uint32_t imageCount = 0;
-            uint32_t currentFrameInFlightIndex = 0;
-            uint32_t currentSemaphoreIndex = 0;
-            bool shouldRebuildSwapchain = false;
+            VkSurfaceFormatKHR vkSurfaceFormat = { }; /// @brief Vulkan format of the render surface
+            VkPresentModeKHR vkSurfacePresentMode = (VkPresentModeKHR)0; /// @brief Vulkan present mode of the render surface
+            VkExtent2D vkSurfaceExtent = { }; /// @brief Vulkan extent (size) of the render surface
+            VkRenderPass vkRenderPass = VK_NULL_HANDLE; /// @brief Vulkan render pass handle 
+            VkSwapchainKHR vkSwapchain = VK_NULL_HANDLE; /// @brief Vulkan swapchain handle
+            uint32_t minImageCount = 0; /// @brief Minimum image count for swapchain frames in flight
+            uint32_t maxImageCount = 0; /// @brief Maximum image count for swapchain frames in flight
+            uint32_t imageCount = 0; /// @brief Current image count for swapchain frames in flight
+            uint32_t currentFrameInFlightIndex = 0; /// @brief Currently used frame in flight index
+            uint32_t currentSemaphoreIndex = 0; /// @brief Currently used semaphore index
+            bool shouldRebuildSwapchain = false; /// @brief Whether the swapchain should be rebuild prior to rendering the next frame
 
             // -- IMAGE SAMPLERS -- //
-            VkSampler vkSampler_Nearest = VK_NULL_HANDLE;
-            VkSampler vkSampler_Linear = VK_NULL_HANDLE;
-            VkSampler vkSampler_Cubic = VK_NULL_HANDLE;
+            VkSampler vkSampler_Nearest = VK_NULL_HANDLE; /// @brief Vulkan sampler handle for the nearest interpolation type
+            VkSampler vkSampler_Linear = VK_NULL_HANDLE; /// @brief Vulkan sampler handle for the linear interpolation type
+            VkSampler vkSampler_Cubic = VK_NULL_HANDLE; /// @brief Vulkan sampler handle for the cubic interpolation type
 
             // -- EVENT CALLBACKS -- //
-            event_callback_t onDearImGuiSetupCallback = nullptr;
-            event_callback_t onWindowCloseCallback = nullptr;
+            event_callback_t onDearImGuiSetupCallback = nullptr; /// @brief Custom callback for Dear ImGui setup, provided by the application  
+            event_callback_t onWindowCloseCallback = nullptr; /// @brief Custom callback for handling the window close event, provided by the application  
 
         private:
             BackendContext(const BackendContext&) = delete;
@@ -337,7 +337,7 @@ namespace yart
         VkImageView CreateVulkanImageView(VkDevice device, VkFormat format, VkImage image);
 
         /// @brief Create Vulkan's `VkFramebuffer` object
-        /// @param device  Logical device on which to create the framebuffer
+        /// @param device Logical device on which to create the framebuffer
         /// @param render_pass Framebuffer's render pass
         /// @param extent Framebuffer extent
         /// @param image_view A single frame buffer attachment
@@ -363,7 +363,10 @@ namespace yart
         /// @param height Swapchain image extent height
         void WindowResize(uint32_t width, uint32_t height);
 
-
+        /// @brief Create Vulkan's `VkSampler` object for a given interpolation type
+        /// @param device Logical device on which to create the sampler
+        /// @param sampler Requested sampler type 
+        /// @return `VkSampler` handle or `VK_NULL_HANDLE` on failure
         VkSampler CreateVulkanSampler(VkDevice device, ImageSampler sampler);
 
         /// @brief Get a Vulkan sampler from a given `Backend::ImageSampler`

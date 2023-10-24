@@ -13,13 +13,20 @@ namespace yart
 {
     /// @brief Mesh data used for defining 3D mesh objects
     struct Mesh {
-        glm::vec3* vertices = nullptr; /// @brief Mesh vertices array pointer. Size of the array should be equal to `verticesCount`
-        uint32_t verticesCount; /// @brief Count of vertices in the mesh
-        glm::u32vec3* triangleIndices = nullptr; /// @brief Mesh triangle indices array pointer. Size of the array should be equal to `trianglesCount`
-        uint32_t trianglesCount; /// @brief Count of triangles in the mesh
-        glm::vec2* uvs = nullptr; /// @brief Array of UV coordinates for each vertex in the mesh. Size of the array should be equal to `uvsCount`
-        uint32_t uvsCount; /// @brief Size of the `uvs` array
-        glm::u32vec3* triangleVerticesUvs = nullptr; /// @brief Map of triangle vertices to their corresponding UVs. Size of the array should be equal to `trianglesCount`
+        /// @brief Mesh vertices array pointer. Size of the array should be equal to `verticesCount`
+        glm::vec3* vertices = nullptr; 
+        /// @brief Count of vertices in the mesh
+        uint32_t verticesCount; 
+        /// @brief Mesh triangle indices array pointer. Size of the array should be equal to `trianglesCount`
+        glm::u32vec3* triangleIndices = nullptr; 
+        /// @brief Count of triangles in the mesh
+        uint32_t trianglesCount; 
+        /// @brief Array of UV coordinates for each vertex in the mesh. Size of the array should be equal to `uvsCount`
+        glm::vec2* uvs = nullptr;
+        /// @brief Size of the `uvs` array 
+        uint32_t uvsCount; 
+        /// @brief Map of triangle vertices to their corresponding UVs. Size of the array should be equal to `trianglesCount`
+        glm::u32vec3* triangleVerticesUvs = nullptr; 
     };
 
 

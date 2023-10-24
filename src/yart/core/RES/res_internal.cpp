@@ -5,9 +5,10 @@
 
 #include "res_internal.h"
 
-
-#define STBI_FAILURE_USERMSG
-#define STB_IMAGE_IMPLEMENTATION
+#ifndef DOXYGEN_EXCLUDE // Exclude from documentation
+    #define STBI_FAILURE_USERMSG
+    #define STB_IMAGE_IMPLEMENTATION
+#endif // #ifndef DOXYGEN_EXCLUDE
 #include <stb_image.h>
 
 #include "yart/core/utils/glm_utils.h"

@@ -17,6 +17,9 @@
 
 namespace yart
 {
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// @brief Scene class, acting as a container and manager for rendered objects 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
     class Scene {
     public:
         /// @brief Construct a new empty scene 
@@ -32,7 +35,7 @@ namespace yart
         /// @param ray Ray to be intersected with the scene 
         /// @param hit_obj Pointer to the nearest hit object, or `nullptr` on miss
         /// @param u Output parameter set on valid intersection with the `u` coordinate in texture space
-        /// @param u Output parameter set on valid intersection with the `v` coordinate in texture space
+        /// @param v Output parameter set on valid intersection with the `v` coordinate in texture space
         /// @return Distance to the closest object hit, or a negative value on miss 
         float IntersectRay(const Ray& ray, Object* hit_obj, float* u, float* v);
 

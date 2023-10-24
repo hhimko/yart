@@ -16,7 +16,9 @@
 #include "yart/application.h"
 
 
-#define GRID_PLANE_HEIGHT 0.0f // @brief Height of the gizmos view grid plane
+/// @brief Height of the gizmos view grid plane
+#define GRID_PLANE_HEIGHT 0.0f 
+
 
 namespace yart
 {
@@ -41,8 +43,9 @@ namespace yart
         std::for_each(std::execution::par, m_verticalPixelIterator.begin(), m_verticalPixelIterator.end(), [&](uint32_t y) {
             std::for_each(std::execution::par, m_horizontalPixelIterator.begin(), m_horizontalPixelIterator.end(), [&](uint32_t x) {
 
-                glm::vec3 ray_direction = m_inverseViewProjectionMatrix * glm::vec4{ x + 0.5f, y + 0.5f, 1.0f, 1.0f };
-                ray_direction = glm::normalize(ray_direction);
+                const glm::vec3 ray_direction     = glm::normalize(m_inverseViewProjectionMatrix * glm::vec4{ x + 0.5f, y + 0.5f, 1.0f, 1.0f });
+                const glm::vec3 ray_direction_ddx = glm::normalize(m_inverseViewProjectionMatrix * glm::vec4{ x + 1.5f, y + 0.5f, 1.0f, 1.0f });
+                const glm::vec3 ray_direction_ddy = glm::normalize(m_inverseViewProjectionMatrix * glm::vec4{ x + 0.5f, y + 1.5f, 1.0f, 1.0f });
 
                 // Trace a ray from the camera's origin into the scene
                 HitPayload payload;
@@ -59,7 +62,7 @@ namespace yart
         return dirty;
     }
 
-    bool Renderer::Render(const yart::Viewport *viewport)
+    bool Renderer::Render(const yart::Viewport* viewport)
     {
         float* image_data = viewport->GetImageData();
         ImVec2 image_size = viewport->GetImageSize();

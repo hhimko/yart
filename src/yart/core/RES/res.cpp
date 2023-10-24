@@ -35,7 +35,9 @@ namespace yart
         }
 
         // Explicit template instantiations
-        template CubeMap* GetDefault<CubeMap>();
+        #ifndef DOXYGEN_EXCLUDE // Exclude from documentation
+            template CubeMap* GetDefault<CubeMap>();
+        #endif // #ifndef DOXYGEN_EXCLUDE
 
         template <class TResource>
         TResource* GetResourceByID(resourceID_t& id)
@@ -57,7 +59,9 @@ namespace yart
         }
 
         // Explicit template instantiations
-        template CubeMap* GetResourceByID<CubeMap>(resourceID_t& id);
+        #ifndef DOXYGEN_EXCLUDE // Exclude from documentation
+            template CubeMap* GetResourceByID<CubeMap>(resourceID_t& id);
+        #endif // #ifndef DOXYGEN_EXCLUDE
 
     } // namespace RES
 } // namespace yart

@@ -202,7 +202,7 @@ namespace yart
         /// @param p_min Frame rectangle upper-left corner in screen space coordinates
         /// @param p_max Frame rectangle lower-right corner in screen space coordinates
         /// @param color Frame background color. Usually the return value of GUI::GetFrameColor()
-        /// @param draw_flag Additional Dear ImGui draw flags
+        /// @param draw_flags Additional Dear ImGui draw flags
         void DrawItemFrame(ImDrawList* draw_list, const ImVec2& p_min, const ImVec2& p_max, ImU32 color, ImDrawFlags draw_flags = ImDrawFlags_None);
 
         /// @brief Add a width aware text to a given Dear ImGui draw list
