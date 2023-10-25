@@ -49,7 +49,7 @@ namespace yart
 
                 // Trace a ray from the camera's origin into the scene
                 HitPayload payload;
-                TraceRay({m_cameraPosition, ray_direction}, payload);
+                TraceRay({ m_cameraPosition, ray_direction, ray_direction_ddx, ray_direction_ddy }, payload);
 
                 size_t idx = (y * width + x) * 4;
                 buffer[idx + 0] = payload.resultColor.r;
@@ -94,7 +94,7 @@ namespace yart
         float u, v;
 
         // Intersect the ray with the active scene and gizmos view
-        float overlay_distance = SampleOverlaysView(ray, overlay_color);
+        float overlay_distance =  SampleOverlaysView(ray, overlay_color);
         float hit_distance = m_scene->IntersectRay(ray, hit_object, &u, &v);
         payload.hitDistance = hit_distance;
 
@@ -115,13 +115,30 @@ namespace yart
     float Renderer::SampleOverlaysView(const yart::Ray& ray, glm::vec4& color)
     {
         // Grid plane
-        float grid_plane_distance = (GRID_PLANE_HEIGHT - ray.origin.y) / ray.direction.y;
+        const float grid_plane_distance = (GRID_PLANE_HEIGHT - ray.origin.y) / ray.direction.y;
         if (grid_plane_distance > 0.0f) {
             const glm::vec3 hit_pos = ray.origin + ray.direction * grid_plane_distance;
             const glm::vec2 uv = { hit_pos.x, hit_pos.z };
 
-            const glm::vec2 a = glm::step(glm::fract(uv), glm::vec2(0.005f, 0.005f));
-            color = glm::vec4(0.01f, 0.01f, 0.01f, 1.0f - (1.0f - a.x) * (1.0f - a.y));
+            // Analytically filtered grid pattern based on Inigo Quilez's approach
+            // See more: https://iquilezles.org/articles/filterableprocedurals/
+            const float grid_plane_distance_ddx = (GRID_PLANE_HEIGHT - ray.origin.y) / ray.direction_ddx.y;
+            const float grid_plane_distance_ddy = (GRID_PLANE_HEIGHT - ray.origin.y) / ray.direction_ddy.y;
+            const glm::vec3 hit_pos_ddx = ray.origin + ray.direction * grid_plane_distance_ddx;
+            const glm::vec3 hit_pos_ddy = ray.origin + ray.direction * grid_plane_distance_ddy;
+            const glm::vec2 uv_ddx = glm::vec2{ hit_pos_ddx.x, hit_pos_ddx.z } - uv;
+            const glm::vec2 uv_ddy = glm::vec2{ hit_pos_ddy.x, hit_pos_ddy.z } - uv;
+
+            // Distance-responsive filter kernel
+            const glm::vec2 w = glm::max(glm::abs(uv_ddx), glm::abs(uv_ddy)) + glm::max(grid_plane_distance / 4000.0f, 0.00001f);
+
+            // Analytic (box) filtering
+            static constexpr float N = 100.0f;
+            const glm::vec2 a = uv + 0.5f * w;                        
+            const glm::vec2 b = uv - 0.5f * w;           
+            const glm::vec2 i = (glm::floor(a) + glm::min(glm::fract(a) * N, 1.0f) - glm::floor(b) - glm::min(glm::fract(b) * N, 1.0f)) / (N * w);
+
+            color = glm::vec4(0.01f, 0.01f, 0.01f, 1.0f - (1.0f - i.x) * (1.0f - i.y));
         }
 
         return grid_plane_distance;

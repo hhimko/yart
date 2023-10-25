@@ -20,6 +20,10 @@ namespace yart
         /// @brief Direction (unit) vector of the ray
         glm::vec3 direction;
 
+        glm::vec3 direction_ddx;
+        
+        glm::vec3 direction_ddy;
+
     public:
         /// @brief Ray-triangle intersection check, implemented using the Möller-Trumbore algorithm
         /// @param ray Traced ray
