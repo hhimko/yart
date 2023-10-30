@@ -35,6 +35,12 @@ namespace yart
             }
             GUI::EndCollapsableSection(section_open);
 
+            section_open = GUI::BeginCollapsableSection("Overlays");
+            if (section_open) {
+                made_changes |= RenderOverlaysSection(target);
+            }
+            GUI::EndCollapsableSection(section_open);
+
             return made_changes;
         }
 
@@ -140,6 +146,23 @@ namespace yart
             if (GUI::SliderFloat("Far clipping plane", &target->m_farClippingPlane, FAR_CLIP_MIN, FAR_CLIP_MAX)) {
                 made_changes = true;
             }
+
+            return made_changes;
+        }
+
+        bool RendererView::RenderOverlaysSection(yart::Renderer* target)
+        {
+            bool made_changes = GUI::CheckBox("Grid", &target->m_showOverlays);
+
+            if (!target->m_showOverlays)
+                ImGui::BeginDisabled();
+
+            static constexpr size_t outlines_count = 2;
+            static const char* outlines[outlines_count] = { "Normal", "Thick" };
+            made_changes |= GUI::ComboHeader("Grid outline", outlines, outlines_count, (int*)&target->m_useThickerGrid);
+
+            if (!target->m_showOverlays)
+                ImGui::EndDisabled();
 
             return made_changes;
         }

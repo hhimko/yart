@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <execution>
 #include <iostream>
+#include <limits>
 
 #include <imgui.h>
 
@@ -16,8 +17,11 @@
 #include "yart/application.h"
 
 
-/// @brief Height of the gizmos view grid plane
+/// @brief Height of the overlay grid plane
 #define GRID_PLANE_HEIGHT 0.0f 
+
+/// @brief Color of the overlay grid plane
+#define GRID_PLANE_COLOR 0.01f, 0.01f, 0.01f
 
 
 namespace yart
@@ -94,7 +98,7 @@ namespace yart
         float u, v;
 
         // Intersect the ray with the active scene and gizmos view
-        float overlay_distance =  SampleOverlaysView(ray, overlay_color);
+        float overlay_distance = m_showOverlays ? SampleOverlaysView(ray, overlay_color) : std::numeric_limits<float>::max();
         float hit_distance = m_scene->IntersectRay(ray, hit_object, &u, &v);
         payload.hitDistance = hit_distance;
 
@@ -130,15 +134,15 @@ namespace yart
             const glm::vec2 uv_ddy = glm::vec2{ hit_pos_ddy.x, hit_pos_ddy.z } - uv;
 
             // Distance-responsive filter kernel
-            const glm::vec2 w = glm::max(glm::abs(uv_ddx), glm::abs(uv_ddy)) + glm::max(grid_plane_distance / 4000.0f, 0.00001f);
+            const glm::vec2 w = glm::max(glm::abs(uv_ddx), glm::abs(uv_ddy)) + glm::max(grid_plane_distance / 4000.0f, 0.0001f);
 
             // Analytic (box) filtering
-            static constexpr float N = 100.0f;
+            const float N = m_useThickerGrid ? 50.0f : 100.0f;
             const glm::vec2 a = uv + 0.5f * w;                        
             const glm::vec2 b = uv - 0.5f * w;           
             const glm::vec2 i = (glm::floor(a) + glm::min(glm::fract(a) * N, 1.0f) - glm::floor(b) - glm::min(glm::fract(b) * N, 1.0f)) / (N * w);
 
-            color = glm::vec4(0.01f, 0.01f, 0.01f, 1.0f - (1.0f - i.x) * (1.0f - i.y));
+            color = glm::vec4(GRID_PLANE_COLOR, 1.0f - (1.0f - i.x) * (1.0f - i.y));
         }
 
         return grid_plane_distance;

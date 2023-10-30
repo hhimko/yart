@@ -52,6 +52,11 @@ namespace yart
             /// @returns Whether any changes were made by the user since the last frame
             static bool RenderCameraPropertiesSection(yart::Renderer* target);
 
+            /// @brief Issue "Overlays" section GUI render commands
+            /// @param target View target instance
+            /// @returns Whether any changes were made by the user since the last frame
+            static bool RenderOverlaysSection(yart::Renderer* target);
+
         private:
             /// @brief Smallest valid value for camera's FOV in degrees
             static constexpr float FOV_MIN = 45.0f;

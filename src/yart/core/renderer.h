@@ -110,6 +110,9 @@ namespace yart
         uint32_t m_width = 0; // Width of the render output in pixels 
         uint32_t m_height = 0; // Height of the render output in pixels 
 
+        bool m_showOverlays = true; // Whether the overlays layer should be rendered
+        bool m_useThickerGrid = false; // Whether the overlay grid should use a thicker outline
+
         // Iterators used by Renderer::Render for multithreading
         std::vector<uint32_t> m_verticalPixelIterator;
         std::vector<uint32_t> m_horizontalPixelIterator;
