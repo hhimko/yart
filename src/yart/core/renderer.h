@@ -97,12 +97,13 @@ namespace yart
         /// @param payload HitPayload structure, where the ray tracing results will be stored
         void Miss(const yart::Ray& ray, HitPayload& payload);
 
-        /// @brief Recalculate the inverse view projection matrix, used for transforming screen space coordinates into world space 
+        /// @brief Recalculate the camera ray direction cache
         /// @note This method should be called if any of the following camera properties have changed:
+        ///        - look direction
         ///        - aspect ratio,  
         ///        - field of view,
         ///        - near clipping plane
-        void RecalculateCameraTransformationMatrix();
+        void RecalculateRayDirections();
 
     private:
         std::unique_ptr<yart::World> m_world = std::make_unique<World>();
@@ -114,8 +115,8 @@ namespace yart
         bool m_useThickerGrid = false; // Whether the overlay grid should use a thicker outline
 
         // Iterators used by Renderer::Render for multithreading
-        std::vector<uint32_t> m_verticalPixelIterator;
-        std::vector<uint32_t> m_horizontalPixelIterator;
+        std::unique_ptr<uint32_t[]> m_verticalPixelIterator;
+        std::unique_ptr<uint32_t[]> m_horizontalPixelIterator;
 
         // -- CAMERA DATA -- // 
         static constexpr glm::vec3 UP_DIRECTION = { .0f, 1.0f, .0f }; // World up vector used for camera positioning
@@ -131,6 +132,9 @@ namespace yart
 
         // Cached view projection matrix inverse for transforming screen space coordinates into world space 
         glm::mat4 m_inverseViewProjectionMatrix; 
+
+        // Cached camera ray directions
+        std::vector<glm::vec3> m_rayDirections;
 
 
         // -- FRIEND DECLARATIONS -- //

@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <execution>
 #include <iostream>
+#include <iterator>
 #include <limits>
 
 #include <imgui.h>
@@ -28,8 +29,11 @@ namespace yart
 {
     Renderer::Renderer()
     {
+        // Calculate the initial camera look direction vector, based on default pitch and yaw values
         m_cameraLookDirection = yart::utils::SphericalToCartesianUnitVector(m_cameraYaw, m_cameraPitch);
-        RecalculateCameraTransformationMatrix();
+
+        // Initialize 
+        Resize(0, 0);
     }
 
     bool Renderer::Render(float buffer[], uint32_t width, uint32_t height)
@@ -44,18 +48,17 @@ namespace yart
         }
 
         // Multithreaded iteration through all image pixels
-        std::for_each(std::execution::par, m_verticalPixelIterator.begin(), m_verticalPixelIterator.end(), [&](uint32_t y) {
-            std::for_each(std::execution::par, m_horizontalPixelIterator.begin(), m_horizontalPixelIterator.end(), [&](uint32_t x) {
-
-                const glm::vec3 ray_direction     = glm::normalize(m_inverseViewProjectionMatrix * glm::vec4{ x + 0.5f, y + 0.5f, 1.0f, 1.0f });
-                const glm::vec3 ray_direction_ddx = glm::normalize(m_inverseViewProjectionMatrix * glm::vec4{ x + 1.5f, y + 0.5f, 1.0f, 1.0f });
-                const glm::vec3 ray_direction_ddy = glm::normalize(m_inverseViewProjectionMatrix * glm::vec4{ x + 0.5f, y + 1.5f, 1.0f, 1.0f });
+        std::for_each(std::execution::par, m_verticalPixelIterator.get(), m_verticalPixelIterator.get() + height, [&](uint32_t y) {
+            std::for_each(std::execution::par, m_horizontalPixelIterator.get(), m_horizontalPixelIterator.get() + width, [&](uint32_t x) {
+                const glm::vec3 ray_direction     = m_rayDirections[y * width + x];
+                const glm::vec3 ray_direction_ddx = m_rayDirections[(y + 0) * width + x + 1];
+                const glm::vec3 ray_direction_ddy = m_rayDirections[(y + 1) * width + x + 0];
 
                 // Trace a ray from the camera's origin into the scene
                 HitPayload payload;
                 TraceRay({ m_cameraPosition, ray_direction, ray_direction_ddx, ray_direction_ddy }, payload);
 
-                size_t idx = (y * width + x) * 4;
+                const size_t idx = (y * width + x) * 4;
                 buffer[idx + 0] = payload.resultColor.r;
                 buffer[idx + 1] = payload.resultColor.g;
                 buffer[idx + 2] = payload.resultColor.b;
@@ -76,19 +79,19 @@ namespace yart
     void Renderer::Resize(uint32_t width, uint32_t height)
     {
         // Resize and fill pixel iterators
-        m_verticalPixelIterator.resize(static_cast<size_t>(height));
-        for (uint32_t i = 0; i < height; ++i)
+        m_verticalPixelIterator = std::make_unique<uint32_t[]>(height + 1);
+        for (uint32_t i = 0; i < height + 1; ++i)
             m_verticalPixelIterator[i] = i;        
         
-        m_horizontalPixelIterator.resize(static_cast<size_t>(width));
-        for (uint32_t i = 0; i < width; ++i)
+        m_horizontalPixelIterator = std::make_unique<uint32_t[]>(width + 1);
+        for (uint32_t i = 0; i < width + 1; ++i)
             m_horizontalPixelIterator[i] = i;    
         
         m_width = width;
         m_height = height;
 
         // Change in aspect ratio requires the camera matrix to be recalculated 
-        RecalculateCameraTransformationMatrix();
+        RecalculateRayDirections();
     }
 
     void Renderer::TraceRay(const Ray& ray, HitPayload& payload)
@@ -159,7 +162,7 @@ namespace yart
         payload.resultColor = m_world->SampleSkyColor(ray.direction);
     }
 
-    void Renderer::RecalculateCameraTransformationMatrix()
+    void Renderer::RecalculateRayDirections()
     {
         // Calculate the view matrix inverse (camera space to world space)
         const glm::mat4 view_matrix = yart::utils::CreateViewMatrix(m_cameraLookDirection, UP_DIRECTION);
@@ -172,6 +175,15 @@ namespace yart
         const glm::mat4 projection_matrix_inverse = yart::utils::CreateInverseProjectionMatrix(fov, w, h, m_nearClippingPlane);
 
         m_inverseViewProjectionMatrix = view_matrix_inverse * projection_matrix_inverse;
+
+        // Precalculate ray directions for each pixel
+        m_rayDirections.resize((m_width + 1) * (m_height + 1));
+        std::for_each(std::execution::par, m_verticalPixelIterator.get(), m_verticalPixelIterator.get() + m_height + 1, [&](uint32_t y) {
+            std::for_each(std::execution::par, m_horizontalPixelIterator.get(), m_horizontalPixelIterator.get() + m_width + 1, [&](uint32_t x) {
+                size_t idx = y * m_width + x;
+                m_rayDirections[idx] = glm::normalize(m_inverseViewProjectionMatrix * glm::vec4{ x + 0.5f, y + 0.5f, 1.0f, 1.0f });
+            });
+        });
     }
     
 } // namespace yart

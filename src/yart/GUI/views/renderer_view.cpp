@@ -57,7 +57,7 @@ namespace yart
                 target->m_cameraYaw = (clicked_axis.y + clicked_axis.z) * 90.0f * yart::utils::DEG_TO_RAD + (clicked_axis.x == -1.0f) * 180.0f * yart::utils::DEG_TO_RAD;
                 target->m_cameraLookDirection = yart::utils::SphericalToCartesianUnitVector(target->m_cameraYaw, target->m_cameraPitch); // Can't use `clicked_axis` directly here, because of rotation clamping
 
-                target->RecalculateCameraTransformationMatrix();
+                target->RecalculateRayDirections();
                 return true;
             }
 
@@ -104,7 +104,7 @@ namespace yart
                     target->m_cameraPitch = glm::clamp(target->m_cameraPitch, CAMERA_PITCH_MIN, CAMERA_PITCH_MAX);
                     target->m_cameraLookDirection = yart::utils::SphericalToCartesianUnitVector(target->m_cameraYaw, target->m_cameraPitch);
 
-                    target->RecalculateCameraTransformationMatrix();
+                    target->RecalculateRayDirections();
                     made_changes = true;
                 }
             }
@@ -134,12 +134,12 @@ namespace yart
             bool made_changes = false;
 
             if (GUI::SliderFloat("FOV", &target->m_fieldOfView, FOV_MIN, FOV_MAX)) {
-                target->RecalculateCameraTransformationMatrix();
+                target->RecalculateRayDirections();
                 made_changes = true;
             }
 
             if (GUI::SliderFloat("Near clipping plane", &target->m_nearClippingPlane, NEAR_CLIP_MIN, NEAR_CLIP_MAX)) {
-                target->RecalculateCameraTransformationMatrix();
+                target->RecalculateRayDirections();
                 made_changes = true;
             }
 
@@ -159,7 +159,11 @@ namespace yart
 
             static constexpr size_t outlines_count = 2;
             static const char* outlines[outlines_count] = { "Normal", "Thick" };
-            made_changes |= GUI::ComboHeader("Grid outline", outlines, outlines_count, (int*)&target->m_useThickerGrid);
+            int selection = static_cast<int>(target->m_useThickerGrid);
+            if (GUI::ComboHeader("Grid outline", outlines, outlines_count, &selection)) {
+                target->m_useThickerGrid ^= 0x1;
+                made_changes = true;
+            }
 
             if (!target->m_showOverlays)
                 ImGui::EndDisabled();
