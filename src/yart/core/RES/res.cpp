@@ -8,7 +8,7 @@
 
 #include <type_traits>
 
-#include "yart/core/utils/yart_utils.h"
+#include "yart/common/utils/yart_utils.h"
 #include "resources/cubemap.h"
 #include "res_internal.h"
 

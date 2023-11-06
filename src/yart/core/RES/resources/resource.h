@@ -8,7 +8,7 @@
 
 #include <string>
 
-#include "yart/core/utils/yart_utils.h"
+#include "yart/common/utils/yart_utils.h"
 
 
 namespace yart

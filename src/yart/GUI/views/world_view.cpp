@@ -7,7 +7,7 @@
 
 
 #include "yart/core/RES/resources/cubemap.h"
-#include "yart/core/utils/yart_utils.h"
+#include "yart/common/utils/yart_utils.h"
 #include "yart/core/world.h"
 #include "yart/GUI/gui.h"
 

@@ -1,49 +1,26 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @file
-/// @brief Implementation of YART backend module helper utility functions and macros
+/// @brief LTStack memory management class definition for object allocation unwinding 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-
 #include <functional>
-#include <cassert>
 #include <vector>
-#include <cstdio>
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// Helper Macros & Definitions
-////////////////////////////////////////////////////////////////////////////////////////////////////
-#ifndef DOXYGEN_EXCLUDE // Exclude from documentation
-    #define YART_STRINGIFY(x) #x
-
-    #define YART_SUPPRESS_PUSH(code) \
-        _Pragma("warning(push)")     \
-        _Pragma(YART_STRINGIFY(warning(disable: ## code)))
-
-    #define YART_SUPPRESS_POP() \
-        _Pragma("warning(pop)") 
-
-    #define YART_ARRAYSIZE(arr) (sizeof(arr) / sizeof(*(arr)))
-    #define YART_UNUSED(...) (void)sizeof(__VA_ARGS__)
-
-    #define YART_ASSERT(expr) assert(expr) 
-    #define YART_ABORT(msg) assert(0 && msg)
-    #define YART_UNREACHABLE() YART_ABORT("Reached unreachable section")
-
-    #define YART_LOG_ERR(format, ...) fprintf(stderr, format, __VA_ARGS__)
-#endif // #ifndef DOXYGEN_EXCLUDE
 
 
 namespace yart
 {
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-    /// @brief YART helper utility functions 
+    /// @brief YART memory management helper definitions
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-    namespace utils
+    namespace memory
     {
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
         /// @brief Stack-based object lifetime management structure
+        /// @details Used for "unwinding" object allocations in reverse order to their allocation, 
+        ///     for objects that might be dependant of each other
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
         class LTStack {
         public:
             LTStack() = default;
@@ -53,8 +30,8 @@ namespace yart
 
             /// @brief Push a new managed object into the stack with a given destructor 
             /// @tparam T Type of the managed object. Must be a pointer type 
-            /// @param var Object to be managed
-            /// @param dtor Custom destructor for var
+            /// @param var Pointer to the managed object
+            /// @param dtor Custom destructor for `var`
             template<typename T>
             void Push(T var, std::function<void(T)>&& dtor) {
                 static_assert(std::is_pointer<T>::value, "Expected a pointer");
@@ -98,5 +75,5 @@ namespace yart
             
         };
 
-    } // namespace utils
+    } // namespace memory
 } // namespace yart

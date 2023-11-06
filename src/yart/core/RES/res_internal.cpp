@@ -11,7 +11,7 @@
 #endif // #ifndef DOXYGEN_EXCLUDE
 #include <stb_image.h>
 
-#include "yart/core/utils/glm_utils.h"
+#include "yart/common/utils/glm_utils.h"
 
 
 /// @brief Color displayed when trying to sample a missing image

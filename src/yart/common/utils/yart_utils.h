@@ -1,12 +1,13 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @file
-/// @brief Implementation of core YART helper utility macros
+/// @brief Implementation of common YART helper utility macros
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
 
-#include <assert.h>
+#include <cassert>
+#include <cstdio>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -28,6 +29,8 @@
     #define YART_ASSERT(expr) assert(expr) 
     #define YART_ABORT(msg) assert(0 && msg)
     #define YART_UNREACHABLE() YART_ABORT("Reached unreachable section")
+
+    #define YART_LOG_ERR(format, ...) fprintf(stderr, format, __VA_ARGS__)
 #endif // #ifndef DOXYGEN_EXCLUDE
 
 // TODO: Create YART logging macros

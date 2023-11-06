@@ -8,7 +8,7 @@
 
 #include <imgui.h>
 
-#include "yart/core/utils/glm_utils.h"
+#include "yart/common/utils/glm_utils.h"
 
 
 namespace yart

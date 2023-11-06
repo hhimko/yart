@@ -13,7 +13,7 @@
 #include <backends/imgui_impl_vulkan.h> // Renderer backend
 #include <vulkan/vulkan.h>
 
-#include "yart/backend/utils/backend_utils.h"
+#include "yart/common/memory/ltstack.h"
 #include "yart/backend/backend.h"
 
 
@@ -183,8 +183,8 @@ namespace yart
         /// @brief Context struct for the Backend module Vulkan/GLFW implementation
         struct BackendContext {
         public:
-            utils::LTStack LT; /// @brief Lifetime stack for backend module allocations
-            utils::LTStack swapchainLT; /// @brief Lifetime stack for swapchain allocations
+            yart::memory::LTStack LT; /// @brief Lifetime stack for backend module allocations
+            yart::memory::LTStack swapchainLT; /// @brief Lifetime stack for swapchain allocations
             std::unique_ptr<FrameInFlight[]> framesInFlight = nullptr; /// @brief Swapchain frames in flight array
             std::vector<Backend::Image*> allocatedImages = { }; /// @brief Vector of all allocated backend Images
 
