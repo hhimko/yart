@@ -30,13 +30,24 @@ namespace yart
     };
 
 
-    /// @brief Static factory class for primitive meshes
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// @brief Static factory class for generating primitive meshes
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
     class MeshFactory {
     public:
-        /// @brief Create a new unit cube mesh, centered around a given origin point
+        /// @brief Generate a new unit cube mesh, centered around a given origin point
         /// @param origin Center point, around which to build the mesh
-        /// @return Mesh primitive
+        /// @return Mesh object for the primitive
         static Mesh* CubeMesh(const glm::vec3& origin);
+
+        /// @brief Generate a new UV sphere mesh, centered around a given origin point
+        /// @param origin Center point, around which to build the mesh
+        /// @param num_segments Number of sphere segments (vertical slices) to subdivide the mesh with.
+        ///     The segment count should not be less than three
+        /// @param num_rings Number of sphere rings (horizontal stacks) to subdivide the mesh with.
+        ///     The ring count should not be less than three
+        /// @return Mesh object for the primitive
+        static Mesh* UvSphereMesh(const glm::vec3& origin, size_t num_segments = 32U, size_t num_rings = 16U);
 
     };
 } // namespace yart
