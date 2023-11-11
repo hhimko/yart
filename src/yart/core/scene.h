@@ -10,7 +10,7 @@
 
 #include <glm/glm.hpp>
 
-#include "yart/common/classes/mesh_factory.h"
+#include "yart/common/mesh_factory.h"
 #include "object.h"
 #include "ray.h"
 
