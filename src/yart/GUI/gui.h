@@ -78,12 +78,28 @@ namespace yart
 {
     namespace GUI
     {
-        /// @brief Callback function for rendering custom Dear ImGui windows  
-        using imgui_callback_t = std::function<bool()>;
+        /// @brief GUI Layout direction enum
+        enum class LayoutDir : uint8_t {
+            HORIZONTAL,
+            VERTICAL
+        };
 
-
-        /// @brief GUI context, holding all state required to render a specific UI layout
-        struct GuiContext; // Opaque type without including `gui_internal.h`
+        /// @brief Layout specification object used to store state of layout widgets
+        struct LayoutContext {
+        public:
+            /// @brief Direction of the layout (vertical / horizontal)
+            LayoutDir direction;
+            /// @brief Dear ImGui window flags for child windows inside layout
+            ImGuiWindowFlags window_flags;
+            /// @brief Whether the size should be updated based on the second layout section when resizing the OS window
+            bool preserveSecondSectionSize;
+            /// @brief The default layout segment sizing ratio. Should be in the [0..1] range 
+            float default_size_ratio = 0.5f;
+            /// @brief Separator handle position state
+            float size;
+            /// @brief The minimum possible size 
+            float min_size = 100.0f;
+        };
 
         /// @brief Structure used for storing state of the GradientEditor widgets
         struct GradientEditorContext {
@@ -111,17 +127,9 @@ namespace yart
         };
 
 
-        /// @brief Get the current GUI context
-        /// @return The currently active context object
-        GuiContext* GetGuiContext();
-
-
         ////////////////////////////////////////////////////////////////////////////////////////////////////
-        /// GUI module setup and callback registering public functions 
+        /// GUI module setup functions
         ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        /// @brief Initialize the GUI module
-        void Init();
 
         /// @brief Apply the default YART application GUI style and color palette
         void ApplyCustomStyle();
@@ -130,54 +138,56 @@ namespace yart
         /// @note Should only ever be called before uploading font textures to the GPU
         void LoadFonts();
 
-        /// @brief Register a global Dear ImGui render function
-        /// @param callback Callback function pointer
-        void RegisterCallback(imgui_callback_t callback);
-
-        /// @brief Register a nav bar menu item, visible in the main inspector window
-        /// @param name Name of the nav bar item
-        /// @param icon Nav bar icon code point from the application's icons font 
-        /// @param color Nav bar icon color
-        /// @param callback Callback function pointer to the nav bar item contents
-        void RegisterInspectorWindow(const char* name, const char* icon, ImU32 color, imgui_callback_t callback);
-
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
         /// GUI module public interface 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        /// @brief Update the GUI module state
-        /// @details Should be called once every frame
-        void Update();
-
-        /// @brief Issue Dear ImGui render commands for the current GUI context
-        /// @note This method should only be called after calling `ImGui::NewFrame()`
-        /// @returns Whether any changes were made by the user within this frame
-        bool Render();
-
-        /// @brief Render the view axes context window
-        /// @param x_axis View x-axis
-        /// @param y_axis View y-axis
-        /// @param z_axis View z-axis
-        /// @param clicked_axis Output variable set to a base axis clicked by the user
-        /// @return Whether the user has clicked on an axis and the `clicked_axis` output variable has been set 
-        bool RenderViewAxesWindow(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis, glm::vec3& clicked_axis);
-
-        /// @brief Get the main application render viewport
-        /// @return Main render viewport
-        yart::Viewport* GetRenderViewport();
-
         /// @brief Set custom flags for the next GUI item 
         /// @param flags Flags to be set
         void SetNextItemFlags(GuiItemFlags flags);
 
-        /// @brief Test whether the mouse cursor is currently directly over the render viewport
-        /// @return Whether mouse is over viewport
-        bool IsMouseOverRenderViewport();
+        /// @brief Get the Dear ImGui font for GUI icons 
+        /// @brief The font should be loaded with GUI::LoadFonts()
+        /// @return Icons font pointer
+        const ImFont* GetIconsFont();
 
         /// @brief Push the icons font to the Dear ImGui font stack 
         /// @note Call `ImGui::PopFont()` to return to the previous font in the stack
         void PushIconsFont();
+
+        /// @brief Check whether the mouse cursor lies within a given circle
+        /// @param pos Circle position on the screen
+        /// @param radius Radius of the circle
+        /// @return Whether the mouse cursor is inside circle
+        bool IsMouseHoveringCircle(const ImVec2& pos, float radius);
+
+        /// @brief Get the amount of pixels the OS window size has changed since last frame
+        /// @return Display size delta amount in pixels
+        ImVec2 GetDisplaySizeDelta();
+
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        /// Layout group widgets rendering functions
+        ///  - Layouts are trying to simulate and simplify the docking branch of Dear ImGui, without
+        ///    the additional viewports and just the functionality required by YART
+        ///  - The current layout code is limited to rendering at most two segments within one layout,
+        ///    due to the `LayoutContext` structure currently holding just one `size` value
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        /// @brief Begin a new GUI layout
+        /// @param layout Layout state object
+        /// @return Whether the layout section is currently visible on screen
+        bool BeginLayout(LayoutContext& layout);
+
+        /// @brief End the previous layout segment and start the next segment
+        /// @param layout Layout state object
+        /// @return Whether the layout section is currently visible on screen
+        bool LayoutSeparator(LayoutContext& layout);
+
+        /// @brief Finalize rendering a layout
+        /// @param layout Layout state object
+        void EndLayout(LayoutContext& layout);
 
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -270,6 +280,16 @@ namespace yart
         /// @brief Finish recording a YART GUI style collapsable header
         /// @param was_open The value returned by GUI::BeginCollapsableSection()
         void EndCollapsableSection(bool was_open);
+
+        /// @brief Begin a YART GUI style tab bar with an initial tab item
+        /// @details Subsequent tab items can be issued calling `ImGui::BeginTabItem()`
+        /// @param item_name First tab item name
+        /// @return Whether the first tab item is currently opened
+        /// @note `ImGui::EndTabBar()` should always be called after calling this method
+        bool BeginTabBar(const char* item_name);
+
+        /// @brief Finish recording a YART GUI style tab bar
+        void EndTabBar();
 
         /// @brief Begin a new named frame window  
         /// @param name Name of the frame, displayed as the header

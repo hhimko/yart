@@ -6,6 +6,7 @@
 #include "renderer_view.h"
 
 
+#include "yart/interface/interface.h"
 #include "yart/core/renderer.h"
 #include "yart/GUI/input.h"
 #include "yart/GUI/gui.h"
@@ -51,15 +52,15 @@ namespace yart
             const glm::vec3 z_axis = glm::normalize(glm::cross(x_axis, y_axis));
 
             glm::vec3 clicked_axis = {0, 0, 0};
-            if (yart::GUI::RenderViewAxesWindow(x_axis, y_axis, z_axis, clicked_axis)) {
-                // Base axis to pitch, yaw rotation transformation magic
-                target->m_cameraPitch = clicked_axis.y * CAMERA_PITCH_MAX;
-                target->m_cameraYaw = (clicked_axis.y + clicked_axis.z) * 90.0f * yart::utils::DEG_TO_RAD + (clicked_axis.x == -1.0f) * 180.0f * yart::utils::DEG_TO_RAD;
-                target->m_cameraLookDirection = yart::utils::SphericalToCartesianUnitVector(target->m_cameraYaw, target->m_cameraPitch); // Can't use `clicked_axis` directly here, because of rotation clamping
+            // if (yart::GUI::RenderViewAxesWindow(x_axis, y_axis, z_axis, clicked_axis)) {
+            //     // Base axis to pitch, yaw rotation transformation magic
+            //     target->m_cameraPitch = clicked_axis.y * CAMERA_PITCH_MAX;
+            //     target->m_cameraYaw = (clicked_axis.y + clicked_axis.z) * 90.0f * yart::utils::DEG_TO_RAD + (clicked_axis.x == -1.0f) * 180.0f * yart::utils::DEG_TO_RAD;
+            //     target->m_cameraLookDirection = yart::utils::SphericalToCartesianUnitVector(target->m_cameraYaw, target->m_cameraPitch); // Can't use `clicked_axis` directly here, because of rotation clamping
 
-                target->RecalculateRayDirections();
-                return true;
-            }
+            //     target->RecalculateRayDirections();
+            //     return true;
+            // }
 
             return false;
         }
@@ -94,7 +95,7 @@ namespace yart
 
 
             // -- ROTATION -- //
-            if (GUI::IsMouseOverRenderViewport() && ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
+            if (Interface::IsMouseOverRenderViewport() && ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
                 yart::GUI::Input::SetCursorLocked(true); // Lock and hide the cursor
                 ImVec2 mouse_delta = yart::GUI::Input::GetMouseMoveDelta();
 

@@ -11,6 +11,7 @@
 
 #include "yart/GUI/views/renderer_view.h"
 #include "yart/GUI/views/viewport_view.h"
+#include "yart/interface/interface.h"
 #include "yart/backend/backend.h"
 #include "yart/core/viewport.h"
 #include "yart/GUI/input.h"
@@ -49,11 +50,11 @@ namespace yart
             yart::Backend::NewFrame();
 
             // Update application state
-            yart::GUI::Update();
+            yart::Interface::Update();
             yart::GUI::Input::Update();
 
             // Ray trace the scene onto the main render viewport image on CPU
-            yart::Viewport* viewport = GUI::GetRenderViewport();
+            yart::Viewport* viewport = yart::Interface::GetRenderViewport();
             viewport_dirty |= m_renderer->Render(viewport);
             if (viewport_dirty) {
                 viewport->EnsureRefresh(); // Make sure the viewport image gets refreshed this frame
@@ -61,7 +62,7 @@ namespace yart
             }
 
             // Render application GUI
-            viewport_dirty |= yart::GUI::Render();
+            viewport_dirty |= yart::Interface::Render();
 
             // Render and present a new frame to the OS window on GPU
             yart::Backend::Render();
@@ -90,7 +91,7 @@ namespace yart
     void Application::SetupGUI()
     {
         // Initialize the YART GUI module
-        yart::GUI::Init();
+        yart::Interface::Init();
 
         // Enable keyboard navigation
         ImGuiIO& io = ImGui::GetIO();
@@ -101,19 +102,19 @@ namespace yart
         yart::GUI::LoadFonts();
 
         // Register YART GUI callbacks
-        yart::GUI::RegisterCallback(std::bind(&yart::GUI::RendererView::OnRenderViewAxesWindow, m_renderer.get()));
+        // yart::Interface::RegisterCallback(std::bind(&yart::GUI::RendererView::OnRenderViewAxesWindow, m_renderer.get()));
 
         const ImU32 color_gray = 0xFF6F767D;
-        yart::GUI::RegisterInspectorWindow("Renderer", ICON_CI_EDIT, color_gray, 
+        yart::Interface::RegisterInspectorSection("Renderer", ICON_CI_EDIT, color_gray, 
             std::bind(&yart::GUI::RendererView::OnRenderGUI, m_renderer.get())
         );
 
-        yart::GUI::RegisterInspectorWindow("World", ICON_CI_GLOBE, color_gray, 
+        yart::Interface::RegisterInspectorSection("World", ICON_CI_GLOBE, color_gray, 
             std::bind(&yart::GUI::WorldView::OnRenderGUI, m_renderer->GetWorld())
         );
 
-        yart::GUI::RegisterInspectorWindow("Viewport", ICON_CI_DEVICE_DESKTOP, color_gray, 
-            std::bind(&yart::GUI::ViewportView::OnRenderGUI, GUI::GetRenderViewport())
+        yart::Interface::RegisterInspectorSection("Viewport", ICON_CI_DEVICE_DESKTOP, color_gray, 
+            std::bind(&yart::GUI::ViewportView::OnRenderGUI, yart::Interface::GetRenderViewport())
         );
     }
 } // namespace yart

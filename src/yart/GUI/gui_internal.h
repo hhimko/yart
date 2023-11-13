@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @file
-/// @brief Internal GUI objects and methods definitions to hide implementation detail
+/// @brief Internal GUI module definitions to hide implementation detail
 /// @details Not supposed to be imported from outside the GUI module
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -27,39 +27,9 @@ namespace yart
 {
     namespace GUI
     {
-        /// @brief Layout direction enum
-        enum class LayoutDir : uint8_t {
-            HORIZONTAL,
-            VERTICAL
-        };
-
-        /// @brief Structure containing data required to render a inspector nav bar window 
-        struct InspectorWindow {
-        public:
-            /// @brief Nav bar icon code point from the application's icons font
-            const char* icon;
-            /// @brief Nav bar icon color
-            ImU32 color;
-            /// @brief Nav bar item name
-            const char* name; 
-            /// @brief Nav bar item contents immediate rendering callback  
-            imgui_callback_t callback;
-        };
-
         /// @brief GUI context, holding all state required to render a specific UI layout
         struct GuiContext {
         public:
-            /// @brief Custom Dear ImGui render function callbacks registered by the application
-            std::vector<imgui_callback_t> registeredCallbacks;
-            /// @brief Inspector nav bar items registered by the application 
-            std::vector<InspectorWindow> inspectorWindows;
-            /// @brief The main render viewport used for rendering the scene
-            std::unique_ptr<yart::Viewport> renderViewport = nullptr;
-            /// @brief Currently open inspector nav bar window
-            InspectorWindow* activeInspectorWindow = nullptr;
-
-            /// @brief Whether any changes were made by the user within the last frame
-            bool madeChanges;
             /// @brief Flags for the current GUI item
             GuiItemFlags currentItemFlags;
             /// @brief Flags for the next GUI item
@@ -68,112 +38,32 @@ namespace yart
             bool startMultiItems;
             /// @brief Count of remaining items inside a multi-item group
             uint8_t multiItemsCount;
-            /// @brief Amount of pixels the OS window size has changed since last frame
-            /// @details Used for updating layout sizes 
-            ImVec2 displaySizeDelta;
-            /// @brief Current render viewport area bounding box
-            ImRect renderViewportArea;
-            /// @brief Dear ImGui window ID of the render viewport window
-            ImGuiID renderViewportWindowID;
-            /// @brief Cached size of the main context window vertical separator
-            float mainContextSeparatorHeight;
 
             /// @brief Pointer to a Dear ImGui icon Font object 
             ImFont* iconsFont = nullptr; 
         };
 
-        /// @brief Layout specification object used to store state of layout widgets
-        struct LayoutContext {
-        public:
-            /// @brief Direction of the layout (vertical / horizontal)
-            LayoutDir direction;
-            /// @brief Dear ImGui window flags for child windows inside layout
-            ImGuiWindowFlags window_flags;
-            /// @brief Whether the size should be updated based on the second layout section when resizing the OS window
-            bool preserveSecondSectionSize;
-            /// @brief The default layout segment sizing ratio. Should be in the [0..1] range 
-            float default_size_ratio = 0.5f;
-            /// @brief Separator handle position state
-            float size;
-            /// @brief The minimum possible size 
-            float min_size = 100.0f;
-        };
 
-
-        ////////////////////////////////////////////////////////////////////////////////////////////////////
-        /// YART application's static layout rendering functions 
-        ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        /// @brief Issue main menu bar render commands 
-        /// @return Height of the menu bar, used for determining the content area size
-        float RenderMainMenuBar();
-
-        /// @brief Issue the application's main content area render commands 
-        /// @param menu_bar_height Height of the menu bar, returned by GUI::RenderMainMenuBar()
-        void RenderMainContentArea(float menu_bar_height);
-
-        /// @brief Issue the application's context window render commands
-        void RenderContextWindow();
-
-        /// @brief Issue the inspector window's side nav bar render commands
-        void RenderInspectorNavBar();
-
-        /// @brief Render a YART GUI style detached window 
-        /// @details The window is rendered on top of the viewport stack, detached from the static layout
-        /// @param name Name of the window
-        /// @param callback Dear ImGui callback 
-        void RenderWindow(const char* name, imgui_callback_t callback);
-
-        /// @brief Render the view axes context window
-        /// @param x_axis View x-axis
-        /// @param y_axis View y-axis
-        /// @param z_axis View z-axis
-        /// @param clicked_axis Output variable set to a base axis clicked by the user
-        /// @return Whether the user has clicked on an axis and the `clicked_axis` output variable has been set 
-        bool RenderViewAxesWindowEx(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis, glm::vec3& clicked_axis);
-
-
-        ////////////////////////////////////////////////////////////////////////////////////////////////////
-        /// Layout group widgets rendering functions
-        ///  - Layouts are trying to simulate and simplify the docking branch of Dear ImGui, without
-        ///    the additional viewports and just the functionality required by YART
-        ///  - The current layout code is limited to rendering at most two segments within one layout,
-        ///    due to the `LayoutContext` structure currently holding just one `size` value
-        ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        /// @brief Begin a new GUI layout
-        /// @param layout Layout state object
-        /// @return Whether the layout section is currently visible on screen
-        bool BeginLayout(LayoutContext& layout);
-
-        /// @brief End the previous layout segment and start the next segment
-        /// @param layout Layout state object
-        /// @return Whether the layout section is currently visible on screen
-        bool LayoutSeparator(LayoutContext& layout);
-
-        /// @brief Finalize rendering a layout
-        /// @param layout Layout state object
-        void EndLayout(LayoutContext& layout);
+        /// @brief Get the current GUI context
+        /// @return The currently active context object
+        GuiContext* GetGuiContext();
 
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
         /// Custom GUI widgets rendering internal functions
         ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+        /// @brief Draw the layout separator handle and handle its inputs
+        /// @param pos Start position of the handle's bounding box
+        /// @param size Size of the handle's bounding box
+        /// @param cursor Cursor to be used while the handle is hovered over
+        /// @return Mouse drag amount since last frame 
+        ImVec2 LayoutSeparatorHandleEx(ImVec2 pos, ImVec2 size, ImGuiMouseCursor_ cursor);
+
         /// @brief Render a YART GUI style label widget
         /// @param name Name of the widget, displayed next to the label 
         /// @param text Label text
         void LabelEx(const char* name, const char* text);
-
-        /// @brief Begin a YART GUI style tab bar with an initial tab item
-        /// @details Subsequent tab items can be issued calling `ImGui::BeginTabItem()`
-        /// @param item_name First tab item name
-        /// @return Whether the first tab item is currently opened
-        /// @note `ImGui::EndTabBar()` should always be called after calling this method
-        bool BeginTabBar(const char* item_name);
-
-        /// @brief Finalize rendering a YART GUI style tab bar
-        void EndTabBar();
 
         /// @brief Render a YART GUI style slider widget
         /// @param name Label text displayed next to the slider
@@ -290,12 +180,6 @@ namespace yart
         /// @param active Whether the current item is currently active
         /// @return Item frame background color
         ImU32 GetFrameColor(bool hovered, bool active);
-
-        /// @brief Check whether the mouse cursor lies within a given circle
-        /// @param pos Circle position on the screen
-        /// @param radius Radius of the circle
-        /// @return Whether the mouse cursor is inside circle
-        bool IsMouseHoveringCircle(const ImVec2& pos, float radius);
 
     } // namespace GUI
 } // namespace yart

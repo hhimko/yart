@@ -40,9 +40,13 @@ namespace yart
         /// @returns Whether any changes were made by the user within this frame
         bool Render();
 
-        /// @brief Get the main render viewport
+        /// @brief Get the YART application's main render viewport
         /// @return YART application render viewport
         yart::Viewport* GetRenderViewport();
+
+        /// @brief Test whether the mouse cursor is currently directly over the YART application's main render viewport
+        /// @return Whether mouse is over viewport
+        bool IsMouseOverRenderViewport();
 
     } // namespace Interface
 } // namespace yart

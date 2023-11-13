@@ -9,20 +9,13 @@
 #include "gui_internal.h"
 
 
+#ifndef DOXYGEN_EXCLUDE // Exclude from documentation
+    #define SEPARATOR_HANDLE_THICKNESS 2.0f
+#endif // #ifndef DOXYGEN_EXCLUDE 
+
+
 namespace yart
 {
-    GUI::GuiContext* GUI::GetGuiContext()
-    {
-        static yart::GUI::GuiContext s_context = { };  
-        return &s_context;
-    }
-
-    void GUI::Init()
-    {
-        GuiContext* ctx = GUI::GetGuiContext();
-        ctx->renderViewport = std::make_unique<yart::Viewport>(1, 1);
-    }
-
     void GUI::ApplyCustomStyle()
     {
         // -- APPLY YART STYLE VARS -- // 
@@ -129,97 +122,125 @@ namespace yart
         ctx->iconsFont = icons_font;
     }
 
-    void GUI::RegisterCallback(imgui_callback_t callback)
-    {
-        GuiContext* ctx = GetGuiContext();
-        ctx->registeredCallbacks.push_back(callback);
-    }
-
-    void GUI::RegisterInspectorWindow(const char* name, const char* icon, ImU32 color, imgui_callback_t callback)
-    {
-        GuiContext* ctx = GetGuiContext();
-
-        InspectorWindow item;
-        item.name = name;
-        item.icon = icon;
-        item.color = color;
-        item.callback = callback;
-
-        ctx->inspectorWindows.push_back(item);
-        ctx->activeInspectorWindow = &ctx->inspectorWindows.front();
-    }
-
-    void GUI::Update()
-    {
-        // Refresh and update the context state
-        GuiContext* ctx = GUI::GetGuiContext();
-        ctx->madeChanges = false;
-
-        static ImVec2 last_display_size = ImGui::GetIO().DisplaySize;
-        ImVec2 display_size = ImGui::GetIO().DisplaySize;
-
-        ctx->displaySizeDelta = { display_size.x - last_display_size.x, display_size.y - last_display_size.y};
-        last_display_size = display_size;
-
-        // Resize the render viewport
-        uint32_t viewport_width = ctx->renderViewportArea.GetWidth();
-        uint32_t viewport_height = ctx->renderViewportArea.GetHeight();
-        ctx->renderViewport->Resize(viewport_width > 0 ? viewport_width : 1, viewport_height > 0 ? viewport_height : 1);
-    }
-
-    bool GUI::Render()
-    {
-        // Uncomment to display Dear ImGui's debug window
-        // ImGui::ShowDemoWindow();
-
-
-        float fps = ImGui::GetCurrentContext()->IO.Framerate;
-        ImGui::Text("%.1f FPS", fps);
-
-        // Render the static layout
-        float menu_bar_height = GUI::RenderMainMenuBar();
-        GUI::RenderMainContentArea(menu_bar_height);
-
-        // Render registered global callbacks
-        GuiContext* ctx = GUI::GetGuiContext();
-        for (auto callback : ctx->registeredCallbacks)
-            ctx->madeChanges |= callback();
-
-        return ctx->madeChanges;
-    }
-
-    bool GUI::RenderViewAxesWindow(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis, glm::vec3& clicked_axis)
-    {
-        return GUI::RenderViewAxesWindowEx(x_axis, y_axis, z_axis, clicked_axis);
-    }
-
-    yart::Viewport* GUI::GetRenderViewport()
-    {
-        GuiContext* ctx = GUI::GetGuiContext();
-        return ctx->renderViewport.get();
-    }
-
     void GUI::SetNextItemFlags(GuiItemFlags flags)
     {
         GuiContext* ctx = GUI::GetGuiContext();
         ctx->nextItemFlags = flags;
     }
 
-    bool GUI::IsMouseOverRenderViewport()
+    const ImFont* GUI::GetIconsFont()
     {
-        ImGuiContext* g = ImGui::GetCurrentContext();
-        if (g->HoveredWindow != nullptr) {
-            GuiContext* ctx = GUI::GetGuiContext();
-            return g->HoveredWindow->ID == ctx->renderViewportWindowID;
-        }
-
-        return false;
+        GuiContext* ctx = GUI::GetGuiContext();
+        return ctx->iconsFont;
     }
 
     void GUI::PushIconsFont()
     {
         GuiContext* ctx = GUI::GetGuiContext();
         ImGui::PushFont(ctx->iconsFont);
+    }
+
+    bool GUI::IsMouseHoveringCircle(const ImVec2& pos, float radius)
+    {
+        ImGuiIO& io = ImGui::GetIO();
+
+        float dx = io.MousePos.x - pos.x;
+        float dy = io.MousePos.y - pos.y;
+
+        return dx * dx + dy * dy <= radius * radius;
+    }
+
+    ImVec2 GUI::GetDisplaySizeDelta()
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+
+        static int last_frame = g->FrameCount;
+        static ImVec2 last_display_size = g->IO.DisplaySize;
+
+        static ImVec2 display_size_delta = { g->IO.DisplaySize.x - last_display_size.x, g->IO.DisplaySize.y - last_display_size.y};
+        if (last_frame == g->FrameCount)
+            return display_size_delta;
+
+        display_size_delta = { g->IO.DisplaySize.x - last_display_size.x, g->IO.DisplaySize.y - last_display_size.y};
+        last_display_size = g->IO.DisplaySize;
+        last_frame = g->FrameCount;
+
+        return display_size_delta;
+    }
+
+    bool GUI::BeginLayout(LayoutContext& layout)
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        if (layout.size <= 0.0f) {
+            float min_size = ImMax(g->Style.ChildRounding * 2.0f + 2.0f, layout.min_size);
+            float content_avail = layout.direction == GUI::LayoutDir::HORIZONTAL ? ImGui::GetContentRegionAvail().x : ImGui::GetContentRegionAvail().y;
+            layout.size = ImMax((content_avail - SEPARATOR_HANDLE_THICKNESS) * layout.default_size_ratio, min_size);
+        }
+
+        // The whole layout is captured into a group to act as a single item 
+        ImGui::BeginGroup();
+
+        // Start capturing the fist segment
+        ImVec2 old_item_spacing = g->Style.ItemSpacing;
+        g->Style.ItemSpacing = { 0.0f, 0.0f };
+
+        ImVec2 region = layout.direction == GUI::LayoutDir::HORIZONTAL ? ImVec2(layout.size, 0) : ImVec2(0, layout.size);
+        bool ret = ImGui::BeginChild("LayoutSegment_First", region, false, layout.window_flags);
+            
+        g->Style.ItemSpacing = old_item_spacing;
+
+        return ret;
+    }
+
+    bool GUI::LayoutSeparator(LayoutContext& layout)
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+
+        // Finalize capturing the previous segment
+        ImVec2 old_item_spacing = g->Style.ItemSpacing;
+        g->Style.ItemSpacing = { 0.0f, 0.0f };
+        ImGui::EndChild();
+
+        // Draw and handle the separator
+        ImGuiWindow* window = g->CurrentWindow;
+
+        if (layout.direction == GUI::LayoutDir::HORIZONTAL) ImGui::SameLine();
+        ImVec2 separator_size = layout.direction == GUI::LayoutDir::HORIZONTAL ? ImVec2(SEPARATOR_HANDLE_THICKNESS, ImGui::GetContentRegionAvail().y) : ImVec2(window->Size.x, SEPARATOR_HANDLE_THICKNESS);
+        ImGuiMouseCursor_ cursor = layout.direction == GUI::LayoutDir::HORIZONTAL ? ImGuiMouseCursor_ResizeEW : ImGuiMouseCursor_ResizeNS;
+
+        ImVec2 drag = LayoutSeparatorHandleEx({ window->DC.CursorPos.x, window->DC.CursorPos.y }, separator_size, cursor);
+        layout.size += layout.direction == GUI::LayoutDir::HORIZONTAL ? drag.x : drag.y;
+
+        const ImVec2 display_size_delta = GUI::GetDisplaySizeDelta();
+        if (layout.preserveSecondSectionSize && drag.x == 0 && drag.y == 0)
+            layout.size += layout.direction == GUI::LayoutDir::HORIZONTAL ? display_size_delta.x : display_size_delta.y;
+
+
+        float min_size = ImMax(g->Style.ChildRounding * 2.0f + 2.0f, layout.min_size);
+        if (layout.size < min_size) 
+            layout.size = min_size;
+
+        float content = layout.direction == GUI::LayoutDir::HORIZONTAL ? window->Size.x : window->Size.y;
+        float max_size = content - min_size - SEPARATOR_HANDLE_THICKNESS;
+        if (max_size > min_size && layout.size > max_size)
+            layout.size = max_size;
+
+        // Start capturing the next segment
+        if (layout.direction == GUI::LayoutDir::HORIZONTAL) ImGui::SameLine();
+        bool ret = ImGui::BeginChild("LayoutSegment_Second", { 0.0f, 0.0f }, false, layout.window_flags);
+        g->Style.ItemSpacing = old_item_spacing;
+
+        return ret;
+    }
+
+    void GUI::EndLayout(LayoutContext& layout)
+    {
+        (void)layout; // Unused
+
+        // Finalize capturing the previous segment
+        ImGui::EndChild();
+
+        ImGui::EndGroup();
     }
 
     void GUI::Label(const char* name, const char* text, ...)
@@ -647,6 +668,43 @@ namespace yart
         p1.x = p_max.x;
         p2.x = p_max.x - 3.0f;
         window->DrawList->AddBezierQuadratic(p1, { p_max.x, p_min.y }, p2, bg_col, 1.0f);
+    }
+
+    bool GUI::BeginTabBar(const char* item_name)
+    {
+        ImGuiContext* g = ImGui::GetCurrentContext();
+
+        // The whole tab bar is recorded into a group to act as a single item
+        ImGui::BeginGroup();
+
+        ImVec2 backup_spacing = g->Style.ItemSpacing;
+        g->Style.ItemSpacing = { 0.0f, 0.0f };
+
+        ImGui::ItemSize({ g->Style.ChildRounding , 0.0f });
+        ImGui::SameLine();
+
+        ImVec4 backup_tab_active_color = g->Style.Colors[ImGuiCol_TabActive];
+        ImVec2 backup_frame_padding = g->Style.FramePadding;
+        g->Style.FramePadding = { 16.0f, backup_frame_padding.y };
+        g->Style.Colors[ImGuiCol_TabActive] = { YART_GUI_COLOR_BLACK, YART_GUI_ALPHA_TRANSPARENT };
+        ImGui::BeginTabBar("##TabBar", ImGuiTabBarFlags_AutoSelectNewTabs);
+        g->Style.Colors[ImGuiCol_TabActive] = backup_tab_active_color;
+
+        ImVec2 backup_inner_spacing = g->Style.ItemInnerSpacing;
+        g->Style.ItemInnerSpacing = { 0.0f, 0.0f };
+        g->Style.ItemSpacing = { 0.0f, -1.0f };
+        bool open = ImGui::BeginTabItem(item_name, nullptr, ImGuiTabItemFlags_NoPushId);
+        g->Style.ItemSpacing = backup_spacing;
+        g->Style.ItemInnerSpacing = backup_inner_spacing;
+        g->Style.FramePadding = backup_frame_padding;
+
+        return open;
+    }
+
+    void GUI::EndTabBar() 
+    {
+        ImGui::EndTabBar();
+        ImGui::EndGroup();
     }
 
     void GUI::BeginFrame(const char* name, uint32_t rows)
