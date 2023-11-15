@@ -11,7 +11,7 @@
 #include <glm/glm.hpp>
 
 #include "yart/core/RES/resources/cubemap.h"
-#include "yart/GUI/views/world_view.h"
+#include "yart/interface/views/world_view.h"
 
 
 namespace yart
@@ -53,7 +53,7 @@ namespace yart
 
 
         // -- FRIEND DECLARATIONS -- //
-        friend class yart::GUI::WorldView;
+        friend class yart::Interface::WorldView;
 
     };  
 } // namespace yart

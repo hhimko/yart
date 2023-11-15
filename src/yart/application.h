@@ -39,6 +39,13 @@ namespace yart
             #endif
         }
 
+        /// @brief Get the YART application renderer used for rendering onto the main viewport
+        /// @return Application renderer instance
+        yart::Renderer* GetRenderer() const 
+        {
+            return m_renderer.get();
+        }
+
         /// @brief Run the application mainloop if not already running
         /// @return Application exit status code 
         int Run();

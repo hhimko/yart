@@ -12,7 +12,7 @@
 
 #include <glm/glm.hpp>
 
-#include "yart/GUI/views/renderer_view.h"
+#include "yart/interface/views/renderer_view.h"
 #include "yart/core/viewport.h"
 #include "scene.h"
 #include "world.h"
@@ -138,7 +138,7 @@ namespace yart
 
 
         // -- FRIEND DECLARATIONS -- //
-        friend class yart::GUI::RendererView;
+        friend class yart::Interface::RendererView;
 
     };
 } // namespace yart

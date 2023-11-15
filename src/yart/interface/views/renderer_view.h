@@ -17,7 +17,7 @@ namespace yart
     class Renderer;
 
 
-    namespace GUI
+    namespace Interface
     {
         ////////////////////////////////////////////////////////////////////////////////////////////////////
         /// @brief GUI view for the Renderer class
@@ -77,5 +77,5 @@ namespace yart
 
         };   
 
-    } // namespace GUI
+    } // namespace Interface
 } // namespace yart

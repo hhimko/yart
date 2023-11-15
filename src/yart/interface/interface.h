@@ -31,6 +31,10 @@ namespace yart
         /// @param callback Section contents rendering function callback 
         void RegisterInspectorSection(const char* name, const char* icon, ImU32 color, callback_t callback);
 
+        /// @brief Handle all incoming UI events
+        /// @return 
+        bool HandleInputs();
+
         /// @brief Update the Interface module state
         /// @details Should be called once every frame
         void Update();

@@ -6,7 +6,10 @@
 #include "interface.h"
 
 
+#include "yart/interface/views/renderer_view.h"
 #include "yart/interface/interface_internal.h"
+#include "yart/application.h"
+#include "yart/GUI/input.h"
 #include "yart/GUI/gui.h"
 
 
@@ -30,6 +33,17 @@ namespace yart
 
         ctx->registeredInspectorSections.push_back(item);
         ctx->activeInspectorSection = &ctx->registeredInspectorSections.front();
+    }
+
+    bool Interface::HandleInputs()
+    {
+        // Update application inputs state
+        yart::GUI::Input::Update();
+
+        yart::Renderer* renderer = yart::Application::Get().GetRenderer();
+        bool made_changes = yart::Interface::RendererView::HandleInputs(renderer);
+
+        return made_changes;
     }
 
     void Interface::Update()
