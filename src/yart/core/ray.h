@@ -20,8 +20,10 @@ namespace yart
         /// @brief Direction (unit) vector of the ray
         glm::vec3 direction;
 
+        /// @brief Ray direction differential
         glm::vec3 direction_ddx;
         
+        /// @brief Ray direction differential
         glm::vec3 direction_ddy;
 
     public:
