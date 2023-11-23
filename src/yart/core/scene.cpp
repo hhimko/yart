@@ -30,7 +30,7 @@ namespace yart
         delete cube_mesh;
     }
 
-    float Scene::IntersectRay(const Ray& ray, Object* hit_obj, float* u, float* v)
+    float Scene::IntersectRay(const Ray& ray, Object** hit_obj, float* u, float* v)
     {
         float t;
         for (auto&& obj : m_objects) {
@@ -44,7 +44,7 @@ namespace yart
                     const glm::u32vec3& uv_indices = obj.triangleUVs[i];
                     const glm::vec2 tex_uv = w * obj.UVs[uv_indices.x] + (*u) * obj.UVs[uv_indices.y] + (*v) * obj.UVs[uv_indices.z];
                     
-                    hit_obj = &obj;
+                    *hit_obj = &obj;
                     *u = tex_uv.x;
                     *v = tex_uv.y;
                     

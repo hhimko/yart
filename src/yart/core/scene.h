@@ -37,7 +37,7 @@ namespace yart
         /// @param u Output parameter set on valid intersection with the `u` coordinate in texture space
         /// @param v Output parameter set on valid intersection with the `v` coordinate in texture space
         /// @return Distance to the closest object hit, or a negative value on miss 
-        float IntersectRay(const Ray& ray, Object* hit_obj, float* u, float* v);
+        float IntersectRay(const Ray& ray, Object** hit_obj, float* u, float* v);
 
         /// @brief Add a new mesh type object to the scene 
         /// @param name Name of the object

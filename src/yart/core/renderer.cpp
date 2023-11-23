@@ -102,7 +102,7 @@ namespace yart
 
         // Intersect the ray with the active scene and gizmos view
         float overlay_distance = m_showOverlays ? SampleOverlaysView(ray, overlay_color) : std::numeric_limits<float>::max();
-        float hit_distance = m_scene->IntersectRay(ray, hit_object, &u, &v);
+        float hit_distance = m_scene->IntersectRay(ray, &hit_object, &u, &v);
         payload.hitDistance = hit_distance;
 
         if (hit_distance > m_nearClippingPlane && hit_distance < m_farClippingPlane) {
