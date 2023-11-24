@@ -6,6 +6,8 @@
 #include "viewport.h"
 
 
+#include <glm/glm.hpp>
+
 #include "yart/common/utils/yart_utils.h"
 
 
@@ -23,8 +25,8 @@ namespace yart
     Viewport::Viewport(uint32_t width, uint32_t height, uint8_t scale)
         : m_width(width), m_height(height), m_imageScale(scale)
     {
-        uint32_t scaled_width = m_width / m_imageScale;
-        uint32_t scaled_height = m_height / m_imageScale;
+        uint32_t scaled_width = glm::max(m_width / m_imageScale, 1U);
+        uint32_t scaled_height = glm::max(m_height / m_imageScale, 1U);
 
         m_image = yart::Backend::CreateImage(scaled_width, scaled_height, IMAGE_FORMAT, DEFAULT_IMAGE_SAMPLER);
         YART_ASSERT(m_image != nullptr);
@@ -43,8 +45,8 @@ namespace yart
         m_width = width; 
         m_height = height;
 
-        uint32_t scaled_width = width / m_imageScale;
-        uint32_t scaled_height = height / m_imageScale;
+        uint32_t scaled_width = glm::max(width / m_imageScale, 1U);
+        uint32_t scaled_height = glm::max(height / m_imageScale, 1U);
         ImVec2 image_size = GetImageSize();
         if (image_size.x == scaled_width && image_size.y == scaled_height)
             return; // When the underlying image is down scaled, scaling the viewport does not necessarily mean the image has to be recreated

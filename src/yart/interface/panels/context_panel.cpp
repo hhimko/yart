@@ -90,43 +90,43 @@ namespace yart
             static constexpr float item_spacing = 4.0f; 
             window->DC.CursorPos.y += window_y_offset;
 
-            for (auto&& item : ctx->registeredInspectorSections) {
-                window->DC.CursorPos.x += icon_button_outer_padding;
-                window->DC.CursorPos.y += item_spacing;
+            // for (auto&& item : ctx->registeredInspectorSections) {
+            //     window->DC.CursorPos.x += icon_button_outer_padding;
+            //     window->DC.CursorPos.y += item_spacing;
 
-                p_min = { window->DC.CursorPos.x, window->DC.CursorPos.y + 1.0f };
-                p_max = { p_min.x + 2.0f * icon_button_inner_padding + icon_button_outer_padding + size, p_min.y + 2.0f * icon_button_inner_padding + size };
+            //     p_min = { window->DC.CursorPos.x, window->DC.CursorPos.y + 1.0f };
+            //     p_max = { p_min.x + 2.0f * icon_button_inner_padding + icon_button_outer_padding + size, p_min.y + 2.0f * icon_button_inner_padding + size };
 
-                const ImGuiID id = ImGui::GetID(item.name);
-                ImGui::ItemAdd({ p_min, p_max }, id);
+            //     const ImGuiID id = ImGui::GetID(item.name);
+            //     ImGui::ItemAdd({ p_min, p_max }, id);
 
-                bool hovered, held;
-                bool clicked = ImGui::ButtonBehavior({ p_min, p_max }, id, &hovered, &held);
+            //     bool hovered, held;
+            //     bool clicked = ImGui::ButtonBehavior({ p_min, p_max }, id, &hovered, &held);
 
-                bool active = &item == ctx->activeInspectorSection;
-                if (!active && clicked) {
-                    ctx->activeInspectorSection = &item;
-                    active = true;
-                }
+            //     bool active = &item == ctx->activeInspectorSection;
+            //     if (!active && clicked) {
+            //         ctx->activeInspectorSection = &item;
+            //         active = true;
+            //     }
 
-                if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
-                    ImGui::SetTooltip(item.name);
+            //     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
+            //         ImGui::SetTooltip(item.name);
 
-                // Render background
-                const ImU32 col = ImGui::GetColorU32(hovered ? ImGuiCol_TabHovered : active ? ImGuiCol_TabActive : ImGuiCol_Tab);
-                window->DrawList->AddRectFilled(p_min, p_max, col, child_rounding, ImDrawFlags_RoundCornersLeft);
+            //     // Render background
+            //     const ImU32 col = ImGui::GetColorU32(hovered ? ImGuiCol_TabHovered : active ? ImGuiCol_TabActive : ImGuiCol_Tab);
+            //     window->DrawList->AddRectFilled(p_min, p_max, col, child_rounding, ImDrawFlags_RoundCornersLeft);
 
-                // Render the icon
-                window->DC.CursorPos.x += icon_button_inner_padding;
-                window->DC.CursorPos.y += icon_button_inner_padding;
+            //     // Render the icon
+            //     window->DC.CursorPos.x += icon_button_inner_padding;
+            //     window->DC.CursorPos.y += icon_button_inner_padding;
 
-                ImVec4 backup_text_color = g->Style.Colors[ImGuiCol_Text];
-                g->Style.Colors[ImGuiCol_Text] = ImGui::ColorConvertU32ToFloat4(item.color);
-                GUI::PushIconsFont();
-                ImGui::Text(item.icon);
-                ImGui::PopFont();
-                g->Style.Colors[ImGuiCol_Text] = backup_text_color;
-            }
+            //     ImVec4 backup_text_color = g->Style.Colors[ImGuiCol_Text];
+            //     g->Style.Colors[ImGuiCol_Text] = ImGui::ColorConvertU32ToFloat4(item.color);
+            //     GUI::PushIconsFont();
+            //     ImGui::Text(item.icon);
+            //     ImGui::PopFont();
+            //     g->Style.Colors[ImGuiCol_Text] = backup_text_color;
+            // }
             
             ImGui::EndChild();
         }

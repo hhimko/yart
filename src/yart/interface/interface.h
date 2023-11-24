@@ -24,13 +24,6 @@ namespace yart
         /// @brief Initialize the Interface module
         void Init();
 
-        /// @brief Register a section to be rendered within YART application's inspector window
-        /// @param name Name of the section, visible when hovering over the section's nav bar menu item
-        /// @param icon Inspector nav bar menu item icon to be rendered for the section
-        /// @param color Section icon color in `ARGB` format
-        /// @param callback Section contents rendering function callback 
-        void RegisterInspectorSection(const char* name, const char* icon, ImU32 color, callback_t callback);
-
         /// @brief Handle all incoming UI events
         /// @return 
         bool HandleInputs();

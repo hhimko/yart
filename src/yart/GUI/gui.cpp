@@ -173,7 +173,7 @@ namespace yart
         ImGuiContext* g = ImGui::GetCurrentContext();
         if (layout.size <= 0.0f) {
             float min_size = ImMax(g->Style.ChildRounding * 2.0f + 2.0f, layout.min_size);
-            float content_avail = layout.direction == GUI::LayoutDir::HORIZONTAL ? ImGui::GetContentRegionAvail().x : ImGui::GetContentRegionAvail().y;
+            float content_avail = layout.direction == GUI::LayoutDirection::HORIZONTAL ? ImGui::GetContentRegionAvail().x : ImGui::GetContentRegionAvail().y;
             layout.size = ImMax((content_avail - SEPARATOR_HANDLE_THICKNESS) * layout.default_size_ratio, min_size);
         }
 
@@ -184,8 +184,8 @@ namespace yart
         ImVec2 old_item_spacing = g->Style.ItemSpacing;
         g->Style.ItemSpacing = { 0.0f, 0.0f };
 
-        ImVec2 region = layout.direction == GUI::LayoutDir::HORIZONTAL ? ImVec2(layout.size, 0) : ImVec2(0, layout.size);
-        bool ret = ImGui::BeginChild("LayoutSegment_First", region, false, layout.window_flags);
+        ImVec2 region = layout.direction == GUI::LayoutDirection::HORIZONTAL ? ImVec2(layout.size, 0) : ImVec2(0, layout.size);
+        bool ret = ImGui::BeginChild("LayoutSegment_First", region, false, ImGuiWindowFlags_NoBackground);
             
         g->Style.ItemSpacing = old_item_spacing;
 
@@ -204,30 +204,30 @@ namespace yart
         // Draw and handle the separator
         ImGuiWindow* window = g->CurrentWindow;
 
-        if (layout.direction == GUI::LayoutDir::HORIZONTAL) ImGui::SameLine();
-        ImVec2 separator_size = layout.direction == GUI::LayoutDir::HORIZONTAL ? ImVec2(SEPARATOR_HANDLE_THICKNESS, ImGui::GetContentRegionAvail().y) : ImVec2(window->Size.x, SEPARATOR_HANDLE_THICKNESS);
-        ImGuiMouseCursor_ cursor = layout.direction == GUI::LayoutDir::HORIZONTAL ? ImGuiMouseCursor_ResizeEW : ImGuiMouseCursor_ResizeNS;
+        if (layout.direction == GUI::LayoutDirection::HORIZONTAL) ImGui::SameLine();
+        ImVec2 separator_size = layout.direction == GUI::LayoutDirection::HORIZONTAL ? ImVec2(SEPARATOR_HANDLE_THICKNESS, ImGui::GetContentRegionAvail().y) : ImVec2(window->Size.x, SEPARATOR_HANDLE_THICKNESS);
+        ImGuiMouseCursor_ cursor = layout.direction == GUI::LayoutDirection::HORIZONTAL ? ImGuiMouseCursor_ResizeEW : ImGuiMouseCursor_ResizeNS;
 
         ImVec2 drag = LayoutSeparatorHandleEx({ window->DC.CursorPos.x, window->DC.CursorPos.y }, separator_size, cursor);
-        layout.size += layout.direction == GUI::LayoutDir::HORIZONTAL ? drag.x : drag.y;
+        layout.size += layout.direction == GUI::LayoutDirection::HORIZONTAL ? drag.x : drag.y;
 
         const ImVec2 display_size_delta = GUI::GetDisplaySizeDelta();
         if (layout.preserveSecondSectionSize && drag.x == 0 && drag.y == 0)
-            layout.size += layout.direction == GUI::LayoutDir::HORIZONTAL ? display_size_delta.x : display_size_delta.y;
+            layout.size += layout.direction == GUI::LayoutDirection::HORIZONTAL ? display_size_delta.x : display_size_delta.y;
 
 
         float min_size = ImMax(g->Style.ChildRounding * 2.0f + 2.0f, layout.min_size);
         if (layout.size < min_size) 
             layout.size = min_size;
 
-        float content = layout.direction == GUI::LayoutDir::HORIZONTAL ? window->Size.x : window->Size.y;
+        float content = layout.direction == GUI::LayoutDirection::HORIZONTAL ? window->Size.x : window->Size.y;
         float max_size = content - min_size - SEPARATOR_HANDLE_THICKNESS;
         if (max_size > min_size && layout.size > max_size)
             layout.size = max_size;
 
         // Start capturing the next segment
-        if (layout.direction == GUI::LayoutDir::HORIZONTAL) ImGui::SameLine();
-        bool ret = ImGui::BeginChild("LayoutSegment_Second", { 0.0f, 0.0f }, false, layout.window_flags);
+        if (layout.direction == GUI::LayoutDirection::HORIZONTAL) ImGui::SameLine();
+        bool ret = ImGui::BeginChild("LayoutSegment_Second", { 0.0f, 0.0f }, false, ImGuiWindowFlags_NoBackground);
         g->Style.ItemSpacing = old_item_spacing;
 
         return ret;

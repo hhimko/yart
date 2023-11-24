@@ -78,8 +78,8 @@ namespace yart
 {
     namespace GUI
     {
-        /// @brief GUI Layout direction enum
-        enum class LayoutDir : uint8_t {
+        /// @brief GUI layout direction enum
+        enum class LayoutDirection : uint8_t {
             HORIZONTAL,
             VERTICAL
         };
@@ -88,15 +88,13 @@ namespace yart
         struct LayoutContext {
         public:
             /// @brief Direction of the layout (vertical / horizontal)
-            LayoutDir direction;
-            /// @brief Dear ImGui window flags for child windows inside layout
-            ImGuiWindowFlags window_flags;
+            LayoutDirection direction;
             /// @brief Whether the size should be updated based on the second layout section when resizing the OS window
             bool preserveSecondSectionSize;
             /// @brief The default layout segment sizing ratio. Should be in the [0..1] range 
             float default_size_ratio = 0.5f;
-            /// @brief Separator handle position state
-            float size;
+            /// @brief Separator handle position state. Negative value represents an uninitialized context
+            float size = -1.0f;
             /// @brief The minimum possible size 
             float min_size = 100.0f;
         };

@@ -9,7 +9,6 @@
 #include <iostream>
 #include <functional>
 
-#include "yart/interface/views/viewport_view.h"
 #include "yart/interface/interface.h"
 #include "yart/backend/backend.h"
 #include "yart/core/viewport.h"
@@ -98,21 +97,5 @@ namespace yart
         // Set Dear ImGui style
         yart::GUI::ApplyCustomStyle();
         yart::GUI::LoadFonts();
-
-        // Register YART GUI callbacks
-        // yart::Interface::RegisterCallback(std::bind(&yart::GUI::RendererView::OnRenderViewAxesWindow, m_renderer.get()));
-
-        const ImU32 color_gray = 0xFF6F767D;
-        yart::Interface::RegisterInspectorSection("Renderer", ICON_CI_EDIT, color_gray, 
-            std::bind(&yart::Interface::RendererView::OnRenderGUI, m_renderer.get())
-        );
-
-        yart::Interface::RegisterInspectorSection("World", ICON_CI_GLOBE, color_gray, 
-            std::bind(&yart::Interface::WorldView::OnRenderGUI, m_renderer->GetWorld())
-        );
-
-        yart::Interface::RegisterInspectorSection("Viewport", ICON_CI_DEVICE_DESKTOP, color_gray, 
-            std::bind(&yart::Interface::ViewportView::OnRenderGUI, yart::Interface::GetRenderViewport())
-        );
     }
 } // namespace yart
