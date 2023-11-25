@@ -63,21 +63,22 @@ namespace yart
             return false;
         }
 
-        LayoutPanel::LayoutPanel(yart::GUI::LayoutDirection direction, Panel* ul_child, Panel* lr_child)
+        LayoutPanel::LayoutPanel(yart::GUI::LayoutCreateInfo& layout_create_info, Panel* ul_child, Panel* lr_child)
             : m_ul_child(ul_child), m_lr_child(lr_child)
         {
             // Attach the child panels
+            YART_ASSERT(m_ul_child != nullptr && m_lr_child != nullptr);
             m_ul_child->m_parent = this;
             m_lr_child->m_parent = this;
 
-            m_layoutContext.direction = direction;
-            m_layoutContext.preserveSecondSectionSize = true;
-            m_layoutContext.default_size_ratio = 1.0f / 2.0f;
-            m_layoutContext.min_size = 50.0f;
+            m_layout = GUI::CreateLayout(layout_create_info);
+            YART_ASSERT(m_layout != nullptr);
         }
 
         LayoutPanel::~LayoutPanel()
         {
+            GUI::DestroyLayout(m_layout);
+
             delete m_ul_child;
             delete m_lr_child;
         }
@@ -87,15 +88,15 @@ namespace yart
             ImGuiContext* g = ImGui::GetCurrentContext();
             bool made_changes = false;
 
-            GUI::BeginLayout(m_layoutContext);
+            GUI::BeginLayout(m_layout);
             {
                 made_changes |= m_ul_child->Render(g->CurrentWindow);
             }
-            GUI::LayoutSeparator(m_layoutContext);
+            GUI::LayoutSeparator(m_layout);
             {
                 made_changes |= m_lr_child->Render(g->CurrentWindow);
             }
-            GUI::EndLayout(m_layoutContext);
+            GUI::EndLayout(m_layout);
 
             return made_changes;
         }

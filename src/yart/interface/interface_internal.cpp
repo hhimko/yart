@@ -34,13 +34,29 @@ namespace yart
     {
         RootAppPanel* root_panel = RootAppPanel::Get();
 
-        InspectorPanel* inspector_panel = new InspectorPanel();
-        ContextPanel* context_panel = new ContextPanel();
-        LayoutPanel* sidebar_layout_panel = new LayoutPanel(yart::GUI::LayoutDirection::VERTICAL, inspector_panel, context_panel);
+        // Sidebar (inspector + context) menu layout
+        LayoutPanel* sidebar_layout_panel = nullptr; 
+        {
+            GUI::LayoutCreateInfo sidebar_layout_ci(GUI::LayoutDirection::VERTICAL);
+            sidebar_layout_ci.scaling_mode = GUI::LayoutScalingMode::FIRST_SECTION_FIXED;
+            sidebar_layout_ci.default_size_ratio = 0.4f;
 
-        RenderViewportPanel* render_viewport_panel = new RenderViewportPanel();
-        LayoutPanel* master_layout_panel = new LayoutPanel(yart::GUI::LayoutDirection::HORIZONTAL, render_viewport_panel, sidebar_layout_panel);
+            InspectorPanel* inspector_panel = new InspectorPanel();
+            ContextPanel* context_panel = new ContextPanel();
+            sidebar_layout_panel = new LayoutPanel(sidebar_layout_ci, inspector_panel, context_panel);
+        }
 
+        // Master layout (sidebar + render viewport)
+        LayoutPanel* master_layout_panel = nullptr;
+        {
+            GUI::LayoutCreateInfo master_layout_ci(GUI::LayoutDirection::HORIZONTAL);
+            master_layout_ci.scaling_mode = GUI::LayoutScalingMode::PRESERVE_RATIO;
+            master_layout_ci.default_size_ratio = 0.7f;
+
+            RenderViewportPanel* render_viewport_panel = new RenderViewportPanel();
+            master_layout_panel = new LayoutPanel(master_layout_ci, render_viewport_panel, sidebar_layout_panel);
+        }
+        
         root_panel->AttachPanel(master_layout_panel);
     }
 

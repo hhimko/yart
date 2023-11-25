@@ -58,19 +58,19 @@
 #endif // ifndef DOXYGEN_EXCLUDE 
 
 
-/// @brief GUI item flags type for the GuiItemFlags_ enum
+/// @brief GUI item flags type for the `GuiItemFlags_` enum
 using GuiItemFlags = uint16_t; 
 
 /// @brief Common flags enum for specifying GUI items appearance/behavior
 enum GuiItemFlags_ : GuiItemFlags {
-    GuiItemFlags_None =               (0),      /// @brief No flags
-    GuiItemFlags_HideLabel =          (1 << 0), /// @brief Don't display a text label next to the item's frame 
-    GuiItemFlags_FullWidth =          (1 << 1), /// @brief Display the item over the full content width. Hides item's label in result
-    GuiItemFlags_CornersRoundTop =    (1 << 2), /// @brief Only round the top corners of the item's frame
-    GuiItemFlags_CornersRoundBottom = (1 << 3), /// @brief Only round the bottom corners of the item's frame
-    GuiItemFlags_NoCornerRounding =   (1 << 4), /// @brief Don't use any rounding on the item's frame
-    GuiItemFlags_FrameBorder =        (1 << 5), /// @brief Display the item's frame border 
-    GuiItemFlags_FrameStyleDark =     (1 << 6), /// @brief Use a dark style for rendering the item's frame
+    GuiItemFlags_None =               (0),      ///< No flags
+    GuiItemFlags_HideLabel =          (1 << 0), ///< Don't display a text label next to the item's frame 
+    GuiItemFlags_FullWidth =          (1 << 1), ///< Display the item over the full content width. Hides item's label in result
+    GuiItemFlags_CornersRoundTop =    (1 << 2), ///< Only round the top corners of the item's frame
+    GuiItemFlags_CornersRoundBottom = (1 << 3), ///< Only round the bottom corners of the item's frame
+    GuiItemFlags_NoCornerRounding =   (1 << 4), ///< Don't use any rounding on the item's frame
+    GuiItemFlags_FrameBorder =        (1 << 5), ///< Display the item's frame border 
+    GuiItemFlags_FrameStyleDark =     (1 << 6), ///< Use a dark style for rendering the item's frame
 };
 
 
@@ -80,28 +80,33 @@ namespace yart
     {
         /// @brief GUI layout direction enum
         enum class LayoutDirection : uint8_t {
-            HORIZONTAL,
-            VERTICAL
+            HORIZONTAL, ///< Horizontal layout direction
+            VERTICAL    ///< Vertical layout direction
+        };
+
+        /// @brief Layout sections scaling strategies, for when the OS window gets rescaled
+        enum class LayoutScalingMode: uint8_t {
+            PRESERVE_RATIO = 0,  ///< Preserve the layout section sizes ratio
+            FIRST_SECTION_FIXED, ///< Preserve the first (left/upper) section size
+            SECOND_SECTION_FIXED ///< Preserve the second (right/lower) section size
+        };
+
+        /// @brief Layout creation specification object
+        struct LayoutCreateInfo {
+            LayoutCreateInfo(LayoutDirection direction)
+                : direction(direction) { }
+
+            LayoutDirection direction; ///< Direction of the layout (vertical/horizontal)
+            LayoutScalingMode scaling_mode; ///< Layout sections scaling strategy
+            float default_size_ratio = 0.5f; ///< Initial section sizes ratio. Should be in the [0..1] range
+            float min_size = 100.0f; ///< Minimum section size
         };
 
         /// @brief Layout specification object used to store state of layout widgets
-        struct LayoutContext {
-        public:
-            /// @brief Direction of the layout (vertical / horizontal)
-            LayoutDirection direction;
-            /// @brief Whether the size should be updated based on the second layout section when resizing the OS window
-            bool preserveSecondSectionSize;
-            /// @brief The default layout segment sizing ratio. Should be in the [0..1] range 
-            float default_size_ratio = 0.5f;
-            /// @brief Separator handle position state. Negative value represents an uninitialized context
-            float size = -1.0f;
-            /// @brief The minimum possible size 
-            float min_size = 100.0f;
-        };
+        struct GuiLayout; // Opaque type without including gui_internal.h
 
         /// @brief Structure used for storing state of the GradientEditor widgets
         struct GradientEditorContext {
-        public:
             /// @brief Type of the gradient values collection
             typedef std::vector<glm::vec3> values_t;
             /// @brief Type of the gradient locations collection
@@ -170,22 +175,32 @@ namespace yart
         ///  - Layouts are trying to simulate and simplify the docking branch of Dear ImGui, without
         ///    the additional viewports and just the functionality required by YART
         ///  - The current layout code is limited to rendering at most two segments within one layout,
-        ///    due to the `LayoutContext` structure currently holding just one `size` value
+        ///    due to the `LayoutState` structure currently holding just one `size` value
         ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        /// @brief Create a new GuiLayout object
+        /// @param info Layout specification object
+        /// @return A new GuiLayout object
+        /// @note Layouts created with this method should be destroyed afterward using GUI::DestroyLayout()
+        GuiLayout* CreateLayout(const LayoutCreateInfo& info);
+
+        /// @brief Destroy a GuiLayout object
+        /// @param layout The layout object to be freed
+        void DestroyLayout(GuiLayout* layout);
 
         /// @brief Begin a new GUI layout
         /// @param layout Layout state object
         /// @return Whether the layout section is currently visible on screen
-        bool BeginLayout(LayoutContext& layout);
+        bool BeginLayout(GuiLayout* layout);
 
         /// @brief End the previous layout segment and start the next segment
         /// @param layout Layout state object
         /// @return Whether the layout section is currently visible on screen
-        bool LayoutSeparator(LayoutContext& layout);
+        bool LayoutSeparator(GuiLayout* layout);
 
         /// @brief Finalize rendering a layout
         /// @param layout Layout state object
-        void EndLayout(LayoutContext& layout);
+        void EndLayout(GuiLayout* layout);
 
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////

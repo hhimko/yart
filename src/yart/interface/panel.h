@@ -90,10 +90,10 @@ namespace yart
         class LayoutPanel : public Panel {
         public:
             /// @brief Construct a new layout panel
-            /// @param direction Direction of the layout
+            /// @param layout_create_info Layout creation specification object
             /// @param ul_child Either the upper or left child panel, depending on the chosen layout direction
             /// @param lr_child Either the lower or right child panel, depending on the chosen layout direction
-            LayoutPanel(yart::GUI::LayoutDirection direction, Panel* ul_child, Panel* lr_child);
+            LayoutPanel(yart::GUI::LayoutCreateInfo& layout_create_info, Panel* ul_child, Panel* lr_child);
 
             /// @brief Custom destructor
             ~LayoutPanel();
@@ -105,7 +105,7 @@ namespace yart
             bool Render(ImGuiWindow* window);
 
         private:
-            yart::GUI::LayoutContext m_layoutContext;   
+            yart::GUI::GuiLayout* m_layout = nullptr;   
 
             Panel* m_ul_child = nullptr;
             Panel* m_lr_child = nullptr;

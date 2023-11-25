@@ -168,13 +168,30 @@ namespace yart
         return display_size_delta;
     }
 
-    bool GUI::BeginLayout(LayoutContext& layout)
+    GUI::GuiLayout* GUI::CreateLayout(const LayoutCreateInfo& info)
+    {
+        GuiLayout* layout = new GuiLayout();
+
+        layout->direction = info.direction;
+        layout->scaling_mode = info.scaling_mode;
+        layout->default_size_ratio = info.default_size_ratio;
+        layout->min_size = info.min_size;
+
+        return layout;
+    }
+
+    void GUI::DestroyLayout(GuiLayout* layout)
+    {
+        delete layout;
+    }
+
+    bool GUI::BeginLayout(GuiLayout* layout)
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
-        if (layout.size <= 0.0f) {
-            float min_size = ImMax(g->Style.ChildRounding * 2.0f + 2.0f, layout.min_size);
-            float content_avail = layout.direction == GUI::LayoutDirection::HORIZONTAL ? ImGui::GetContentRegionAvail().x : ImGui::GetContentRegionAvail().y;
-            layout.size = ImMax((content_avail - SEPARATOR_HANDLE_THICKNESS) * layout.default_size_ratio, min_size);
+        if (layout->size <= 0.0f) {
+            float min_size = ImMax(g->Style.ChildRounding * 2.0f + 2.0f, layout->min_size);
+            float content_avail = layout->direction == GUI::LayoutDirection::HORIZONTAL ? ImGui::GetContentRegionAvail().x : ImGui::GetContentRegionAvail().y;
+            layout->size = ImMax((content_avail - SEPARATOR_HANDLE_THICKNESS) * layout->default_size_ratio, min_size);
         }
 
         // The whole layout is captured into a group to act as a single item 
@@ -184,7 +201,7 @@ namespace yart
         ImVec2 old_item_spacing = g->Style.ItemSpacing;
         g->Style.ItemSpacing = { 0.0f, 0.0f };
 
-        ImVec2 region = layout.direction == GUI::LayoutDirection::HORIZONTAL ? ImVec2(layout.size, 0) : ImVec2(0, layout.size);
+        ImVec2 region = layout->direction == GUI::LayoutDirection::HORIZONTAL ? ImVec2(layout->size, 0) : ImVec2(0, layout->size);
         bool ret = ImGui::BeginChild("LayoutSegment_First", region, false, ImGuiWindowFlags_NoBackground);
             
         g->Style.ItemSpacing = old_item_spacing;
@@ -192,7 +209,7 @@ namespace yart
         return ret;
     }
 
-    bool GUI::LayoutSeparator(LayoutContext& layout)
+    bool GUI::LayoutSeparator(GuiLayout* layout)
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
 
@@ -204,36 +221,42 @@ namespace yart
         // Draw and handle the separator
         ImGuiWindow* window = g->CurrentWindow;
 
-        if (layout.direction == GUI::LayoutDirection::HORIZONTAL) ImGui::SameLine();
-        ImVec2 separator_size = layout.direction == GUI::LayoutDirection::HORIZONTAL ? ImVec2(SEPARATOR_HANDLE_THICKNESS, ImGui::GetContentRegionAvail().y) : ImVec2(window->Size.x, SEPARATOR_HANDLE_THICKNESS);
-        ImGuiMouseCursor_ cursor = layout.direction == GUI::LayoutDirection::HORIZONTAL ? ImGuiMouseCursor_ResizeEW : ImGuiMouseCursor_ResizeNS;
+        if (layout->direction == GUI::LayoutDirection::HORIZONTAL) ImGui::SameLine();
+        ImVec2 separator_size = layout->direction == GUI::LayoutDirection::HORIZONTAL ? ImVec2(SEPARATOR_HANDLE_THICKNESS, ImGui::GetContentRegionAvail().y) : ImVec2(window->Size.x, SEPARATOR_HANDLE_THICKNESS);
+        ImGuiMouseCursor_ cursor = layout->direction == GUI::LayoutDirection::HORIZONTAL ? ImGuiMouseCursor_ResizeEW : ImGuiMouseCursor_ResizeNS;
 
         ImVec2 drag = LayoutSeparatorHandleEx({ window->DC.CursorPos.x, window->DC.CursorPos.y }, separator_size, cursor);
-        layout.size += layout.direction == GUI::LayoutDirection::HORIZONTAL ? drag.x : drag.y;
+        layout->size += layout->direction == GUI::LayoutDirection::HORIZONTAL ? drag.x : drag.y;
 
-        const ImVec2 display_size_delta = GUI::GetDisplaySizeDelta();
-        if (layout.preserveSecondSectionSize && drag.x == 0 && drag.y == 0)
-            layout.size += layout.direction == GUI::LayoutDirection::HORIZONTAL ? display_size_delta.x : display_size_delta.y;
+        // Update the section sizes when the OS window gets rescaled
+        if (drag.x == 0 && drag.y == 0) {
+            const ImVec2 display_size_delta = GUI::GetDisplaySizeDelta();
+            if (layout->scaling_mode == LayoutScalingMode::SECOND_SECTION_FIXED) {
+                layout->size += layout->direction == GUI::LayoutDirection::HORIZONTAL ? display_size_delta.x : display_size_delta.y;
+            } else if (layout->scaling_mode == LayoutScalingMode::PRESERVE_RATIO) {
+                layout->size += layout->direction == GUI::LayoutDirection::HORIZONTAL ? display_size_delta.x / 2.0f : display_size_delta.y / 2.0f;
+            }
+        }
 
 
-        float min_size = ImMax(g->Style.ChildRounding * 2.0f + 2.0f, layout.min_size);
-        if (layout.size < min_size) 
-            layout.size = min_size;
+        float min_size = ImMax(g->Style.ChildRounding * 2.0f + 2.0f, layout->min_size);
+        if (layout->size < min_size) 
+            layout->size = min_size;
 
-        float content = layout.direction == GUI::LayoutDirection::HORIZONTAL ? window->Size.x : window->Size.y;
+        float content = layout->direction == GUI::LayoutDirection::HORIZONTAL ? window->Size.x : window->Size.y;
         float max_size = content - min_size - SEPARATOR_HANDLE_THICKNESS;
-        if (max_size > min_size && layout.size > max_size)
-            layout.size = max_size;
+        if (max_size > min_size && layout->size > max_size)
+            layout->size = max_size;
 
         // Start capturing the next segment
-        if (layout.direction == GUI::LayoutDirection::HORIZONTAL) ImGui::SameLine();
+        if (layout->direction == GUI::LayoutDirection::HORIZONTAL) ImGui::SameLine();
         bool ret = ImGui::BeginChild("LayoutSegment_Second", { 0.0f, 0.0f }, false, ImGuiWindowFlags_NoBackground);
         g->Style.ItemSpacing = old_item_spacing;
 
         return ret;
     }
 
-    void GUI::EndLayout(LayoutContext& layout)
+    void GUI::EndLayout(GuiLayout* layout)
     {
         (void)layout; // Unused
 

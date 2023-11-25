@@ -29,18 +29,20 @@ namespace yart
     {
         /// @brief GUI context, holding all state required to render a specific UI layout
         struct GuiContext {
-        public:
-            /// @brief Flags for the current GUI item
-            GuiItemFlags currentItemFlags;
-            /// @brief Flags for the next GUI item
-            GuiItemFlags nextItemFlags;
-            /// @brief Whether the next GUI item begins a multi-item group
-            bool startMultiItems;
-            /// @brief Count of remaining items inside a multi-item group
-            uint8_t multiItemsCount;
+            ImFont* iconsFont; ///< Pointer to a Dear ImGui Font object for the icons font 
+            GuiItemFlags currentItemFlags; ///< Flags for the current GUI item
+            GuiItemFlags nextItemFlags; ///< Flags for the next GUI item
+            bool startMultiItems; ///< Whether the next GUI item begins a multi-item group
+            uint8_t multiItemsCount; ///< Count of remaining items inside a multi-item group
+        };
 
-            /// @brief Pointer to a Dear ImGui icon Font object 
-            ImFont* iconsFont = nullptr; 
+        /// @brief Layout specification object used to store state of layout widgets
+        struct GuiLayout {
+            LayoutDirection direction; ///< Direction of the layout (vertical/horizontal)
+            LayoutScalingMode scaling_mode; ///< Layout sections scaling strategy for when the OS window gets resized
+            float default_size_ratio; ///< The default layout segment sizing ratio. Should be in the [0..1] range 
+            float min_size; ///< The minimum possible section size 
+            float size = -1.0f; ///< Separator handle position state. Negative value represents an uninitialized context
         };
 
 
