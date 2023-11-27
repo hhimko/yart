@@ -14,9 +14,10 @@
 
 #include "yart/interface/views/renderer_view.h"
 #include "yart/core/viewport.h"
-#include "scene.h"
-#include "world.h"
-#include "ray.h"
+#include "yart/core/camera.h"
+#include "yart/core/scene.h"
+#include "yart/core/world.h"
+#include "yart/core/ray.h"
 
 
 namespace yart
@@ -26,9 +27,6 @@ namespace yart
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     class Renderer {
     public:
-        Renderer();
-        ~Renderer() = default;
-
         /// @brief Render the active scene to a given buffer
         /// @param buffer Pointer to a pixel array to be rendered onto. 
         ///     The size of the array should be equal to width*height*4, where 4 denotes the number of channels in the output image (RGBA)
@@ -70,12 +68,6 @@ namespace yart
             };
         };
 
-
-        /// @brief Set the render output image size 
-        /// @param width Width of the render output in pixels 
-        /// @param height Height of the render output in pixels 
-        void Resize(uint32_t width, uint32_t height);
-
         /// @brief Shoot a ray into the scene and store the results in a HitPayload structure
         /// @param ray Traced ray
         /// @param payload HitPayload structure, where the ray tracing results will be stored
@@ -97,37 +89,13 @@ namespace yart
         /// @param payload HitPayload structure, where the ray tracing results will be stored
         void Miss(const yart::Ray& ray, HitPayload& payload);
 
-        /// @brief Recalculate the camera ray direction cache
-        /// @note This method should be called if any of the following camera properties have changed:
-        ///        - look direction
-        ///        - aspect ratio,  
-        ///        - field of view,
-        ///        - near clipping plane
-        void RecalculateRayDirections();
-
     private:
         std::unique_ptr<yart::World> m_world = std::make_unique<World>();
         std::shared_ptr<yart::Scene> m_scene;
-        uint32_t m_width = 0; // Width of the render output in pixels 
-        uint32_t m_height = 0; // Height of the render output in pixels 
+        yart::Camera m_camera;
 
         bool m_showOverlays = true; // Whether the overlays layer should be rendered
         bool m_useThickerGrid = false; // Whether the overlay grid should use a thicker outline
-
-        // -- CAMERA DATA -- // 
-        static constexpr glm::vec3 UP_DIRECTION = { .0f, 1.0f, .0f }; // World up vector used for camera positioning
-
-        glm::vec3 m_cameraPosition = { 2.0f, 2.0f, -4.0f }; // World space position 
-        glm::vec3 m_cameraLookDirection = { .0f, .0f, 1.0f }; // Normalized look-at vector, calculated from camera's yaw and pitch rotations
-        float m_cameraYaw = 120.0f * yart::utils::DEG_TO_RAD; // Horizontal camera rotation in radians (around the y axis)
-        float m_cameraPitch = -25.0f * yart::utils::DEG_TO_RAD; // Vertical camera rotation in radians (around the x axis)
-        
-        float m_fieldOfView = 60.0f; // Horizontal camera FOV in degrees
-        float m_nearClippingPlane = 0.1f;
-        float m_farClippingPlane = 1000.0f;
-
-        // Cached camera ray directions
-        std::vector<glm::vec3> m_rayDirections;
 
 
         // -- FRIEND DECLARATIONS -- //

@@ -12,6 +12,7 @@ namespace yart
     {
         // Calculate the initial camera look direction vector, based on default pitch and yaw values
         m_lookDirection = yart::utils::SphericalToCartesianUnitVector(m_rotationYaw, m_rotationPitch);
+        m_shouldRecalculateCache = true;
     }
 
     const glm::vec3* Camera::GetRayDirections(uint32_t width, uint32_t height, bool* resized)

@@ -57,24 +57,6 @@ namespace yart
             /// @returns Whether any changes were made by the user since the last frame
             static bool RenderOverlaysSection(yart::Renderer* target);
 
-        private:
-            /// @brief Smallest valid value for camera's FOV in degrees
-            static constexpr float FOV_MIN = 45.0f;
-            /// @brief Largest valid value for camera's FOV in degrees
-            static constexpr float FOV_MAX = 180.0f;
-            /// @brief Smallest valid value for camera's near clipping plane distance
-            static constexpr float NEAR_CLIP_MIN = 0.001f;
-            /// @brief Largest valid value for camera's near clipping plane distance
-            static constexpr float NEAR_CLIP_MAX = 10.0f;
-            /// @brief Smallest valid value for camera's far clipping plane distance
-            static constexpr float FAR_CLIP_MIN = 100.0f;
-            /// @brief Largest valid value for camera's far clipping plane distance
-            static constexpr float FAR_CLIP_MAX = 1000.0f;
-            /// @brief Smallest valid value for camera's pitch rotation
-            static constexpr float CAMERA_PITCH_MIN = -90.0f * yart::utils::DEG_TO_RAD + yart::utils::EPSILON;
-            /// @brief Largest valid value for camera's pitch rotation
-            static constexpr float CAMERA_PITCH_MAX =  90.0f * yart::utils::DEG_TO_RAD - yart::utils::EPSILON;
-
         };   
 
     } // namespace Interface

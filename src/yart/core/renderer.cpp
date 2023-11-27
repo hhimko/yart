@@ -7,12 +7,10 @@
 
 
 #include <algorithm>
-#include <iostream>
 
 #include <imgui.h>
 
 #include "yart/common/threads/parallel_for.h"
-#include "yart/common/utils/yart_utils.h"
 #include "yart/application.h"
 
 
@@ -25,34 +23,25 @@
 
 namespace yart
 {
-    Renderer::Renderer()
-    {
-        // Calculate the initial camera look direction vector, based on default pitch and yaw values
-        m_cameraLookDirection = yart::utils::SphericalToCartesianUnitVector(m_cameraYaw, m_cameraPitch);
-    }
-
     bool Renderer::Render(float buffer[], uint32_t width, uint32_t height)
     {
         YART_ASSERT(buffer != nullptr);
         YART_ASSERT(m_scene != nullptr);
 
-        bool dirty = false;
-        if (width != m_width || height != m_height) {
-            Resize(width, height);
-            dirty = true;
-        }
+        bool dirty;
+        const glm::vec3* ray_directions = m_camera.GetRayDirections(width, height, &dirty);
 
         // Multithreaded iteration through all image pixels
         yart::threads::parallel_for<size_t>(0, width * height, [&](size_t i) {
             const auto [y, x] = std::div(i, static_cast<int64_t>(width));
 
-            const glm::vec3 ray_direction     = m_rayDirections[i];
-            const glm::vec3 ray_direction_ddx = m_rayDirections[(y + 0) * width + x + 1];
-            const glm::vec3 ray_direction_ddy = m_rayDirections[(y + 1) * width + x + 0];
+            const glm::vec3 ray_direction     = ray_directions[i];
+            const glm::vec3 ray_direction_ddx = ray_directions[(y + 0) * width + x + 1];
+            const glm::vec3 ray_direction_ddy = ray_directions[(y + 1) * width + x + 0];
 
             // Trace a ray from the camera's origin into the scene
             HitPayload payload;
-            TraceRay({ m_cameraPosition, ray_direction, ray_direction_ddx, ray_direction_ddy }, payload);
+            TraceRay({ m_camera.position, ray_direction, ray_direction_ddx, ray_direction_ddy }, payload);
 
             buffer[i * 4 + 0] = payload.resultColor.r;
             buffer[i * 4 + 1] = payload.resultColor.g;
@@ -70,15 +59,6 @@ namespace yart
         return Render(image_data, image_size.x, image_size.y);
     }
 
-    void Renderer::Resize(uint32_t width, uint32_t height)
-    {
-        m_width = width;
-        m_height = height;
-
-        // Change in aspect ratio requires the camera matrix to be recalculated 
-        RecalculateRayDirections();
-    }
-
     void Renderer::TraceRay(const Ray& ray, HitPayload& payload)
     {
         yart::Object* hit_object;
@@ -90,7 +70,7 @@ namespace yart
         float hit_distance = m_scene->IntersectRay(ray, &hit_object, &u, &v);
         payload.hitDistance = hit_distance;
 
-        if (hit_distance > m_nearClippingPlane && hit_distance < m_farClippingPlane) {
+        if (hit_distance > m_camera.GetNearClippingPlane() && hit_distance < m_camera.GetFarClippingPlane()) {
             if (overlay_distance > hit_distance) {
                 overlay_color.a = 0.0f; // Fix color ordering
             }
@@ -146,28 +126,4 @@ namespace yart
     {
         payload.resultColor = m_world->SampleSkyColor(ray.direction);
     }
-
-    void Renderer::RecalculateRayDirections()
-    {
-        // Calculate the view matrix inverse (camera space to world space)
-        const glm::mat4 view_matrix = yart::utils::CreateViewMatrix(m_cameraLookDirection, UP_DIRECTION);
-        const glm::mat4 view_matrix_inverse = glm::inverse(view_matrix);
-
-        // Calculate the projection matrix inverse (screen space to camera space)
-        float w = static_cast<float>(m_width);
-        float h = static_cast<float>(m_height);
-        float fov = m_fieldOfView * yart::utils::DEG_TO_RAD;
-        const glm::mat4 projection_matrix_inverse = yart::utils::CreateInverseProjectionMatrix(fov, w, h, m_nearClippingPlane);
-        const glm::mat4 inverse_view_projection_matrix = view_matrix_inverse * projection_matrix_inverse;
-
-        // Precalculate ray directions for each pixel
-        size_t size = (m_width + 1) * (m_height + 1);
-        m_rayDirections.resize(size);
-
-        yart::threads::parallel_for<size_t>(0, size, [&](size_t i) {
-            const auto [y, x] = std::div(i, static_cast<int64_t>(m_width));
-            m_rayDirections[i] = glm::normalize(inverse_view_projection_matrix * glm::vec4{ x + 0.5f, y + 0.5f, 1.0f, 1.0f });
-        });
-    }
-    
 } // namespace yart
