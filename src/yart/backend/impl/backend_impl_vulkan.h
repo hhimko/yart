@@ -182,7 +182,6 @@ namespace yart
 
         /// @brief Context struct for the Backend module Vulkan/GLFW implementation
         struct BackendContext {
-        public:
             yart::memory::LTStack LT; ///< Lifetime stack for backend module allocations
             yart::memory::LTStack swapchainLT; ///< Lifetime stack for swapchain allocations
             std::unique_ptr<FrameInFlight[]> framesInFlight = nullptr; ///< Swapchain frames in flight array
@@ -220,11 +219,6 @@ namespace yart
             // -- EVENT CALLBACKS -- //
             event_callback_t onDearImGuiSetupCallback = nullptr; ///< Custom callback for Dear ImGui setup, provided by the application  
             event_callback_t onWindowCloseCallback = nullptr; ///< Custom callback for handling the window close event, provided by the application  
-
-        private:
-            BackendContext(const BackendContext&) = delete;
-            BackendContext& operator=(BackendContext const&) = delete;
-
         };
 
 

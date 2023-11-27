@@ -114,10 +114,6 @@ namespace yart
         bool m_showOverlays = true; // Whether the overlays layer should be rendered
         bool m_useThickerGrid = false; // Whether the overlay grid should use a thicker outline
 
-        // Iterators used by Renderer::Render for multithreading
-        std::unique_ptr<uint32_t[]> m_verticalPixelIterator;
-        std::unique_ptr<uint32_t[]> m_horizontalPixelIterator;
-
         // -- CAMERA DATA -- // 
         static constexpr glm::vec3 UP_DIRECTION = { .0f, 1.0f, .0f }; // World up vector used for camera positioning
 
@@ -129,9 +125,6 @@ namespace yart
         float m_fieldOfView = 60.0f; // Horizontal camera FOV in degrees
         float m_nearClippingPlane = 0.1f;
         float m_farClippingPlane = 1000.0f;
-
-        // Cached view projection matrix inverse for transforming screen space coordinates into world space 
-        glm::mat4 m_inverseViewProjectionMatrix; 
 
         // Cached camera ray directions
         std::vector<glm::vec3> m_rayDirections;
