@@ -23,13 +23,13 @@
 
 namespace yart
 {
-    bool Renderer::Render(float buffer[], uint32_t width, uint32_t height)
+    bool Renderer::Render(yart::Camera& camera, float buffer[], uint32_t width, uint32_t height)
     {
         YART_ASSERT(buffer != nullptr);
         YART_ASSERT(m_scene != nullptr);
 
         bool dirty;
-        const glm::vec3* ray_directions = m_camera.GetRayDirections(width, height, &dirty);
+        const glm::vec3* ray_directions = camera.GetRayDirections(width, height, &dirty);
 
         // Multithreaded iteration through all image pixels
         yart::threads::parallel_for<size_t>(0, width * height, [&](size_t i) {
@@ -41,7 +41,8 @@ namespace yart
 
             // Trace a ray from the camera's origin into the scene
             HitPayload payload;
-            TraceRay({ m_camera.position, ray_direction, ray_direction_ddx, ray_direction_ddy }, payload);
+            yart::Ray ray = { camera.position, ray_direction, ray_direction_ddx, ray_direction_ddy };
+            TraceRay(camera, ray, payload);
 
             buffer[i * 4 + 0] = payload.resultColor.r;
             buffer[i * 4 + 1] = payload.resultColor.g;
@@ -52,14 +53,15 @@ namespace yart
         return dirty;
     }
 
-    bool Renderer::Render(const yart::Viewport* viewport)
+    bool Renderer::Render(yart::Camera& camera, const yart::Viewport& viewport)
     {
-        float* image_data = viewport->GetImageData();
-        ImVec2 image_size = viewport->GetImageSize();
-        return Render(image_data, image_size.x, image_size.y);
+        float* image_data = viewport.GetImageData();
+        const ImVec2 image_size = viewport.GetImageSize();
+
+        return Render(camera, image_data, image_size.x, image_size.y);
     }
 
-    void Renderer::TraceRay(const Ray& ray, HitPayload& payload)
+    void Renderer::TraceRay(yart::Camera& camera, const Ray& ray, HitPayload& payload)
     {
         yart::Object* hit_object;
         glm::vec4 overlay_color = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -70,7 +72,7 @@ namespace yart
         float hit_distance = m_scene->IntersectRay(ray, &hit_object, &u, &v);
         payload.hitDistance = hit_distance;
 
-        if (hit_distance > m_camera.GetNearClippingPlane() && hit_distance < m_camera.GetFarClippingPlane()) {
+        if (hit_distance > camera.GetNearClippingPlane() && hit_distance < camera.GetFarClippingPlane()) {
             if (overlay_distance > hit_distance) {
                 overlay_color.a = 0.0f; // Fix color ordering
             }

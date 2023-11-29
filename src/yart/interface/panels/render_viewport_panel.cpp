@@ -31,31 +31,38 @@ namespace yart
     {
         bool RenderViewportPanel::Render(ImGuiWindow* window)
         {
-            InterfaceContext* ctx = Interface::GetInterfaceContext();
+            const ImRect win_rect = window->Rect();
+            m_viewport.Resize(win_rect.GetWidth(), win_rect.GetHeight());
 
-            // Store the viewport window ID and bounding box
-            ctx->renderViewportWindowID = window->ID;
-            ctx->renderViewportArea = window->Rect();
+            // Ray trace the scene onto the main render viewport image on CPU
+            yart::Renderer* renderer = yart::Application::Get().GetRenderer();
+            yart::Camera& camera = RenderViewportPanel::camera;
+
+            bool viewport_dirty = renderer->Render(camera, m_viewport);
+            if (viewport_dirty) {
+                m_viewport.EnsureRefresh(); // Make sure the viewport image gets refreshed this frame
+                viewport_dirty = false;
+            }
 
             // Render the viewport image
-            ImTextureID viewport_texture = ctx->renderViewport->GetImTextureID();
-            ImGui::GetBackgroundDrawList()->AddImage(viewport_texture, ctx->renderViewportArea.Min, ctx->renderViewportArea.Max);
+            ImTextureID viewport_texture = m_viewport.GetImTextureID();
+            ImGui::GetBackgroundDrawList()->AddImage(viewport_texture, win_rect.Min, win_rect.Max);
 
             // Render the camera view axes overlay window
             glm::vec3 clicked_axis = {0, 0, 0};
-            if (RenderCameraViewAxesOverlay(m_camera, clicked_axis)) {
+            if (RenderCameraViewAxesOverlay(window, camera, clicked_axis)) {
                 // Base axis to pitch, yaw rotation transformation magic
                 const float pitch = clicked_axis.y * yart::Camera::PITCH_MAX;
                 const float yaw = (clicked_axis.y + clicked_axis.z) * 90.0f * yart::utils::DEG_TO_RAD + (clicked_axis.x == -1.0f) * 180.0f * yart::utils::DEG_TO_RAD;
 
-                m_camera.SetRotation(pitch, yaw);
+                camera.SetRotation(pitch, yaw);
                 return true;
             }
 
             return false;
         }
 
-        bool RenderViewportPanel::RenderCameraViewAxesOverlay(const yart::Camera& camera, glm::vec3& clicked_axis)
+        bool RenderViewportPanel::RenderCameraViewAxesOverlay(ImGuiWindow* window, const yart::Camera& camera, glm::vec3& clicked_axis)
         {
             static constexpr ImVec2 window_size = { 75.0f, 75.0f }; // Expected to be a square
             static constexpr ImVec2 window_margin = { 25.0f, 15.0f };
@@ -66,8 +73,8 @@ namespace yart
             );
 
             // Set a constant window size and position
-            InterfaceContext* ctx = Interface::GetInterfaceContext();
-            ImRect viewport_area = ctx->renderViewportArea;
+            ImGuiContext* g = ImGui::GetCurrentContext();
+            ImRect viewport_area = window->Rect();
 
             ImVec2 window_center = {
                 viewport_area.Min.x + viewport_area.GetWidth() - window_size.x / 2 - window_margin.x, 
@@ -83,12 +90,12 @@ namespace yart
             ImGui::PopStyleVar();
 
             // Draw window contents
-            ImGuiWindow* window = ImGui::GetCurrentWindow();
             ImDrawList* draw_list = window->DrawList;
             static constexpr float circle_radius = window_size.x / 2;
             
             bool hovered = false;
-            if (Interface::IsMouseOverRenderViewport())
+            bool panel_hovered = g->HoveredWindow ? g->HoveredWindow->ID == window->ID : false;
+            if (panel_hovered)
                 hovered = GUI::IsMouseHoveringCircle(window_center, circle_radius);
 
             // Background

@@ -38,15 +38,8 @@ namespace yart
         public:
             /// @brief Custom Dear ImGui render function callbacks registered by the application
             std::vector<callback_t> registeredCallbacks;
-            /// @brief The main render viewport used for rendering the scene
-            std::unique_ptr<yart::Viewport> renderViewport = nullptr;
             /// @brief Currently open inspector nav bar window
             InspectorSection* activeInspectorSection = nullptr;
-
-            /// @brief Current render viewport area bounding box
-            ImRect renderViewportArea;
-            /// @brief Dear ImGui window ID of the render viewport window
-            ImGuiID renderViewportWindowID;
         };
 
 

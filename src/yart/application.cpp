@@ -11,7 +11,6 @@
 
 #include "yart/interface/interface.h"
 #include "yart/backend/backend.h"
-#include "yart/core/viewport.h"
 #include "yart/GUI/input.h"
 #include "yart/GUI/gui.h"
 
@@ -35,31 +34,19 @@ namespace yart
             return EXIT_FAILURE;
 
 
-        bool viewport_dirty = true; // Whether the viewport should be refreshed this frame
         m_running = true; // m_running is indirectly controlled by Application::Shutdown()
 
         // -- APPLICATION MAINLOOP -- // 
         while (m_running) {
             // Poll and handle incoming events
             yart::Backend::PollEvents();
-            viewport_dirty |= yart::Interface::HandleInputs();
+            yart::Interface::HandleInputs();
 
             // Begin recording a new frame
             yart::Backend::NewFrame();
 
-            // Update application state
-            yart::Interface::Update();
-
-            // Ray trace the scene onto the main render viewport image on CPU
-            yart::Viewport* viewport = yart::Interface::GetRenderViewport();
-            viewport_dirty |= m_renderer->Render(viewport);
-            if (viewport_dirty) {
-                viewport->EnsureRefresh(); // Make sure the viewport image gets refreshed this frame
-                viewport_dirty = false;
-            }
-
             // Render the application UI
-            viewport_dirty |= yart::Interface::Render();
+            yart::Interface::Render();
 
             // Render and present a new frame to the OS window on GPU
             yart::Backend::Render();

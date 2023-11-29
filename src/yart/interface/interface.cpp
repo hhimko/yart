@@ -19,9 +19,6 @@ namespace yart
     void Interface::Init()
     {
         Interface::ApplyDefaultLayout();
-
-        InterfaceContext* ctx = Interface::GetInterfaceContext();
-        ctx->renderViewport = std::make_unique<yart::Viewport>(1, 1, 2);
     }
 
     bool Interface::HandleInputs()
@@ -33,16 +30,6 @@ namespace yart
         bool made_changes = yart::Interface::RendererView::HandleInputs(renderer);
 
         return made_changes;
-    }
-
-    void Interface::Update()
-    {
-        InterfaceContext* ctx = Interface::GetInterfaceContext();
-
-        // Resize the render viewport
-        uint32_t viewport_width = ctx->renderViewportArea.GetWidth();
-        uint32_t viewport_height = ctx->renderViewportArea.GetHeight();
-        ctx->renderViewport->Resize(viewport_width, viewport_height);
     }
 
     bool Interface::Render()
@@ -66,23 +53,4 @@ namespace yart
         return made_changes;
     }
 
-    yart::Viewport* Interface::GetRenderViewport()
-    {
-        InterfaceContext* ctx = Interface::GetInterfaceContext();
-        return ctx->renderViewport.get();
-    }
-
-    bool Interface::IsMouseOverRenderViewport()
-    {
-        ImGuiContext* g = ImGui::GetCurrentContext();
-        if (g->HoveredWindow != nullptr) {
-            InterfaceContext* ctx = Interface::GetInterfaceContext();
-            return g->HoveredWindow->ID == ctx->renderViewportWindowID;
-        }
-
-        return false;
-    }
-
 } // namespace yart
-
-

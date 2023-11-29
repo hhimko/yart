@@ -9,6 +9,7 @@
 #include <imgui.h>
 
 #include "yart/interface/panel.h"
+#include "yart/core/viewport.h"
 #include "yart/core/camera.h"
 
 
@@ -27,10 +28,11 @@ namespace yart
             bool Render(ImGuiWindow* window);
 
             /// @brief Render the camera view axes overlay window over the viewport
+            /// @param window Dear ImGui window representing the panel
             /// @param camera YART camera instance 
             /// @param clicked_axis Output variable set to a base axis clicked by the user
             /// @return Whether the user has clicked on an axis and the `clicked_axis` output variable has been set 
-            static bool RenderCameraViewAxesOverlay(const yart::Camera& camera, glm::vec3& clicked_axis);
+            static bool RenderCameraViewAxesOverlay(ImGuiWindow* window, const yart::Camera& camera, glm::vec3& clicked_axis);
 
             /// @brief Camera view axes overlay window rendering helper function
             /// @param draw_list ImGui window draw list
@@ -66,7 +68,9 @@ namespace yart
             static void DrawNegativeViewAxisH(ImDrawList* draw_list, const glm::vec3& win_pos, const glm::vec3& axis, const glm::vec3& color, float length, bool hovered);
 
         private:
-            static yart::Camera m_camera; ///< YART camera instance, shared between all viewport panels
+            inline static yart::Camera camera; ///< YART camera instance, shared between all viewport panels
+
+            yart::Viewport m_viewport { 1, 1, 2 };
 
         };
 

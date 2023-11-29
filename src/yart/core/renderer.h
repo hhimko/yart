@@ -28,17 +28,19 @@ namespace yart
     class Renderer {
     public:
         /// @brief Render the active scene to a given buffer
+        /// @param camera YART camera instance, from which perspective to render
         /// @param buffer Pointer to a pixel array to be rendered onto. 
         ///     The size of the array should be equal to width*height*4, where 4 denotes the number of channels in the output image (RGBA)
         /// @param width Width in pixels of the output image
         /// @param height Height in pixels of the output image
         /// @return Whether the current frame has changed visually from the previous rendered frame (used for conditional viewport refreshing) 
-        bool Render(float buffer[], uint32_t width, uint32_t height);
+        bool Render(yart::Camera& camera, float buffer[], uint32_t width, uint32_t height);
 
         /// @brief Render the active scene directly to a given viewport
+        /// @param camera YART camera instance, from which perspective to render
         /// @param viewport Viewport to render to
         /// @return Whether the current frame has changed visually from the previous rendered frame (used for conditional viewport refreshing) 
-        bool Render(const yart::Viewport* viewport);
+        bool Render(yart::Camera& camera, const yart::Viewport& viewport);
 
         /// @brief Set a scene to be used for rendering by this renderer
         /// @param scene New scene instance
@@ -69,9 +71,10 @@ namespace yart
         };
 
         /// @brief Shoot a ray into the scene and store the results in a HitPayload structure
+        /// @param camera YART camera instance, from which to trace the rays
         /// @param ray Traced ray
         /// @param payload HitPayload structure, where the ray tracing results will be stored
-        void TraceRay(const yart::Ray& ray, HitPayload& payload);
+        void TraceRay(yart::Camera& camera, const yart::Ray& ray, HitPayload& payload);
 
         /// @brief Sample the overlays/gizmos layer from a given ray
         /// @param ray Traced ray
@@ -92,7 +95,6 @@ namespace yart
     private:
         std::unique_ptr<yart::World> m_world = std::make_unique<World>();
         std::shared_ptr<yart::Scene> m_scene;
-        yart::Camera m_camera;
 
         bool m_showOverlays = true; // Whether the overlays layer should be rendered
         bool m_useThickerGrid = false; // Whether the overlay grid should use a thicker outline
