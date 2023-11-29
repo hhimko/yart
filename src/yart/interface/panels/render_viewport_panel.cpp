@@ -29,8 +29,11 @@ namespace yart
 {
     namespace Interface
     {
-        bool RenderViewportPanel::Render(ImGuiWindow* window)
+        bool RenderViewportPanel::OnRender()
         {
+            ImGuiWindow* window = GetPanelWindow();
+
+            // Resize the underlying viewport to match the panel size
             const ImRect win_rect = window->Rect();
             m_viewport.Resize(win_rect.GetWidth(), win_rect.GetHeight());
 
@@ -50,7 +53,7 @@ namespace yart
 
             // Render the camera view axes overlay window
             glm::vec3 clicked_axis = {0, 0, 0};
-            if (RenderCameraViewAxesOverlay(window, camera, clicked_axis)) {
+            if (RenderCameraViewAxesOverlay(camera, clicked_axis)) {
                 // Base axis to pitch, yaw rotation transformation magic
                 const float pitch = clicked_axis.y * yart::Camera::PITCH_MAX;
                 const float yaw = (clicked_axis.y + clicked_axis.z) * 90.0f * yart::utils::DEG_TO_RAD + (clicked_axis.x == -1.0f) * 180.0f * yart::utils::DEG_TO_RAD;
@@ -62,7 +65,7 @@ namespace yart
             return false;
         }
 
-        bool RenderViewportPanel::RenderCameraViewAxesOverlay(ImGuiWindow* window, const yart::Camera& camera, glm::vec3& clicked_axis)
+        bool RenderViewportPanel::RenderCameraViewAxesOverlay(const yart::Camera& camera, glm::vec3& clicked_axis)
         {
             static constexpr ImVec2 window_size = { 75.0f, 75.0f }; // Expected to be a square
             static constexpr ImVec2 window_margin = { 25.0f, 15.0f };
@@ -74,6 +77,7 @@ namespace yart
 
             // Set a constant window size and position
             ImGuiContext* g = ImGui::GetCurrentContext();
+            ImGuiWindow* window = GetPanelWindow();
             ImRect viewport_area = window->Rect();
 
             ImVec2 window_center = {
@@ -94,8 +98,7 @@ namespace yart
             static constexpr float circle_radius = window_size.x / 2;
             
             bool hovered = false;
-            bool panel_hovered = g->HoveredWindow ? g->HoveredWindow->ID == window->ID : false;
-            if (panel_hovered)
+            if (IsPanelHovered())
                 hovered = GUI::IsMouseHoveringCircle(window_center, circle_radius);
 
             // Background

@@ -13,6 +13,22 @@ namespace yart
 {
     namespace Interface
     {
+        bool Panel::IsPanelHovered() const
+        {
+            ImGuiContext* g = ImGui::GetCurrentContext();
+            if (g->HoveredWindow != nullptr)
+                return g->HoveredWindow->ID == m_window->ID;
+
+            return false;
+        }
+
+        bool Panel::Render(ImGuiWindow* window)
+        {
+            m_window = window;
+
+            return OnRender();
+        }
+
         RootAppPanel* RootAppPanel::Get()
         {
             static RootAppPanel s_instance;
@@ -47,16 +63,17 @@ namespace yart
             ImGui::Begin("YART_Panel_Root_Window", nullptr, flags);
             g->Style.WindowPadding = backup_padding;
 
-            bool made_changes = Render(g->CurrentWindow);
+            bool made_changes = Panel::Render(g->CurrentWindow);
 
             ImGui::End();
             return made_changes;
         }
 
-        bool RootAppPanel::Render(ImGuiWindow* window)
+        bool RootAppPanel::OnRender()
         {
             if (m_child) {
                 // The root panel Dear ImGui window gets reused by the child panel
+                ImGuiWindow* window = GetPanelWindow();
                 return m_child->Render(window);
             }
 
@@ -83,7 +100,7 @@ namespace yart
             delete m_lr_child;
         }
 
-        bool LayoutPanel::Render(ImGuiWindow* window)
+        bool LayoutPanel::OnRender()
         {
             ImGuiContext* g = ImGui::GetCurrentContext();
             bool made_changes = false;

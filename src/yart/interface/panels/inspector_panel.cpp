@@ -15,7 +15,7 @@ namespace yart
 {
     namespace Interface
     {
-        bool InspectorPanel::Render(ImGuiWindow* window)
+        bool InspectorPanel::OnRender()
         {
             if (GUI::BeginTabBar("Scene")) {
                 ImGui::BeginChild("##Content", { 0.0f, 0.0f }, false, ImGuiWindowFlags_AlwaysUseWindowPadding);

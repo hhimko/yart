@@ -23,16 +23,14 @@ namespace yart
         class RenderViewportPanel : public Panel {
         private:
             /// @brief Issue panel GUI render commands
-            /// @param window Dear ImGui window representing the panel
             /// @return Whether any changes were made by the user during this frame
-            bool Render(ImGuiWindow* window);
+            bool OnRender();
 
             /// @brief Render the camera view axes overlay window over the viewport
-            /// @param window Dear ImGui window representing the panel
             /// @param camera YART camera instance 
             /// @param clicked_axis Output variable set to a base axis clicked by the user
             /// @return Whether the user has clicked on an axis and the `clicked_axis` output variable has been set 
-            static bool RenderCameraViewAxesOverlay(ImGuiWindow* window, const yart::Camera& camera, glm::vec3& clicked_axis);
+            bool RenderCameraViewAxesOverlay(const yart::Camera& camera, glm::vec3& clicked_axis);
 
             /// @brief Camera view axes overlay window rendering helper function
             /// @param draw_list ImGui window draw list

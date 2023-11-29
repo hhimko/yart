@@ -27,15 +27,34 @@ namespace yart
             /// @brief Virtual destructor
             virtual ~Panel() = default;
 
+        protected:
+            /// @brief Get the Dear ImGui window associated with this panel
+            /// @return Dear ImGui window instance
+            ImGuiWindow* GetPanelWindow() const
+            {
+                return m_window;
+            }
+
+            /// @brief Perform a check whether the panel is currently hovered
+            /// @return Whether the panel is hovered by the cursor
+            bool IsPanelHovered() const;
+
         private:
-            /// @brief Issue panel GUI render commands
+            /// @brief Render the panel into a given Dear ImGui window
             /// @param window Dear ImGui window representing the panel
             /// @return Whether any changes were made by the user during this frame
-            virtual bool Render(ImGuiWindow* window) = 0;
+            bool Render(ImGuiWindow* window);
+
+            /// @brief Issue panel GUI render commands. Internal method intended to be overriden by child classes
+            /// @return Whether any changes were made by the user during this frame
+            virtual bool OnRender() = 0;
 
         private:
             /// @brief Parent panel in hierarchy
             Panel* m_parent = nullptr;
+
+            /// @brief Dear ImGui window representing the panel at a given frame
+            ImGuiWindow* m_window;
 
             // -- FRIEND DECLARATIONS -- //
             friend class RootAppPanel;
@@ -71,9 +90,8 @@ namespace yart
             }
 
             /// @brief Issue panel GUI render commands
-            /// @param window Dear ImGui window representing the panel
             /// @return Whether any changes were made by the user during this frame
-            bool Render(ImGuiWindow* window);
+            bool OnRender();
 
         private:
             RootAppPanel() = default;
@@ -100,9 +118,8 @@ namespace yart
 
         private:
             /// @brief Issue panel GUI render commands
-            /// @param window Dear ImGui window representing the panel
             /// @return Whether any changes were made by the user during this frame
-            bool Render(ImGuiWindow* window);
+            bool OnRender();
 
         private:
             yart::GUI::GuiLayout* m_layout = nullptr;   
