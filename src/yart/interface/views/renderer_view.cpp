@@ -67,41 +67,41 @@ namespace yart
     {
         bool made_changes = false;
 
-        // -- TRANSLATION -- //
-        // Forward/backward movement
-        float vertical_speed = yart::GUI::Input::GetVerticalAxis();
-        if (vertical_speed != 0) {
-            target->m_camera.position += target->m_camera.GetLookDirection() * vertical_speed * s_cameraMoveSpeed;
-            made_changes = true;
-        }
+        // // -- TRANSLATION -- //
+        // // Forward/backward movement
+        // float vertical_speed = yart::GUI::Input::GetVerticalAxis();
+        // if (vertical_speed != 0) {
+        //     target->m_camera.position += target->m_camera.GetLookDirection() * vertical_speed * s_cameraMoveSpeed;
+        //     made_changes = true;
+        // }
 
-        // Side-to-side movement
-        float horizontal_speed = yart::GUI::Input::GetHorizontalAxis();
-        if (horizontal_speed != 0) {
-            const glm::vec3 u = -glm::normalize(glm::cross(target->m_camera.GetLookDirection(), yart::Camera::UP_DIRECTION)); // Camera view horizontal (right) direction vector
-            target->m_camera.position += u * horizontal_speed * s_cameraMoveSpeed;
-            made_changes = true;
-        }
+        // // Side-to-side movement
+        // float horizontal_speed = yart::GUI::Input::GetHorizontalAxis();
+        // if (horizontal_speed != 0) {
+        //     const glm::vec3 u = -glm::normalize(glm::cross(target->m_camera.GetLookDirection(), yart::Camera::UP_DIRECTION)); // Camera view horizontal (right) direction vector
+        //     target->m_camera.position += u * horizontal_speed * s_cameraMoveSpeed;
+        //     made_changes = true;
+        // }
 
-        // Ascend/descend movement
-        float elevation_speed = static_cast<float>(ImGui::IsKeyDown(ImGuiKey_Space));
-        elevation_speed -= static_cast<float>(ImGui::IsKeyDown(ImGuiKey_LeftCtrl));
-        if (elevation_speed != 0) {
-            target->m_camera.position += yart::Camera::UP_DIRECTION * elevation_speed * s_cameraMoveSpeed;
-            made_changes = true;
-        }
+        // // Ascend/descend movement
+        // float elevation_speed = static_cast<float>(ImGui::IsKeyDown(ImGuiKey_Space));
+        // elevation_speed -= static_cast<float>(ImGui::IsKeyDown(ImGuiKey_LeftCtrl));
+        // if (elevation_speed != 0) {
+        //     target->m_camera.position += yart::Camera::UP_DIRECTION * elevation_speed * s_cameraMoveSpeed;
+        //     made_changes = true;
+        // }
 
 
-        // -- ROTATION -- //
-        if (Interface::IsMouseOverRenderViewport() && ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
-            yart::GUI::Input::SetCursorLocked(true); // Lock and hide the cursor
-            ImVec2 mouse_delta = yart::GUI::Input::GetMouseMoveDelta();
+        // // -- ROTATION -- //
+        // if (Interface::IsMouseOverRenderViewport() && ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
+        //     yart::GUI::Input::SetCursorLocked(true); // Lock and hide the cursor
+        //     ImVec2 mouse_delta = yart::GUI::Input::GetMouseMoveDelta();
 
-            if (mouse_delta.x != 0 || mouse_delta.y != 0) {
-                target->m_camera.RotateByMouseDelta(mouse_delta.x, mouse_delta.y);
-                made_changes = true;
-            }
-        }
+        //     if (mouse_delta.x != 0 || mouse_delta.y != 0) {
+        //         target->m_camera.RotateByMouseDelta(mouse_delta.x, mouse_delta.y);
+        //         made_changes = true;
+        //     }
+        // }
 
         return made_changes;
     }
@@ -110,14 +110,14 @@ namespace yart
     {
         bool made_changes = false;
 
-        // Camera position
-        GUI::BeginMultiItem(3);
-        {
-            made_changes |= GUI::SliderFloat("Position X", &target->m_camera.position.x, "%.3fm", 0.1f);
-            made_changes |= GUI::SliderFloat(         "Y", &target->m_camera.position.y, "%.3fm", 0.1f);
-            made_changes |= GUI::SliderFloat(         "Z", &target->m_camera.position.z, "%.3fm", 0.1f);
-        }
-        GUI::EndMultiItem();
+        // // Camera position
+        // GUI::BeginMultiItem(3);
+        // {
+        //     made_changes |= GUI::SliderFloat("Position X", &target->m_camera.position.x, "%.3fm", 0.1f);
+        //     made_changes |= GUI::SliderFloat(         "Y", &target->m_camera.position.y, "%.3fm", 0.1f);
+        //     made_changes |= GUI::SliderFloat(         "Z", &target->m_camera.position.z, "%.3fm", 0.1f);
+        // }
+        // GUI::EndMultiItem();
 
 
         return made_changes;
@@ -127,23 +127,23 @@ namespace yart
     {
         bool made_changes = false;
 
-        float fov = target->m_camera.GetFOV();
-        if (GUI::SliderFloat("FOV", &fov, yart::Camera::FOV_MIN, yart::Camera::FOV_MAX)) {
-            target->m_camera.SetFOV(fov);
-            made_changes = true;
-        }
+        // float fov = target->m_camera.GetFOV();
+        // if (GUI::SliderFloat("FOV", &fov, yart::Camera::FOV_MIN, yart::Camera::FOV_MAX)) {
+        //     target->m_camera.SetFOV(fov);
+        //     made_changes = true;
+        // }
 
-        float near = target->m_camera.GetNearClippingPlane();
-        if (GUI::SliderFloat("Near clipping plane", &near, yart::Camera::NEAR_CLIP_MIN, yart::Camera::NEAR_CLIP_MAX)) {
-            target->m_camera.SetNearClippingPlane(near);
-            made_changes = true;
-        }
+        // float near = target->m_camera.GetNearClippingPlane();
+        // if (GUI::SliderFloat("Near clipping plane", &near, yart::Camera::NEAR_CLIP_MIN, yart::Camera::NEAR_CLIP_MAX)) {
+        //     target->m_camera.SetNearClippingPlane(near);
+        //     made_changes = true;
+        // }
 
-        float far = target->m_camera.GetNearClippingPlane();
-        if (GUI::SliderFloat("Far clipping plane", &far, yart::Camera::FAR_CLIP_MIN, yart::Camera::FAR_CLIP_MAX)) {
-            target->m_camera.SetNearClippingPlane(far);
-            made_changes = true;
-        }
+        // float far = target->m_camera.GetNearClippingPlane();
+        // if (GUI::SliderFloat("Far clipping plane", &far, yart::Camera::FAR_CLIP_MIN, yart::Camera::FAR_CLIP_MAX)) {
+        //     target->m_camera.SetNearClippingPlane(far);
+        //     made_changes = true;
+        // }
 
         return made_changes;
     }

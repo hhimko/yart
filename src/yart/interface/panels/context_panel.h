@@ -26,7 +26,7 @@ namespace yart
             bool Render(ImGuiWindow* window);
 
             /// @brief Render the context's side nav bar
-            void RenderContextNavBar();
+            static void RenderContextNavBar();
 
         };
 

@@ -9,6 +9,7 @@
 #include <imgui.h>
 
 #include "yart/interface/panel.h"
+#include "yart/core/camera.h"
 
 
 namespace yart
@@ -25,13 +26,11 @@ namespace yart
             /// @return Whether any changes were made by the user during this frame
             bool Render(ImGuiWindow* window);
 
-            /// @brief Render the camera view axes overlay window over the viewport 
-            /// @param x_axis View x-axis
-            /// @param y_axis View y-axis
-            /// @param z_axis View z-axis
+            /// @brief Render the camera view axes overlay window over the viewport
+            /// @param camera YART camera instance 
             /// @param clicked_axis Output variable set to a base axis clicked by the user
             /// @return Whether the user has clicked on an axis and the `clicked_axis` output variable has been set 
-            bool RenderCameraViewAxesOverlay(const glm::vec3& x_axis, const glm::vec3& y_axis, const glm::vec3& z_axis, glm::vec3& clicked_axis);
+            static bool RenderCameraViewAxesOverlay(const yart::Camera& camera, glm::vec3& clicked_axis);
 
             /// @brief Camera view axes overlay window rendering helper function
             /// @param draw_list ImGui window draw list
@@ -65,6 +64,9 @@ namespace yart
             /// @param length Maximum axis length in pixels 
             /// @param hovered Whether the axis handle is currently hovered
             static void DrawNegativeViewAxisH(ImDrawList* draw_list, const glm::vec3& win_pos, const glm::vec3& axis, const glm::vec3& color, float length, bool hovered);
+
+        private:
+            static yart::Camera m_camera; ///< YART camera instance, shared between all viewport panels
 
         };
 

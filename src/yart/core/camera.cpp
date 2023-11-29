@@ -1,3 +1,8 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file
+/// @brief Implementation of the Camera class
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #include "camera.h"
 
 
@@ -25,6 +30,24 @@ namespace yart
             *resized = should_resize;
 
         return m_rayDirectionsCache.data();
+    }
+
+    void Camera::GetRotation(float* pitch, float* yaw) const
+    {
+        if (pitch != nullptr)
+            *pitch = m_rotationPitch;
+
+        if (yaw != nullptr)
+            *yaw = m_rotationYaw;
+    }
+
+    void Camera::SetRotation(float pitch, float yaw)
+    {
+        m_rotationPitch = pitch;
+        m_rotationYaw = yaw;
+
+        m_lookDirection = yart::utils::SphericalToCartesianUnitVector(m_rotationYaw, m_rotationPitch);
+        m_shouldRecalculateCache = true;
     }
 
     void Camera::RotateByMouseDelta(float x, float y)
