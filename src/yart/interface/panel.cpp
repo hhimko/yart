@@ -37,11 +37,20 @@ namespace yart
 
         void RootAppPanel::AttachPanel(Panel* panel)
         {
-            if (panel != m_child)
-                delete m_child;
+            if (panel == nullptr)
+                return DetachLayout();
 
             m_child = panel;
             m_child->m_parent = this;
+        }
+
+        void RootAppPanel::DetachLayout()
+        {
+            m_activePanel = nullptr;
+
+            // Deleting the root's child should destroy the whole layout in a dominos effect
+            delete m_child;
+            m_child = nullptr;
         }
 
         bool RootAppPanel::Render(const float menu_bar_height)
@@ -67,6 +76,19 @@ namespace yart
 
             ImGui::End();
             return made_changes;
+        }
+
+        Interface::Panel* RootAppPanel::GetPanel(Interface::PanelType type) const
+        {
+            if (m_child == nullptr || m_child->m_type == type)
+                return m_child;
+
+            if (m_child->m_type == Interface::PanelType::CONTAINER_PANEL) {
+                Interface::ContainerPanel* container = dynamic_cast<ContainerPanel*>(m_child);
+                return container->GetPanel(type);
+            }
+
+            return nullptr;
         }
 
         bool RootAppPanel::OnRender()
@@ -98,6 +120,30 @@ namespace yart
 
             delete m_ul_child;
             delete m_lr_child;
+        }
+
+        Interface::Panel* LayoutPanel::GetPanel(Interface::PanelType type) const
+        {
+            if (m_ul_child->m_type == type)
+                return m_ul_child;
+
+            if (m_lr_child->m_type == type)
+                return m_lr_child;
+
+            if (m_ul_child->m_type == Interface::PanelType::CONTAINER_PANEL) {
+                Interface::ContainerPanel* container = dynamic_cast<ContainerPanel*>(m_ul_child);
+
+                Interface::Panel* panel = container->GetPanel(type);
+                if (panel != nullptr)
+                    return panel;
+            }
+
+            if (m_lr_child->m_type == Interface::PanelType::CONTAINER_PANEL) {
+                Interface::ContainerPanel* container = dynamic_cast<ContainerPanel*>(m_lr_child);
+                return container->GetPanel(type);
+            }
+
+            return nullptr;
         }
 
         bool LayoutPanel::OnRender()

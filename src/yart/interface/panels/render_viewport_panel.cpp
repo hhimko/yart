@@ -39,7 +39,7 @@ namespace yart
 
             // Ray trace the scene onto the main render viewport image on CPU
             yart::Renderer* renderer = yart::Application::Get().GetRenderer();
-            yart::Camera& camera = RenderViewportPanel::camera;
+            yart::Camera& camera = RenderViewportPanel::m_camera;
 
             bool viewport_dirty = renderer->Render(camera, m_viewport);
             if (viewport_dirty) {

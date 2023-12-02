@@ -21,6 +21,25 @@ namespace yart
         /// @brief UI panel for displaying and handling render viewports 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
         class RenderViewportPanel : public Panel {
+        public:
+            /// @brief RenderViewportPanel class constructor
+            RenderViewportPanel()
+                : Panel(RenderViewportPanel::TYPE) { }
+
+            /// @brief Get the viewport associated with this panel
+            /// @return YART viewport instance 
+            yart::Viewport* GetViewport()
+            {
+                return &m_viewport;
+            }
+
+            /// @brief Get the camera associated with this panel
+            /// @return YART camera instance 
+            yart::Camera* GetCamera()
+            {
+                return &m_camera;
+            }
+
         private:
             /// @brief Issue panel GUI render commands
             /// @return Whether any changes were made by the user during this frame
@@ -65,8 +84,13 @@ namespace yart
             /// @param hovered Whether the axis handle is currently hovered
             static void DrawNegativeViewAxisH(ImDrawList* draw_list, const glm::vec3& win_pos, const glm::vec3& axis, const glm::vec3& color, float length, bool hovered);
 
+        public:
+            /// @brief Type of this panel, used for panel retrieval in a layout
+            static constexpr Interface::PanelType TYPE = PanelType::RENDER_VIEWPORT_PANEL;
+
         private:
-            inline static yart::Camera camera; ///< YART camera instance, shared between all viewport panels
+            /// @brief YART camera instance, shared between all viewport panels
+            inline static yart::Camera m_camera;
 
             yart::Viewport m_viewport { 1, 1, 2 };
 

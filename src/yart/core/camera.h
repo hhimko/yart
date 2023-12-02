@@ -87,14 +87,14 @@ namespace yart
         /// @return Current field of view
         float GetFOV() const 
         {
-            return m_farClippingPlane;
+            return m_fieldOfView;
         }
 
         /// @brief Set the camera's field of view
         /// @param value New field of view distance
         void SetFOV(float value) 
         {
-            m_farClippingPlane = value;
+            m_fieldOfView = value;
             m_shouldRecalculateCache = true;
         }
 
