@@ -58,12 +58,16 @@ namespace yart
         private:
             /// @brief Render the panel into a given Dear ImGui window
             /// @param window Dear ImGui window representing the panel
+            /// @param active_panel Output parameter for propagating the active panel back through the call stack.
+            ///     Should be set to `this` whenever the panel should be activated in the layout
             /// @return Whether any changes were made by the user during this frame
-            bool Render(ImGuiWindow* window);
+            bool Render(ImGuiWindow* window, Panel** active_panel);
 
             /// @brief Issue panel GUI render commands. Internal method intended to be overriden by child classes
+            /// @param active_panel Output parameter for propagating the active panel back through the call stack.
+            ///     Should be set to `this` whenever the panel should be activated in the layout
             /// @return Whether any changes were made by the user during this frame
-            virtual bool OnRender() = 0;
+            virtual bool OnRender(Panel** active_panel) = 0;
 
         private:
             const Interface::PanelType m_type; ///< Type of this panel, used for panel retrieval in a layout
@@ -168,8 +172,10 @@ namespace yart
             Interface::Panel* GetPanel(Interface::PanelType type) const;
 
             /// @brief Issue panel GUI render commands
+            /// @param active_panel Output parameter for propagating the active panel back through the call stack.
+            ///     Should be set to `this` whenever the panel should be activated in the layout
             /// @return Whether any changes were made by the user during this frame
-            bool OnRender();
+            bool OnRender(Panel** active_panel);
 
         public:
             /// @brief Type of this panel, used for panel retrieval in a layout
@@ -203,8 +209,10 @@ namespace yart
             Interface::Panel* GetPanel(Interface::PanelType type) const;
 
             /// @brief Issue panel GUI render commands
+            /// @param active_panel Output parameter for propagating the active panel back through the call stack.
+            ///     Should be set to `this` whenever the panel should be activated in the layout
             /// @return Whether any changes were made by the user during this frame
-            bool OnRender();
+            bool OnRender(Panel** active_panel);
 
         private:
             yart::GUI::GuiLayout* m_layout = nullptr;

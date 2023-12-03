@@ -29,7 +29,7 @@ namespace yart
 {
     namespace Interface
     {
-        bool RenderViewportPanel::OnRender()
+        bool RenderViewportPanel::OnRender(Panel** active_panel)
         {
             ImGuiWindow* window = GetPanelWindow();
 

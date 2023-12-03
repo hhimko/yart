@@ -47,17 +47,19 @@ namespace yart
         }
 
         // Master layout (sidebar + render viewport)
+        RenderViewportPanel* render_viewport_panel = nullptr;
         LayoutPanel* master_layout_panel = nullptr;
         {
             GUI::LayoutCreateInfo master_layout_ci(GUI::LayoutDirection::HORIZONTAL);
             master_layout_ci.scaling_mode = GUI::LayoutScalingMode::PRESERVE_RATIO;
             master_layout_ci.default_size_ratio = 0.7f;
 
-            RenderViewportPanel* render_viewport_panel = new RenderViewportPanel();
+            render_viewport_panel = new RenderViewportPanel();
             master_layout_panel = new LayoutPanel(master_layout_ci, render_viewport_panel, sidebar_layout_panel);
         }
         
         root_panel->AttachPanel(master_layout_panel);
+        root_panel->SetActivePanel(render_viewport_panel);
     }
 
     float Interface::RenderMainMenuBar()

@@ -16,17 +16,29 @@ namespace yart
         bool Panel::IsPanelHovered() const
         {
             ImGuiContext* g = ImGui::GetCurrentContext();
-            if (g->HoveredWindow != nullptr)
-                return g->HoveredWindow->ID == m_window->ID;
+            ImGuiWindow* hovered_window = g->HoveredWindow;
+
+            if (hovered_window != nullptr)
+                return ImGui::IsWindowChildOf(hovered_window, m_window, true);
 
             return false;
         }
 
-        bool Panel::Render(ImGuiWindow* window)
+        bool Panel::Render(ImGuiWindow* window, Panel** active_panel)
         {
             m_window = window;
 
-            return OnRender();
+            // Test for the panel being activated by user input
+            if (m_type != Interface::PanelType::CONTAINER_PANEL) {
+                ImGuiContext* g = ImGui::GetCurrentContext();
+                ImGuiWindow* hovered_window = g->HoveredWindow;
+
+                const bool lmb_clicked = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
+                if (lmb_clicked && IsPanelHovered())
+                    *active_panel = this; // Propagate the active panel back to the caller
+            }
+
+            return OnRender(active_panel);
         }
 
         RootAppPanel* RootAppPanel::Get()
@@ -57,6 +69,9 @@ namespace yart
         {
             ImGuiContext* g = ImGui::GetCurrentContext();
 
+            if (m_activePanel)
+                ImGui::Text("active id: %d", m_activePanel->m_type);
+
             // Root panel window area is essentially the display area minus the main menu bar size 
             ImVec2 display_size = g->IO.DisplaySize;
             ImGui::SetNextWindowPos({ 0.0f, menu_bar_height });
@@ -72,7 +87,10 @@ namespace yart
             ImGui::Begin("YART_Panel_Root_Window", nullptr, flags);
             g->Style.WindowPadding = backup_padding;
 
-            bool made_changes = Panel::Render(g->CurrentWindow);
+            Panel* active_panel = nullptr;
+            bool made_changes = Panel::Render(g->CurrentWindow, &active_panel);
+            if (active_panel != nullptr)
+                m_activePanel = active_panel;
 
             ImGui::End();
             return made_changes;
@@ -91,12 +109,12 @@ namespace yart
             return nullptr;
         }
 
-        bool RootAppPanel::OnRender()
+        bool RootAppPanel::OnRender(Panel** active_panel)
         {
             if (m_child) {
                 // The root panel Dear ImGui window gets reused by the child panel
                 ImGuiWindow* window = GetPanelWindow();
-                return m_child->Render(window);
+                return m_child->Render(window, active_panel);
             }
 
             return false;
@@ -146,18 +164,18 @@ namespace yart
             return nullptr;
         }
 
-        bool LayoutPanel::OnRender()
+        bool LayoutPanel::OnRender(Panel** active_panel)
         {
             ImGuiContext* g = ImGui::GetCurrentContext();
             bool made_changes = false;
 
             GUI::BeginLayout(m_layout);
             {
-                made_changes |= m_ul_child->Render(g->CurrentWindow);
+                made_changes |= m_ul_child->Render(g->CurrentWindow, active_panel);
             }
             GUI::LayoutSeparator(m_layout);
             {
-                made_changes |= m_lr_child->Render(g->CurrentWindow);
+                made_changes |= m_lr_child->Render(g->CurrentWindow, active_panel);
             }
             GUI::EndLayout(m_layout);
 

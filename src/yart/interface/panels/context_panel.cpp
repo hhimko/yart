@@ -15,7 +15,7 @@ namespace yart
 {
     namespace Interface
     {
-        bool ContextPanel::OnRender()
+        bool ContextPanel::OnRender(Panel** active_panel)
         {
             InterfaceContext* ctx = Interface::GetInterfaceContext();
             ImGuiContext* g = ImGui::GetCurrentContext();
