@@ -9,6 +9,7 @@
 #include <imgui_internal.h>
 
 #include "yart/interface/interface_internal.h"
+#include "yart/interface/views/view.h"
 
 
 namespace yart
@@ -23,15 +24,15 @@ namespace yart
 
             RenderContextNavBar();
 
-            InspectorSection* active_section = ctx->activeInspectorSection;
+            InspectorSection* active_section = nullptr;
 
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, { 0.0f, 0.0f });
             ImGui::SameLine();
             ImGui::PopStyleVar();
 
-            const char* name = "Inspector";
+            const char* name = "Context";
             if (active_section != nullptr)
-                ImFormatStringToTempBuffer(&name, nullptr, "%s###InspectorTabItem", active_section->name);
+                ImFormatStringToTempBuffer(&name, nullptr, "%s###ContextTabItem", active_section->name);
 
             bool open = GUI::BeginTabBar(name);
             {
@@ -50,7 +51,7 @@ namespace yart
                 g->CurrentWindow->DrawList->AddRectFilled(p_min, p_max, bg_col);
                 g->CurrentWindow->DrawList->PushClipRect({ backup_clip_rect.x, backup_clip_rect.y }, { backup_clip_rect.z, backup_clip_rect.w });
 
-                // Render the currently active inspector item
+                // Render the currently active context item
                 if (active_section != nullptr)
                     made_changes |= active_section->callback();
 
