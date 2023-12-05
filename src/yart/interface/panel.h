@@ -41,6 +41,8 @@ namespace yart
             virtual ~Panel() = default;
 
         protected:
+            /// @brief Panel class custom constructor
+            /// @param type Type of the panel from the Interface::PanelType enum
             Panel(Interface::PanelType type)
                 : m_type(type) { }
 
@@ -56,6 +58,16 @@ namespace yart
             bool IsPanelHovered() const;
 
         private:
+            /// @brief Handle incoming user inputs
+            /// @param should_refresh_viewports Output parameter, used for specifying wether any changes that 
+            ///     invalidate viewports have been made
+            /// @return Whether the incoming events have been handled by this panel
+            virtual bool HandleInputs(bool* should_refresh_viewports)
+            {
+                // Defaults to no input handling
+                return false;
+            }
+
             /// @brief Render the panel into a given Dear ImGui window
             /// @param window Dear ImGui window representing the panel
             /// @param active_panel Output parameter for propagating the active panel back through the call stack.
@@ -88,6 +100,7 @@ namespace yart
         ////////////////////////////////////////////////////////////////////////////////////////////////////
         class ContainerPanel : public Panel {
         protected:
+            /// @brief ContainerPanel class custom constructor
             ContainerPanel()
                 : Panel(ContainerPanel::TYPE) { }
 
@@ -157,13 +170,17 @@ namespace yart
                 m_activePanel = panel;
             }
 
+            /// @brief Handle incoming user inputs
+            /// @returns Whether any changes were made this frame. Used for conditional viewport refreshing
+            bool HandleInputs();
+
             /// @brief Render the currently attached UI layout
             /// @param menu_bar_height Height of the main menu bar, used for determining the content area size
-            /// @return Whether any changes were made by the user during this frame
+            /// @return Whether any changes were made this frame. Used for conditional viewport refreshing
             bool Render(const float menu_bar_height);
 
         private:
-            /// @brief Private destructor
+            /// @brief RootAppPanel class private destructor
             ~RootAppPanel() { DetachLayout(); }
 
             /// @brief Try retrieving a panel of given type from the container

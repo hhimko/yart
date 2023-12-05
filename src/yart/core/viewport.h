@@ -40,13 +40,6 @@ namespace yart
         /// @param height New height of the viewport in pixels
         void Resize(uint32_t width, uint32_t height);
 
-        /// @brief Set an internal flag to make sure the viewport image gets refreshed before the next render command
-        /// @details Should be used when the image data has changed since the last frame
-        void EnsureRefresh() 
-        {
-            m_needsRefresh = true;
-        }
-
         /// @brief Get the current size of the viewport in pixels
         /// @return The unscaled viewport size used for rendering to the display
         ImVec2 GetViewportSize() const 
@@ -84,6 +77,7 @@ namespace yart
         void SetImageSampler(Backend::ImageSampler sampler) 
         {
             m_image->SetSampler(sampler);
+            m_needsRefresh = true;
         }
 
         /// @brief Get the viewport's image pixel array
@@ -96,10 +90,11 @@ namespace yart
         }
 
         /// @brief Get the viewport's image Dear ImGui texture ID
+        /// @param refresh Optional parameter, specifying whether the viewport should be forced to refresh this frame
         /// @return Dear ImGui's `ImTextureID`, used for rendering GPU textures onto the screen
-        ImTextureID GetImTextureID()
+        ImTextureID GetImTextureID(bool refresh = false)
         {
-            if (m_needsRefresh)
+            if (refresh || m_needsRefresh)
                 Refresh();
 
             return m_image->GetImTextureID();

@@ -36,10 +36,9 @@ namespace yart
         /// @brief Interface module internal context structure
         struct InterfaceContext {
         public:
-            /// @brief Custom Dear ImGui render function callbacks registered by the application
-            std::vector<callback_t> registeredCallbacks;
-            /// @brief Currently open inspector nav bar window
-            InspectorSection* activeInspectorSection = nullptr;
+            std::vector<callback_t> registeredCallbacks; ///< Custom Dear ImGui render function callbacks registered by the application
+            InspectorSection* activeInspectorSection = nullptr; ///< Currently open inspector nav bar window
+            bool shouldRefreshViewports = true; ///< Whether all viewports should be refreshed next frame
         };
 
 

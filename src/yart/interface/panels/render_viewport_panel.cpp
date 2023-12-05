@@ -31,6 +31,7 @@ namespace yart
     {
         bool RenderViewportPanel::OnRender(Panel** active_panel)
         {
+            InterfaceContext* ctx = Interface::GetInterfaceContext();
             ImGuiWindow* window = GetPanelWindow();
 
             // Resize the underlying viewport to match the panel size
@@ -39,20 +40,16 @@ namespace yart
 
             // Ray trace the scene onto the main render viewport image on CPU
             yart::Renderer* renderer = yart::Application::Get().GetRenderer();
-            yart::Camera& camera = RenderViewportPanel::m_camera;
-
-            bool viewport_dirty = renderer->Render(camera, m_viewport);
-            if (viewport_dirty) {
-                m_viewport.EnsureRefresh(); // Make sure the viewport image gets refreshed this frame
-                viewport_dirty = false;
-            }
+            yart::Camera& camera = RenderViewportPanel::s_camera;
+            const bool viewport_dirty = renderer->Render(camera, m_viewport);
 
             // Render the viewport image
-            ImTextureID viewport_texture = m_viewport.GetImTextureID();
+            const bool should_refresh = viewport_dirty || ctx->shouldRefreshViewports;
+            ImTextureID viewport_texture = m_viewport.GetImTextureID(should_refresh);
             ImGui::GetBackgroundDrawList()->AddImage(viewport_texture, win_rect.Min, win_rect.Max);
 
             // Render the camera view axes overlay window
-            glm::vec3 clicked_axis = {0, 0, 0};
+            glm::vec3 clicked_axis = { 0.0f, 0.0f, 0.0f };
             if (RenderCameraViewAxesOverlay(camera, clicked_axis)) {
                 // Base axis to pitch, yaw rotation transformation magic
                 const float pitch = clicked_axis.y * yart::Camera::PITCH_MAX;

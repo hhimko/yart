@@ -37,7 +37,7 @@ namespace yart
             /// @return YART camera instance 
             yart::Camera* GetCamera()
             {
-                return &m_camera;
+                return &s_camera;
             }
 
         private:
@@ -91,9 +91,7 @@ namespace yart
             static constexpr Interface::PanelType TYPE = PanelType::RENDER_VIEWPORT_PANEL;
 
         private:
-            /// @brief YART camera instance, shared between all viewport panels
-            inline static yart::Camera m_camera;
-
+            inline static yart::Camera s_camera; ///< YART camera instance, shared between all viewport panels
             yart::Viewport m_viewport { 1, 1, 2 };
 
         };

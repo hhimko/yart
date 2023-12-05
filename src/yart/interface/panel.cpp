@@ -65,6 +65,21 @@ namespace yart
             m_child = nullptr;
         }
 
+        bool RootAppPanel::HandleInputs()
+        {
+            bool should_refresh_viewports = false;
+
+            Panel* panel = m_activePanel ? m_activePanel : dynamic_cast<Panel*>(this);
+            while (panel != nullptr) {
+                if (panel->HandleInputs(&should_refresh_viewports))
+                    break;
+
+                panel = panel->m_parent;
+            }
+
+            return should_refresh_viewports;
+        }
+
         bool RootAppPanel::Render(const float menu_bar_height)
         {
             ImGuiContext* g = ImGui::GetCurrentContext();

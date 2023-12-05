@@ -23,33 +23,39 @@ namespace yart
 
     bool Interface::HandleInputs()
     {
+        InterfaceContext* ctx = Interface::GetInterfaceContext();
+
         // Update application inputs state
         yart::GUI::Input::Update();
 
-        yart::Renderer* renderer = yart::Application::Get().GetRenderer();
-        bool made_changes = yart::Interface::RendererView::HandleInputs(renderer);
+        RootAppPanel* rap = RootAppPanel::Get();
+        bool made_changes = rap->HandleInputs();
 
+        ctx->shouldRefreshViewports |= made_changes;
         return made_changes;
     }
 
     bool Interface::Render()
     {
+        InterfaceContext* ctx = Interface::GetInterfaceContext();
+
         // Uncomment to display Dear ImGui's debug window
         // ImGui::ShowDemoWindow();
-
 
         float fps = ImGui::GetCurrentContext()->IO.Framerate;
         ImGui::Text("%.1f FPS", fps);
 
         // Render the YART application UI layout
         float menu_bar_height = Interface::RenderMainMenuBar();
-        bool made_changes = RootAppPanel::Get()->Render(menu_bar_height);
+
+        RootAppPanel* rap = RootAppPanel::Get();
+        bool made_changes = rap->Render(menu_bar_height);
 
         // Render registered global callbacks
-        InterfaceContext* ctx = Interface::GetInterfaceContext();
         for (auto callback : ctx->registeredCallbacks)
             made_changes |= callback();
 
+        ctx->shouldRefreshViewports = made_changes;
         return made_changes;
     }
 

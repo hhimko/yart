@@ -65,6 +65,7 @@ namespace yart
             return;
 
         m_imageScale = scale;
+        m_needsRefresh = true;
     }
 
     void Viewport::Refresh()
