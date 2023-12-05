@@ -8,12 +8,7 @@
 
 #include "yart/interface/interface.h"
 #include "yart/core/renderer.h"
-#include "yart/GUI/input.h"
 #include "yart/GUI/gui.h"
-
-
-/// @brief The speed multiplier for camera's movements
-static float s_cameraMoveSpeed = 0.01f;
 
 
 namespace yart
@@ -39,69 +34,6 @@ namespace yart
             made_changes |= RenderOverlaysSection(target);
         }
         GUI::EndCollapsableSection(section_open);
-
-        return made_changes;
-    }
-
-    bool Interface::RendererView::OnRenderViewAxesWindow(yart::Renderer* target)
-    {
-        // const glm::vec3 x_axis = { glm::sin(target->m_cameraYaw), glm::sin(target->m_cameraPitch) * glm::cos(target->m_cameraYaw), -glm::cos(target->m_cameraYaw) };
-        // const glm::vec3 y_axis = { 0, -glm::cos(target->m_cameraPitch), -glm::sin(target->m_cameraPitch) };
-        // const glm::vec3 z_axis = glm::normalize(glm::cross(x_axis, y_axis));
-
-        // glm::vec3 clicked_axis = {0, 0, 0};
-        // if (yart::GUI::RenderViewAxesWindow(x_axis, y_axis, z_axis, clicked_axis)) {
-        //     // Base axis to pitch, yaw rotation transformation magic
-        //     target->m_cameraPitch = clicked_axis.y * CAMERA_PITCH_MAX;
-        //     target->m_cameraYaw = (clicked_axis.y + clicked_axis.z) * 90.0f * yart::utils::DEG_TO_RAD + (clicked_axis.x == -1.0f) * 180.0f * yart::utils::DEG_TO_RAD;
-        //     target->m_cameraLookDirection = yart::utils::SphericalToCartesianUnitVector(target->m_cameraYaw, target->m_cameraPitch); // Can't use `clicked_axis` directly here, because of rotation clamping
-
-        //     target->RecalculateRayDirections();
-        //     return true;
-        // }
-
-        return false;
-    }
-
-    bool Interface::RendererView::HandleInputs(yart::Renderer* target)
-    {
-        bool made_changes = false;
-
-        // // -- TRANSLATION -- //
-        // // Forward/backward movement
-        // float vertical_speed = yart::GUI::Input::GetVerticalAxis();
-        // if (vertical_speed != 0) {
-        //     target->m_camera.position += target->m_camera.GetLookDirection() * vertical_speed * s_cameraMoveSpeed;
-        //     made_changes = true;
-        // }
-
-        // // Side-to-side movement
-        // float horizontal_speed = yart::GUI::Input::GetHorizontalAxis();
-        // if (horizontal_speed != 0) {
-        //     const glm::vec3 u = -glm::normalize(glm::cross(target->m_camera.GetLookDirection(), yart::Camera::UP_DIRECTION)); // Camera view horizontal (right) direction vector
-        //     target->m_camera.position += u * horizontal_speed * s_cameraMoveSpeed;
-        //     made_changes = true;
-        // }
-
-        // // Ascend/descend movement
-        // float elevation_speed = static_cast<float>(ImGui::IsKeyDown(ImGuiKey_Space));
-        // elevation_speed -= static_cast<float>(ImGui::IsKeyDown(ImGuiKey_LeftCtrl));
-        // if (elevation_speed != 0) {
-        //     target->m_camera.position += yart::Camera::UP_DIRECTION * elevation_speed * s_cameraMoveSpeed;
-        //     made_changes = true;
-        // }
-
-
-        // // -- ROTATION -- //
-        // if (Interface::IsMouseOverRenderViewport() && ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
-        //     yart::GUI::Input::SetCursorLocked(true); // Lock and hide the cursor
-        //     ImVec2 mouse_delta = yart::GUI::Input::GetMouseMoveDelta();
-
-        //     if (mouse_delta.x != 0 || mouse_delta.y != 0) {
-        //         target->m_camera.RotateByMouseDelta(mouse_delta.x, mouse_delta.y);
-        //         made_changes = true;
-        //     }
-        // }
 
         return made_changes;
     }

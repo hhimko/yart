@@ -7,10 +7,12 @@
 
 
 #include <imgui_internal.h>
+#include <glm/glm.hpp>
 
 #include "yart/interface/interface_internal.h"
 #include "yart/core/renderer.h"
 #include "yart/application.h"
+#include "yart/GUI/input.h"
 
 
 #ifndef DOXYGEN_EXCLUDE // Exclude from documentation
@@ -29,6 +31,53 @@ namespace yart
 {
     namespace Interface
     {
+        bool RenderViewportPanel::HandleInputs(bool* should_refresh_viewports)
+        {
+            bool handled = false;
+            yart::Camera* camera = &s_camera;
+
+            // -- TRANSLATION -- //
+            // Forward/backward movement
+            float vertical_speed = yart::GUI::Input::GetVerticalAxis();
+            if (vertical_speed != 0) {
+                camera->position += camera->GetLookDirection() * vertical_speed * s_cameraMoveSpeed;
+                handled = true;
+            }
+
+            // Side-to-side movement
+            float horizontal_speed = yart::GUI::Input::GetHorizontalAxis();
+            if (horizontal_speed != 0) {
+                const glm::vec3 u = -glm::normalize(glm::cross(camera->GetLookDirection(), yart::Camera::UP_DIRECTION)); // Camera view horizontal (right) direction vector
+                camera->position += u * horizontal_speed * s_cameraMoveSpeed;
+                handled = true;
+            }
+
+            // Ascend/descend movement
+            float elevation_speed = static_cast<float>(ImGui::IsKeyDown(ImGuiKey_Space));
+            elevation_speed -= static_cast<float>(ImGui::IsKeyDown(ImGuiKey_LeftCtrl));
+            if (elevation_speed != 0) {
+                camera->position += yart::Camera::UP_DIRECTION * elevation_speed * s_cameraMoveSpeed;
+                handled = true;
+            }
+
+
+            // -- ROTATION -- //
+            if (IsPanelHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
+                yart::GUI::Input::SetCursorLocked(true); // Lock and hide the cursor
+                ImVec2 mouse_delta = yart::GUI::Input::GetMouseMoveDelta();
+
+                if (mouse_delta.x != 0 || mouse_delta.y != 0) {
+                    camera->RotateByMouseDelta(mouse_delta.x, mouse_delta.y);
+                    handled = true;
+                }
+            }
+
+            if (handled)
+                *should_refresh_viewports = true;
+
+            return handled;
+        }
+
         bool RenderViewportPanel::OnRender(Panel** active_panel)
         {
             InterfaceContext* ctx = Interface::GetInterfaceContext();

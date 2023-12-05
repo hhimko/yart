@@ -41,11 +41,17 @@ namespace yart
             }
 
         private:
+            /// @brief Handle incoming user inputs
+            /// @param should_refresh_viewports Output parameter, used for specifying wether any changes that 
+            ///     invalidate viewports have been made
+            /// @return Whether the incoming events have been handled by this panel
+            bool HandleInputs(bool* should_refresh_viewports) override;
+
             /// @brief Issue panel GUI render commands
             /// @param active_panel Output parameter for propagating the active panel back through the call stack.
             ///     Should be set to `this` whenever the panel should be activated in the layout
             /// @return Whether any changes were made by the user during this frame
-            bool OnRender(Panel** active_panel);
+            bool OnRender(Panel** active_panel) override;
 
             /// @brief Render the camera view axes overlay window over the viewport
             /// @param camera YART camera instance 
@@ -92,6 +98,8 @@ namespace yart
 
         private:
             inline static yart::Camera s_camera; ///< YART camera instance, shared between all viewport panels
+            inline static float s_cameraMoveSpeed = 0.01f; ///< Speed multiplier for camera translation
+
             yart::Viewport m_viewport { 1, 1, 2 };
 
         };

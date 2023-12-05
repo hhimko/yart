@@ -34,7 +34,8 @@ namespace yart
                 ImGuiWindow* hovered_window = g->HoveredWindow;
 
                 const bool lmb_clicked = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
-                if (lmb_clicked && IsPanelHovered())
+                const bool rmb_clicked = ImGui::IsMouseClicked(ImGuiMouseButton_Right);
+                if ((lmb_clicked || rmb_clicked) && IsPanelHovered())
                     *active_panel = this; // Propagate the active panel back to the caller
             }
 
