@@ -20,19 +20,6 @@ namespace yart
 {
     namespace Interface
     {
-        /// @brief Structure containing data required to render a inspector menu item
-        struct InspectorSection {
-        public:
-            /// @brief Inspector menu item icon code point from the application's icons font
-            const char* icon;
-            /// @brief Section icon color in `ARGB` format
-            ImU32 color;
-            /// @brief Section name
-            const char* name; 
-            /// @brief Section contents rendering function callback 
-            callback_t callback;
-        };
-
         /// @brief Interface module internal context structure
         struct InterfaceContext {
         public:

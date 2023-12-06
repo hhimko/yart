@@ -58,6 +58,11 @@ namespace yart
                 return m_iconColor; 
             }
 
+            /// @brief Get all YART application view instances 
+            /// @param views_count Size of the returned array
+            /// @return YART views array
+            const static View** GetAllViews(size_t* views_count);
+
         private:
             const char* m_name; ///< View name, for displaying in the context panel
             const char* m_icon; ///< View icon code point from the icons font, for displaying in the context panel

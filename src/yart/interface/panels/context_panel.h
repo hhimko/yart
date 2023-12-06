@@ -6,8 +6,11 @@
 #pragma once
 
 
+#include <vector>
+
 #include <imgui.h>
 
+#include "yart/interface/views/view.h"
 #include "yart/interface/panel.h"
 
 
@@ -32,7 +35,16 @@ namespace yart
             bool OnRender(Panel** active_panel);
 
             /// @brief Render the context's side nav bar
-            static void RenderContextNavBar();
+            /// @param target Output parameter, populated with the returned active view's target instance. 
+            ///     Guaranteed to never be `nullptr`
+            /// @return Active view instance. Guaranteed to never be `nullptr`
+            static const Interface::View* RenderContextNavBar(void** target);
+
+            /// @brief Render a specified context view within the context window
+            /// @param view UI view to be rendered
+            /// @param target Target instance for the view
+            /// @return Whether any changes were made by the user during this frame
+            static bool RenderContextView(const Interface::View* view, void* target);
 
         public:
             /// @brief Type of this panel, used for panel retrieval in a layout
