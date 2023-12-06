@@ -8,18 +8,35 @@
 
 #include "yart/core/RES/resources/cubemap.h"
 #include "yart/common/utils/yart_utils.h"
+#include "yart/application.h"
 #include "yart/core/world.h"
 #include "yart/GUI/gui.h"
 
 
 namespace yart
 {
-    bool Interface::WorldView::OnRenderGUI(yart::World* target)
+    Interface::WorldView* Interface::WorldView::Get()
     {
+        static WorldView s_instance;
+        return &s_instance;
+    }
+
+    void* Interface::WorldView::GetViewTarget() const
+    {
+        yart::Renderer* renderer = yart::Application::Get().GetRenderer();
+        yart::World* world = renderer->GetWorld();
+
+        return static_cast<void*>(world);
+    }
+
+    bool Interface::WorldView::Render(void* target) const
+    {
+        yart::World* world = static_cast<yart::World*>(target);
+
         bool section_open, made_changes = false;
         section_open = GUI::BeginCollapsableSection("Sky");
         if (section_open) {
-            made_changes |= RenderSkySection(target);
+            made_changes |= RenderSkySection(world);
         }
         GUI::EndCollapsableSection(section_open);
 

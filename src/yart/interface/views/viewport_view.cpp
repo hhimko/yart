@@ -6,18 +6,38 @@
 #include "viewport_view.h"
 
 
+#include "yart/interface/panels/render_viewport_panel.h"
+#include "yart/interface/panel.h"
 #include "yart/GUI/gui.h"
 
 
 namespace yart
 {
-    bool Interface::ViewportView::OnRenderGUI(yart::Viewport* target)
+    Interface::ViewportView* Interface::ViewportView::Get()
     {
+        static ViewportView s_instance;
+        return &s_instance;
+    }
+
+    void* Interface::ViewportView::GetViewTarget() const
+    {
+        Interface::RootAppPanel* rap = Interface::RootAppPanel::Get();
+        Interface::RenderViewportPanel* viewport_panel = rap->GetPanel<Interface::RenderViewportPanel>();
+
+        if (viewport_panel == nullptr)
+            return nullptr;
+        
+        return static_cast<void*>(viewport_panel->GetViewport());
+    }
+
+    bool Interface::ViewportView::Render(void* target) const
+    {
+        yart::Viewport* viewport = static_cast<yart::Viewport*>(target);
         bool section_open, made_changes = false;
 
         section_open = GUI::BeginCollapsableSection("Output");
         if (section_open) {
-            made_changes |= RenderOutputSection(target);
+            made_changes |= RenderOutputSection(viewport);
         }
         GUI::EndCollapsableSection(section_open);
 

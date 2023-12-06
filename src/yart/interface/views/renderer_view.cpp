@@ -8,30 +8,45 @@
 
 #include "yart/interface/interface.h"
 #include "yart/core/renderer.h"
+#include "yart/application.h"
 #include "yart/GUI/gui.h"
 
 
 namespace yart
 {
-    bool Interface::RendererView::OnRenderGUI(yart::Renderer* target)
+    Interface::RendererView* Interface::RendererView::Get()
     {
+        static RendererView s_instance;
+        return &s_instance;
+    }
+
+    void* Interface::RendererView::GetViewTarget() const
+    {
+        yart::Renderer* renderer = yart::Application::Get().GetRenderer();
+
+        return static_cast<void*>(renderer);
+    }
+
+    bool Interface::RendererView::Render(void* target) const
+    {
+        yart::Renderer* renderer = static_cast<yart::Renderer*>(target);
         bool section_open, made_changes = false;
 
         section_open = GUI::BeginCollapsableSection("View Transform");
         if (section_open) {
-            made_changes |= RenderViewTransformSection(target);
+            made_changes |= RenderViewTransformSection(renderer);
         }
         GUI::EndCollapsableSection(section_open);
 
         section_open = GUI::BeginCollapsableSection("Camera Properties");
         if (section_open) {
-            made_changes |= RenderCameraPropertiesSection(target);
+            made_changes |= RenderCameraPropertiesSection(renderer);
         }
         GUI::EndCollapsableSection(section_open);
 
         section_open = GUI::BeginCollapsableSection("Overlays");
         if (section_open) {
-            made_changes |= RenderOverlaysSection(target);
+            made_changes |= RenderOverlaysSection(renderer);
         }
         GUI::EndCollapsableSection(section_open);
 

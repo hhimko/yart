@@ -6,6 +6,10 @@
 #pragma once
 
 
+#include "yart/interface/views/view.h"
+#include "font/IconsCodicons.h"
+
+
 namespace yart
 {
     /// @brief View target class forward declaration
@@ -15,22 +19,40 @@ namespace yart
     namespace Interface
     {
         ////////////////////////////////////////////////////////////////////////////////////////////////////
-        /// @brief GUI view for the World class
+        /// @brief Context view for the yart::World target
         ////////////////////////////////////////////////////////////////////////////////////////////////////
-        class WorldView {
+        class WorldView : public View {
         public:
-            /// @brief Issue GUI render commands to display the World object context menu
-            /// @param target View target instance
-            /// @returns Whether any changes were made by the user since the last frame
-            static bool OnRenderGUI(yart::World* target);
+            /// @brief Get the static instance, lazily initialized on first call
+            /// @return Static WorldView instance
+            static WorldView* Get();
+
+            /// @brief Try to retrieve a target instance for the view
+            /// @return Target instance pointer for this frame, or `nullptr` if no targets are active
+            void* GetViewTarget() const;  
+
+            /// @brief Issue view render commands for a given view target
+            /// @param target View target instance, retrieved from View::GetViewTarget()
+            /// @return Whether any changes were made by the user since the last frame
+            bool Render(void* target) const;
 
         private:
-            WorldView() = delete;
+            /// @brief WorldView class private constructor
+            WorldView()
+                : View(NAME, ICON, ICON_COLOR) { }
 
-            /// @brief Issue "Sky" section GUI render commands
+            WorldView(const WorldView&) = delete;
+            WorldView& operator=(WorldView const&) = delete;
+
+            /// @brief Issue "Sky" section UI render commands
             /// @param target View target instance
             /// @returns Whether any changes were made by the user since the last frame
             static bool RenderSkySection(yart::World* target);
+
+        private:
+            static constexpr char* NAME = "World";
+            static constexpr char* ICON = ICON_CI_GLOBE;
+            static constexpr ImU32 ICON_COLOR = YART_VIEW_ICON_COLOR_GRAY; 
 
         };   
 
