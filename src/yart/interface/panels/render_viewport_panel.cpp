@@ -155,7 +155,7 @@ namespace yart
 
             // Axes
             float yaw, pitch;
-            camera.GetRotation(&yaw, &pitch);
+            camera.GetRotation(&pitch, &yaw);
 
             const float sin_pitch = glm::sin(pitch);
             const float cos_yaw = glm::cos(yaw);
