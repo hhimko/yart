@@ -8,6 +8,7 @@
 
 #include "yart/interface/views/renderer_view.h"
 #include "yart/interface/views/viewport_view.h"
+#include "yart/interface/views/camera_view.h"
 #include "yart/interface/views/world_view.h"
 
 
@@ -17,13 +18,14 @@ namespace yart
     {
         const View** View::GetAllViews(size_t* views_count)
         {
-            static constexpr size_t count = 3;
+            static constexpr size_t count = 4;
             *views_count = count;
 
             // Views are sorted in order they should be rendered
             static const View* views[count] = {
                 dynamic_cast<View*>(RendererView::Get()),
                 dynamic_cast<View*>(ViewportView::Get()),
+                dynamic_cast<View*>(CameraView::Get()),
                 dynamic_cast<View*>(WorldView::Get())
             };
 

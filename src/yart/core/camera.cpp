@@ -84,7 +84,7 @@ namespace yart
 
         yart::threads::parallel_for<size_t>(0, size, [&](size_t i) {
             const auto [y, x] = std::div(i, static_cast<int64_t>(width));
-            m_rayDirectionsCache[i] = glm::normalize(inverse_view_projection_matrix * glm::vec4{ x + 0.5f, y + 0.5f, 1.0f, 1.0f });
+            m_rayDirectionsCache[i] = glm::normalize(inverse_view_projection_matrix * glm::vec4{ x + 0.5f, y + 0.5f, 1.0f, 0.0f });
         });
 
         m_shouldRecalculateCache = false;

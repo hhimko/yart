@@ -114,9 +114,9 @@ namespace yart
 
         static constexpr float FOV_MIN = 45.0f; ///< Smallest valid value for camera's FOV in degrees
         static constexpr float FOV_MAX = 180.0f; ///< Largest valid value for camera's FOV in degrees
-        static constexpr float NEAR_CLIP_MIN = 0.001f; ///< Smallest valid value for camera's near clipping plane distance
+        static constexpr float NEAR_CLIP_MIN = 0.01f; ///< Smallest valid value for camera's near clipping plane distance
         static constexpr float NEAR_CLIP_MAX = 10.0f; ///< Largest valid value for camera's near clipping plane distance
-        static constexpr float FAR_CLIP_MIN = 100.0f; ///< Smallest valid value for camera's far clipping plane distance
+        static constexpr float FAR_CLIP_MIN = 10.0f; ///< Smallest valid value for camera's far clipping plane distance
         static constexpr float FAR_CLIP_MAX = 1000.0f; ///< Largest valid value for camera's far clipping plane distance
         static constexpr float PITCH_MIN = -90.0f * yart::utils::DEG_TO_RAD + yart::utils::EPSILON; ///< Smallest valid value for the pitch rotation
         static constexpr float PITCH_MAX =  90.0f * yart::utils::DEG_TO_RAD - yart::utils::EPSILON; ///< Largest valid value for the pitch rotation
@@ -128,7 +128,7 @@ namespace yart
         float m_rotationYaw = 120.0f * yart::utils::DEG_TO_RAD; ///< Horizontal rotation in radians (around the y axis)
         float m_rotationPitch = -25.0f * yart::utils::DEG_TO_RAD; ///< Vertical rotation in radians (around the x axis)
 
-        float m_nearClippingPlane = 0.1f; ///< Near clipping plane distance
+        float m_nearClippingPlane = 0.25f; ///< Near clipping plane distance
         float m_farClippingPlane = 1000.0f; ///< Far clipping plane distance
         float m_fieldOfView = 60.0f; ///< Horizontal camera FOV in degrees
         

@@ -1,12 +1,10 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @file
-/// @brief Definition of the RendererView class 
+/// @brief Definition of the CameraView class 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-
-#include <imgui.h>
 
 #include "yart/interface/views/view.h"
 #include "font/IconsCodicons.h"
@@ -15,19 +13,19 @@
 namespace yart
 {
     /// @brief View target class forward declaration
-    class Renderer;
+    class Camera;
 
 
     namespace Interface
     {
         ////////////////////////////////////////////////////////////////////////////////////////////////////
-        /// @brief GUI view for the Renderer class
+        /// @brief Context view for the yart::Camera target
         ////////////////////////////////////////////////////////////////////////////////////////////////////
-        class RendererView : public View {
+        class CameraView : public View {
         public:
             /// @brief Get the static instance, lazily initialized on first call
-            /// @return Static RendererView instance
-            static RendererView* Get();
+            /// @return Static CameraView instance
+            static CameraView* Get();
 
             /// @brief Try to retrieve a target instance for the view
             /// @return Target instance pointer for this frame, or `nullptr` if no targets are active
@@ -39,21 +37,26 @@ namespace yart
             bool Render(void* target) const;
 
         private:
-            /// @brief RendererView class private constructor
-            RendererView()
+            /// @brief CameraView class private constructor
+            CameraView()
                 : View(NAME, ICON, ICON_COLOR) { }
 
-            RendererView(const RendererView&) = delete;
-            RendererView& operator=(RendererView const&) = delete;
+            CameraView(const CameraView&) = delete;
+            CameraView& operator=(CameraView const&) = delete;
 
-            /// @brief Issue "Overlays" section GUI render commands
+            /// @brief Issue "View Transform" section GUI render commands
             /// @param target View target instance
             /// @returns Whether any changes were made by the user since the last frame
-            static bool RenderOverlaysSection(yart::Renderer* target);
+            static bool RenderViewTransformSection(yart::Camera* target);
+
+            /// @brief Issue "Camera Properties" section GUI render commands
+            /// @param target View target instance
+            /// @returns Whether any changes were made by the user since the last frame
+            static bool RenderCameraPropertiesSection(yart::Camera* target);
 
         private:
-            static constexpr char* NAME = "Renderer";
-            static constexpr char* ICON = ICON_CI_EDIT;
+            static constexpr char* NAME = "Camera";
+            static constexpr char* ICON = ICON_CI_DEVICE_CAMERA_VIDEO;
             static constexpr ImU32 ICON_COLOR = YART_VIEW_ICON_COLOR_GRAY; 
 
         };   

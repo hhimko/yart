@@ -104,7 +104,7 @@ namespace yart
             const glm::vec2 uv_ddy = glm::vec2{ hit_pos_ddy.x, hit_pos_ddy.z } - uv;
 
             // Distance-responsive filter kernel
-            const glm::vec2 w = glm::max(glm::abs(uv_ddx), glm::abs(uv_ddy)) + glm::max(grid_plane_distance / 4000.0f, 0.0001f);
+            const glm::vec2 w = glm::max(glm::abs(uv_ddx), glm::abs(uv_ddy)) + glm::max(grid_plane_distance / 400.0f, 0.0001f);
 
             // Analytic (box) filtering
             const float N = m_useThickerGrid ? 50.0f : 100.0f;
