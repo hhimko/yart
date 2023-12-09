@@ -18,16 +18,18 @@ namespace yart
         bool InspectorPanel::OnRender(Panel** active_panel)
         {
             if (GUI::BeginTabBar("Scene")) {
-                ImGui::BeginChild("##Content", { 0.0f, 0.0f }, false, ImGuiWindowFlags_AlwaysUseWindowPadding);
+                static constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NavFlattened;
+                ImGui::BeginChild("##Content", { 0.0f, 0.0f }, false, flags);
 
-                ImGui::Text("Hello from the Scene tab!");
+                RenderSceneTab();
 
                 ImGui::EndChild();
                 ImGui::EndTabItem();
             }
 
             if (ImGui::BeginTabItem("Object")) {
-                ImGui::BeginChild("##Content", { 0.0f, 0.0f }, false, ImGuiWindowFlags_AlwaysUseWindowPadding);
+                static constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NavFlattened | ImGuiWindowFlags_AlwaysUseWindowPadding;
+                ImGui::BeginChild("##Content", { 0.0f, 0.0f }, false, flags);
 
                 ImGui::Text("Hello from the Object tab!");
 
@@ -37,6 +39,68 @@ namespace yart
             GUI::EndTabBar();
 
             return false;
+        }
+
+        void InspectorPanel::RenderSceneTab()
+        {
+            ImGuiContext* g = ImGui::GetCurrentContext();
+            ImGuiWindow* window = g->CurrentWindow;
+
+            const size_t num_obj = 10;
+            const float max_y = window->Pos.y + window->Size.y;
+            for (size_t row = 0; row < num_obj || window->DC.CursorPos.y < max_y; ++row) {
+                if (row < num_obj) {
+                    RenderObjectTreeRow(row, nullptr);
+                } else {
+                    RenderObjectTreeRowEmpty(row);
+                }
+            }
+        }
+
+        void InspectorPanel::RenderObjectTreeRow(size_t row, yart::Object* object)
+        {
+            ImGuiContext* g = ImGui::GetCurrentContext();
+            ImGuiWindow* window = g->CurrentWindow;
+
+            const float row_height = g->Font->FontSize + 2.0f * g->Style.FramePadding.y;
+            const ImRect item_rect = { 
+                window->DC.CursorPos, 
+                { window->Pos.x + window->Size.x, window->DC.CursorPos.y + row_height } 
+            };
+
+            const ImVec2 backup_item_spacing = g->Style.ItemSpacing;
+            g->Style.ItemSpacing = { 0.0f, 0.0f };
+
+            ImGui::ItemSize(item_rect);
+
+            const ImGuiID id = ImGui::GetID("???");
+            ImGui::ItemAdd(item_rect, id);
+            
+            g->Style.ItemSpacing = backup_item_spacing;
+
+            static const ImU32 bg_odd_col = ImGui::ColorConvertFloat4ToU32({ 0.022f, 0.022f, 0.022f, YART_GUI_ALPHA_OPAQUE });
+            const ImU32 col = row % 2 ? bg_odd_col : ImGui::GetColorU32({ YART_GUI_COLOR_DARKER_GRAY, YART_GUI_ALPHA_OPAQUE });
+            window->DrawList->AddRectFilled(item_rect.Min, item_rect.Max, col);
+        }
+
+        void InspectorPanel::RenderObjectTreeRowEmpty(size_t row)
+        {
+            ImGuiContext* g = ImGui::GetCurrentContext();
+            ImGuiWindow* window = g->CurrentWindow;
+
+            const float row_height = g->Font->FontSize + 2.0f * g->Style.FramePadding.y;
+            const ImRect item_rect = { 
+                window->DC.CursorPos, 
+                { window->Pos.x + window->Size.x, window->DC.CursorPos.y + row_height } 
+            };
+
+            // Skipping ImGui::ItemSize allows to hide the scrollbar on empty items
+
+            static const ImU32 bg_odd_col = ImGui::ColorConvertFloat4ToU32({ 0.022f, 0.022f, 0.022f, YART_GUI_ALPHA_OPAQUE });
+            const ImU32 col = row % 2 ? bg_odd_col : ImGui::GetColorU32({ YART_GUI_COLOR_DARKER_GRAY, YART_GUI_ALPHA_OPAQUE });
+            window->DrawList->AddRectFilled(item_rect.Min, item_rect.Max, col);
+            
+            window->DC.CursorPos.y += row_height;
         }
 
     } // namespace Interface
