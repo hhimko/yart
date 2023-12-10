@@ -10,6 +10,7 @@
 
 #include "yart/interface/panel.h"
 #include "yart/core/object.h"
+#include "yart/GUI/gui.h"
 
 
 namespace yart
@@ -47,6 +48,11 @@ namespace yart
         public:
             /// @brief Type of this panel, used for panel retrieval in a layout
             static constexpr Interface::PanelType TYPE = PanelType::INSPECTOR_PANEL;
+
+        private:
+            static constexpr ImU32 OBJECT_TREE_ROW_BG_COL_ODD   = GUI::ColorConvertFloat4ToU32({ 0.022f, 0.022f, 0.022f, 1.0f });
+            static constexpr ImU32 OBJECT_TREE_ROW_BG_COL_EVEN  = GUI::ColorConvertFloat4ToU32({ YART_GUI_COLOR_DARKER_GRAY, 1.0f });
+            static constexpr ImU32 OBJECT_TREE_ROW_BG_COL_HOVER = GUI::ColorConvertFloat4ToU32({ YART_GUI_COLOR_DARK_GRAY, 1.0f });
 
         };
 

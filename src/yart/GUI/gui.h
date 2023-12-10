@@ -13,6 +13,7 @@
 #include <imgui.h>
 #include <glm/glm.hpp>
 
+#include "yart/common/utils/glm_utils.h"
 #include "font/IconsCodicons.h"
 #include "yart/core/viewport.h"
 
@@ -318,6 +319,25 @@ namespace yart
 
         /// @brief Finish recording a multi item group 
         void EndMultiItem();
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        /// GUI module public helper functions
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+        /// @brief Convert a 4-component color in RGBA format to a numeric interpretation.
+        ///     Constexpr version of `ImGui::ColorConvertFloat4ToU32`
+        /// @param col Input color in RGBA format
+        /// @return Converted color
+        constexpr ImU32 ColorConvertFloat4ToU32(const ImVec4& col)
+        {
+            ImU32 out = 0U;
+            out |= static_cast<ImU32>(glm::clamp(col.x, 0.0f, 1.0f) * 255.0f + 0.5f) << 0;
+            out |= static_cast<ImU32>(glm::clamp(col.y, 0.0f, 1.0f) * 255.0f + 0.5f) << 8;
+            out |= static_cast<ImU32>(glm::clamp(col.z, 0.0f, 1.0f) * 255.0f + 0.5f) << 16;
+            out |= static_cast<ImU32>(glm::clamp(col.w, 0.0f, 1.0f) * 255.0f + 0.5f) << 24;
+            return out;
+        }
         
     } // namespace GUI
 } // namespace yart

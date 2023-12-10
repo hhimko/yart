@@ -75,11 +75,12 @@ namespace yart
 
             const ImGuiID id = ImGui::GetID("???");
             ImGui::ItemAdd(item_rect, id);
+
+            const bool hovered = ImGui::IsItemHovered();
             
             g->Style.ItemSpacing = backup_item_spacing;
 
-            static const ImU32 bg_odd_col = ImGui::ColorConvertFloat4ToU32({ 0.022f, 0.022f, 0.022f, YART_GUI_ALPHA_OPAQUE });
-            const ImU32 col = row % 2 ? bg_odd_col : ImGui::GetColorU32({ YART_GUI_COLOR_DARKER_GRAY, YART_GUI_ALPHA_OPAQUE });
+            const ImU32 col = hovered ? OBJECT_TREE_ROW_BG_COL_HOVER : row % 2 ? OBJECT_TREE_ROW_BG_COL_ODD : OBJECT_TREE_ROW_BG_COL_EVEN;
             window->DrawList->AddRectFilled(item_rect.Min, item_rect.Max, col);
         }
 
@@ -96,8 +97,7 @@ namespace yart
 
             // Skipping ImGui::ItemSize allows to hide the scrollbar on empty items
 
-            static const ImU32 bg_odd_col = ImGui::ColorConvertFloat4ToU32({ 0.022f, 0.022f, 0.022f, YART_GUI_ALPHA_OPAQUE });
-            const ImU32 col = row % 2 ? bg_odd_col : ImGui::GetColorU32({ YART_GUI_COLOR_DARKER_GRAY, YART_GUI_ALPHA_OPAQUE });
+            const ImU32 col = row % 2 ? OBJECT_TREE_ROW_BG_COL_ODD : OBJECT_TREE_ROW_BG_COL_EVEN;
             window->DrawList->AddRectFilled(item_rect.Min, item_rect.Max, col);
             
             window->DC.CursorPos.y += row_height;
