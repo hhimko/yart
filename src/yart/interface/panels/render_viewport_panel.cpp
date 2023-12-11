@@ -83,6 +83,11 @@ namespace yart
             InterfaceContext* ctx = Interface::GetInterfaceContext();
             ImGuiWindow* window = GetPanelWindow();
 
+            // Right clicking the viewport panel should activate it
+            const bool rmb_clicked = ImGui::IsMouseClicked(ImGuiMouseButton_Right);
+            if (rmb_clicked && IsPanelHovered())
+                    *active_panel = this; // Propagate the active panel back to the caller
+
             // Resize the underlying viewport to match the panel size
             const ImRect win_rect = window->Rect();
             m_viewport.Resize(win_rect.GetWidth(), win_rect.GetHeight());
