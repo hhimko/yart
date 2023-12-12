@@ -80,8 +80,10 @@ namespace yart
             
             g->Style.ItemSpacing = backup_item_spacing;
 
-            const ImU32 col = hovered ? OBJECT_TREE_ROW_BG_COL_HOVER : row % 2 ? OBJECT_TREE_ROW_BG_COL_ODD : OBJECT_TREE_ROW_BG_COL_EVEN;
-            window->DrawList->AddRectFilled(item_rect.Min, item_rect.Max, col);
+            const ImU32 bg_col = hovered ? OBJECT_TREE_ROW_BG_COL_HOVER : row % 2 ? OBJECT_TREE_ROW_BG_COL_ODD : OBJECT_TREE_ROW_BG_COL_EVEN;
+            const float bg_rounding = row == 0 ? g->Style.FrameRounding : 0.0f;
+            const float bg_flags = row == 0 ? ImDrawFlags_RoundCornersTop : ImDrawFlags_RoundCornersNone;
+            window->DrawList->AddRectFilled(item_rect.Min, item_rect.Max, bg_col, bg_rounding, bg_flags);
         }
 
         void InspectorPanel::RenderObjectTreeRowEmpty(size_t row)
@@ -97,8 +99,10 @@ namespace yart
 
             // Skipping ImGui::ItemSize allows to hide the scrollbar on empty items
 
-            const ImU32 col = row % 2 ? OBJECT_TREE_ROW_BG_COL_ODD : OBJECT_TREE_ROW_BG_COL_EVEN;
-            window->DrawList->AddRectFilled(item_rect.Min, item_rect.Max, col);
+            const ImU32 bg_col = row % 2 ? OBJECT_TREE_ROW_BG_COL_ODD : OBJECT_TREE_ROW_BG_COL_EVEN;
+            const float bg_rounding = row == 0 ? g->Style.FrameRounding : 0.0f;
+            const float bg_flags = row == 0 ? ImDrawFlags_RoundCornersTop : ImDrawFlags_RoundCornersNone;
+            window->DrawList->AddRectFilled(item_rect.Min, item_rect.Max, bg_col, bg_rounding, bg_flags);
             
             window->DC.CursorPos.y += row_height;
         }

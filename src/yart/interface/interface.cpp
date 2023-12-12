@@ -18,7 +18,26 @@ namespace yart
 {   
     void Interface::Init()
     {
-        Interface::ApplyDefaultLayout();
+        InterfaceContext* ctx = Interface::GetInterfaceContext();
+        ctx->currentLayoutType = LayoutType::DEFAULT;
+
+        // Load and attach the default UI layout
+        Interface::ApplyLayout(ctx->currentLayoutType);
+    }
+
+    void Interface::ApplyLayout(LayoutType type)
+    {
+        InterfaceContext* ctx = Interface::GetInterfaceContext();
+        ctx->currentLayoutType = type;
+
+        switch (type) {
+        case LayoutType::DEFAULT:
+            return ApplyDefaultLayout();
+        case LayoutType::FULLSCREEN:
+            return ApplyFullscreenLayout();
+        default:
+            YART_UNREACHABLE();
+        }
     }
 
     bool Interface::HandleInputs()

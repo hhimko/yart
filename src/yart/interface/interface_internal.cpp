@@ -62,6 +62,16 @@ namespace yart
         root_panel->SetActivePanel(render_viewport_panel);
     }
 
+    void Interface::ApplyFullscreenLayout()
+    {
+        RootAppPanel* root_panel = RootAppPanel::Get();
+
+        RenderViewportPanel* render_viewport_panel = new RenderViewportPanel();
+
+        root_panel->AttachPanel(render_viewport_panel);
+        root_panel->SetActivePanel(render_viewport_panel);
+    }
+
     float Interface::RenderMainMenuBar()
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
@@ -78,11 +88,36 @@ namespace yart
             ImGui::EndMenu();
         }
 
+        RenderViewMenu();
+
         // Store and return the menu bar height, used for determining content area sizes
         float menu_bar_height = g->CurrentWindow->Size.y;
 
         ImGui::EndMainMenuBar();
         return menu_bar_height;
+    }
+
+    void Interface::RenderViewMenu()
+    {
+        InterfaceContext* ctx = Interface::GetInterfaceContext();
+        if (!ImGui::BeginMenu("View")) return;
+        
+        // Appearance sub menu
+        if (ImGui::BeginMenu("Appearance")) {
+            static constexpr size_t layout_count = 2;
+            static constexpr char* layout_names[layout_count] = { "Default",           "Full Screen"          };
+            static constexpr LayoutType layouts[layout_count] = { LayoutType::DEFAULT, LayoutType::FULLSCREEN };
+
+            for (size_t i = 0; i < layout_count; ++i) {
+                const bool selected = ctx->currentLayoutType == layouts[i];
+                if (ImGui::MenuItem(layout_names[i], nullptr, selected))
+                    ApplyLayout(layouts[i]);
+            }
+            
+            ImGui::EndMenu();
+        }
+
+        ImGui::EndMenu();
     }
 
     void Interface::RenderWindow(const char* name, callback_t callback)

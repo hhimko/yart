@@ -25,6 +25,9 @@ namespace yart
         public:
             std::vector<callback_t> registeredCallbacks; ///< Custom Dear ImGui render function callbacks registered by the application
             bool shouldRefreshViewports = true; ///< Whether all viewports should be refreshed next frame
+
+            // -- UI LAYOUT STATE -- //
+            LayoutType currentLayoutType = LayoutType::DEFAULT; ///< Currently used UI layout
         };
 
 
@@ -37,12 +40,18 @@ namespace yart
         /// YART application's UI layout rendering functions 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        /// @brief Load and attach the default YART application UI layout
+        /// @brief Load and attach the default application UI layout
         void ApplyDefaultLayout();
+
+        /// @brief Load and attach the fullscreen application UI layout
+        void ApplyFullscreenLayout();
 
         /// @brief Render the YART application window main menu bar
         /// @return Height of the menu bar, used for determining the content area size
         float RenderMainMenuBar();
+
+        /// @brief Issue "View" menu render commands for the main menu bar
+        void RenderViewMenu();
 
         /// @brief Render a YART application style detached window 
         /// @details The window is rendered on top of the viewport stack, detached from the static layout

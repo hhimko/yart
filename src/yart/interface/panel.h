@@ -188,6 +188,12 @@ namespace yart
             /// @return Panel of required type, or `nullptr` if panel is not a part of the container
             Interface::Panel* GetPanel(Interface::PanelType type) const;
 
+            /// @brief Handle incoming user inputs
+            /// @param should_refresh_viewports Output parameter, used for specifying wether any changes that 
+            ///     invalidate viewports have been made
+            /// @return Whether the incoming events have been handled by this panel
+            bool HandleInputs(bool* should_refresh_viewports);
+
             /// @brief Issue panel GUI render commands
             /// @param active_panel Output parameter for propagating the active panel back through the call stack.
             ///     Should be set to `this` whenever the panel should be activated in the layout

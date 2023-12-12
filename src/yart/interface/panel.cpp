@@ -8,6 +8,8 @@
 
 #include <imgui_internal.h>
 
+#include "yart/interface/interface_internal.h"
+
 
 namespace yart
 {
@@ -122,6 +124,20 @@ namespace yart
             }
 
             return nullptr;
+        }
+
+        bool RootAppPanel::HandleInputs(bool* should_refresh_viewports)
+        {
+            InterfaceContext* ctx = Interface::GetInterfaceContext();
+
+            // Fullscreen toggle
+            if (ImGui::IsKeyPressed(ImGuiKey_F, false)) {
+                LayoutType layout = ctx->currentLayoutType != LayoutType::FULLSCREEN ? LayoutType::FULLSCREEN : LayoutType::DEFAULT;
+                Interface::ApplyLayout(layout);
+                return true;
+            }
+
+            return false;
         }
 
         bool RootAppPanel::OnRender(Panel** active_panel)
