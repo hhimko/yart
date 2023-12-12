@@ -24,8 +24,9 @@ namespace yart
         class ContextPanel : public Panel {
         public:
             /// @brief ContextPanel class constructor
-            ContextPanel()
-                : Panel(ContextPanel::TYPE) { }
+            /// @param name Unique name of the panel, for saving and retrieving settings
+            ContextPanel(const char* name)
+                : Panel(name, ContextPanel::TYPE) { }
 
         private:
             /// @brief Issue panel GUI render commands

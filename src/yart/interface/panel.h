@@ -7,6 +7,7 @@
 
 
 #include <type_traits>
+#include <iostream>
 
 #include <imgui.h>
 
@@ -33,18 +34,44 @@ namespace yart
 
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
+        /// @brief Base class for saveable UI panel settings
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        class PanelSettings {
+        public:
+            /// @brief PanelSettings custom constructor
+            /// @param panel_type Type of the panel, for which the settings apply
+            /// @param panel_name Name of the panel, for which the settings apply
+            PanelSettings(PanelType panel_type, const char* panel_name)
+                : panelType(panel_type), panelName(panel_name) { }
+
+            /// @brief PanelSettings class virtual destructor
+            virtual ~PanelSettings() = default;
+
+        public:
+            const PanelType panelType; ///< Type of the panel, for which the settings apply
+            const char* const panelName; ///< Name of the panel, for which the settings apply
+
+        };
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
         /// @brief Abstract base class for application UI panels
         ////////////////////////////////////////////////////////////////////////////////////////////////////
         class Panel {
         public:
-            /// @brief Virtual destructor
-            virtual ~Panel() = default;
+            /// @brief Panel class virtual destructor
+            virtual ~Panel()
+            {
+                const PanelSettings* settings = GetPanelSettings();
+                if (settings != nullptr) {
+
+                }
+            }
 
         protected:
             /// @brief Panel class custom constructor
+            /// @param name Unique name of the panel, for saving and retrieving settings
             /// @param type Type of the panel from the Interface::PanelType enum
-            Panel(Interface::PanelType type)
-                : m_type(type) { }
+            Panel(const char* name, Interface::PanelType type);
 
             /// @brief Get the Dear ImGui window associated with this panel
             /// @return Dear ImGui window instance
@@ -58,6 +85,22 @@ namespace yart
             bool IsPanelHovered() const;
 
         private:
+            /// @brief Reconstruct a panel state from saved panel settings
+            /// @param settings Pointer to object containing settings
+            virtual void ApplyPanelSettings(const PanelSettings* const settings)
+            {
+                // Defaults to no setting loading
+                return; 
+            }
+
+            /// @brief Create a PanelSettings object for the current state of this panel
+            /// @return 
+            virtual const PanelSettings* GetPanelSettings() const
+            {
+                // Defaults to no setting creation
+                return nullptr;
+            }  
+
             /// @brief Handle incoming user inputs
             /// @param should_refresh_viewports Output parameter, used for specifying wether any changes that 
             ///     invalidate viewports have been made
@@ -82,6 +125,7 @@ namespace yart
             virtual bool OnRender(Panel** active_panel) = 0;
 
         private:
+            const char* m_name; ///< Unique name of the panel, used for saving and retrieving settings
             const Interface::PanelType m_type; ///< Type of this panel, used for panel retrieval in a layout
             Interface::Panel* m_parent = nullptr; ///< Parent panel in hierarchy
 
@@ -101,8 +145,9 @@ namespace yart
         class ContainerPanel : public Panel {
         protected:
             /// @brief ContainerPanel class custom constructor
-            ContainerPanel()
-                : Panel(ContainerPanel::TYPE) { }
+            /// @param name Unique name of the panel, for saving and retrieving settings
+            ContainerPanel(const char* name)
+                : Panel(name, ContainerPanel::TYPE) { }
 
             /// @brief Try retrieving a panel of given type from the container
             /// @param type Type of the required panel
@@ -180,6 +225,10 @@ namespace yart
             bool Render(const float menu_bar_height);
 
         private:
+            /// @brief RootAppPanel class private constructor
+            RootAppPanel()
+                : ContainerPanel("RootAppPanel") { }
+
             /// @brief RootAppPanel class private destructor
             ~RootAppPanel() { DetachLayout(); }
 
@@ -217,10 +266,11 @@ namespace yart
         class LayoutPanel : public ContainerPanel {
         public:
             /// @brief Construct a new layout panel
+            /// @param name Unique name of the panel, for saving and retrieving settings
             /// @param layout_create_info Layout creation specification object
             /// @param ul_child Either the upper or left child panel, depending on the chosen layout direction
             /// @param lr_child Either the lower or right child panel, depending on the chosen layout direction
-            LayoutPanel(yart::GUI::LayoutCreateInfo& layout_create_info, Panel* ul_child, Panel* lr_child);
+            LayoutPanel(const char* name, yart::GUI::LayoutCreateInfo& layout_create_info, Panel* ul_child, Panel* lr_child);
 
             /// @brief Custom destructor
             ~LayoutPanel();

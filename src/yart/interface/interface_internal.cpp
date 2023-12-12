@@ -37,25 +37,25 @@ namespace yart
         // Sidebar (inspector + context) menu layout
         LayoutPanel* sidebar_layout_panel = nullptr; 
         {
-            GUI::LayoutCreateInfo sidebar_layout_ci(GUI::LayoutDirection::VERTICAL);
-            sidebar_layout_ci.scaling_mode = GUI::LayoutScalingMode::FIRST_SECTION_FIXED;
-            sidebar_layout_ci.default_size_ratio = 0.4f;
+            GUI::LayoutCreateInfo layout_ci(GUI::LayoutDirection::VERTICAL);
+            layout_ci.scaling_mode = GUI::LayoutScalingMode::FIRST_SECTION_FIXED;
+            layout_ci.default_size_ratio = 0.4f;
 
-            InspectorPanel* inspector_panel = new InspectorPanel();
-            ContextPanel* context_panel = new ContextPanel();
-            sidebar_layout_panel = new LayoutPanel(sidebar_layout_ci, inspector_panel, context_panel);
+            InspectorPanel* inspector_panel = new InspectorPanel("Inspector");
+            ContextPanel* context_panel = new ContextPanel("Context");
+            sidebar_layout_panel = new LayoutPanel("Sidebar Layout", layout_ci, inspector_panel, context_panel);
         }
 
         // Master layout (sidebar + render viewport)
         RenderViewportPanel* render_viewport_panel = nullptr;
         LayoutPanel* master_layout_panel = nullptr;
         {
-            GUI::LayoutCreateInfo master_layout_ci(GUI::LayoutDirection::HORIZONTAL);
-            master_layout_ci.scaling_mode = GUI::LayoutScalingMode::PRESERVE_RATIO;
-            master_layout_ci.default_size_ratio = 0.7f;
+            GUI::LayoutCreateInfo layout_ci(GUI::LayoutDirection::HORIZONTAL);
+            layout_ci.scaling_mode = GUI::LayoutScalingMode::PRESERVE_RATIO;
+            layout_ci.default_size_ratio = 0.7f;
 
-            render_viewport_panel = new RenderViewportPanel();
-            master_layout_panel = new LayoutPanel(master_layout_ci, render_viewport_panel, sidebar_layout_panel);
+            render_viewport_panel = new RenderViewportPanel("Primary Viewport");
+            master_layout_panel = new LayoutPanel("Master Layout", layout_ci, render_viewport_panel, sidebar_layout_panel);
         }
         
         root_panel->AttachPanel(master_layout_panel);
@@ -66,7 +66,7 @@ namespace yart
     {
         RootAppPanel* root_panel = RootAppPanel::Get();
 
-        RenderViewportPanel* render_viewport_panel = new RenderViewportPanel();
+        RenderViewportPanel* render_viewport_panel = new RenderViewportPanel("Primary Viewport");
 
         root_panel->AttachPanel(render_viewport_panel);
         root_panel->SetActivePanel(render_viewport_panel);

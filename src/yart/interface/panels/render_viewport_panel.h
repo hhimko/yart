@@ -23,8 +23,9 @@ namespace yart
         class RenderViewportPanel : public Panel {
         public:
             /// @brief RenderViewportPanel class constructor
-            RenderViewportPanel()
-                : Panel(RenderViewportPanel::TYPE) { }
+            /// @param name Unique name of the panel, for saving and retrieving settings
+            RenderViewportPanel(const char* name)
+                : Panel(name, RenderViewportPanel::TYPE) { }
 
             /// @brief Get the viewport associated with this panel
             /// @return YART viewport instance 

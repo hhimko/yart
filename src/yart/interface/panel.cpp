@@ -15,6 +15,12 @@ namespace yart
 {
     namespace Interface
     {
+        Panel::Panel(const char* name, Interface::PanelType type)
+            : m_name(name), m_type(type)
+        {
+
+        }
+
         bool Panel::IsPanelHovered() const
         {
             ImGuiContext* g = ImGui::GetCurrentContext();
@@ -54,6 +60,7 @@ namespace yart
             if (panel == nullptr)
                 return DetachLayout();
 
+            delete m_child;
             m_child = panel;
             m_child->m_parent = this;
         }
@@ -151,8 +158,8 @@ namespace yart
             return false;
         }
 
-        LayoutPanel::LayoutPanel(yart::GUI::LayoutCreateInfo& layout_create_info, Panel* ul_child, Panel* lr_child)
-            : m_ul_child(ul_child), m_lr_child(lr_child)
+        LayoutPanel::LayoutPanel(const char* name, yart::GUI::LayoutCreateInfo& layout_create_info, Panel* ul_child, Panel* lr_child)
+            : ContainerPanel(name), m_ul_child(ul_child), m_lr_child(lr_child)
         {
             // Attach the child panels
             YART_ASSERT(m_ul_child != nullptr && m_lr_child != nullptr);

@@ -23,8 +23,9 @@ namespace yart
         class InspectorPanel : public Panel {
         public:
             /// @brief InspectorPanel class constructor
-            InspectorPanel()
-                : Panel(InspectorPanel::TYPE) { }
+            /// @param name Unique name of the panel, for saving and retrieving settings
+            InspectorPanel(const char* name)
+                : Panel(name, InspectorPanel::TYPE) { }
 
         private:
             /// @brief Issue panel UI render commands
