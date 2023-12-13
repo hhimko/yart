@@ -6,6 +6,7 @@
 #include "interface.h"
 
 
+#include "yart/interface/panels/panel_settings.h"
 #include "yart/interface/views/renderer_view.h"
 #include "yart/interface/interface_internal.h"
 #include "yart/interface/panel.h"
@@ -29,6 +30,9 @@ namespace yart
     {
         InterfaceContext* ctx = Interface::GetInterfaceContext();
         ctx->currentLayoutType = type;
+
+        // Detach the layout early, for current panel states to save
+        RootAppPanel::Get()->DetachLayout();
 
         switch (type) {
         case LayoutType::DEFAULT:
@@ -76,6 +80,15 @@ namespace yart
 
         ctx->shouldRefreshViewports = made_changes;
         return made_changes;
+    }
+
+    void Interface::Shutdown()
+    {
+        // Detach and destroy the current layout 
+        RootAppPanel::Get()->DetachLayout();
+
+        // Clear all saved panel state
+        PanelSettings::ClearPanelSettings();
     }
 
 } // namespace yart

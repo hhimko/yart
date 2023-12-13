@@ -43,5 +43,8 @@ namespace yart
         /// @returns Whether any changes were made by the user within this frame
         bool Render();
 
+        /// @brief Close the Interface module
+        void Shutdown();
+
     } // namespace Interface
 } // namespace yart

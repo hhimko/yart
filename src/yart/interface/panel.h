@@ -7,7 +7,6 @@
 
 
 #include <type_traits>
-#include <iostream>
 
 #include <imgui.h>
 
@@ -34,38 +33,26 @@ namespace yart
 
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
-        /// @brief Base class for saveable UI panel settings
-        ////////////////////////////////////////////////////////////////////////////////////////////////////
-        class PanelSettings {
-        public:
-            /// @brief PanelSettings custom constructor
-            /// @param panel_type Type of the panel, for which the settings apply
-            /// @param panel_name Name of the panel, for which the settings apply
-            PanelSettings(PanelType panel_type, const char* panel_name)
-                : panelType(panel_type), panelName(panel_name) { }
-
-            /// @brief PanelSettings class virtual destructor
-            virtual ~PanelSettings() = default;
-
-        public:
-            const PanelType panelType; ///< Type of the panel, for which the settings apply
-            const char* const panelName; ///< Name of the panel, for which the settings apply
-
-        };
-
-        ////////////////////////////////////////////////////////////////////////////////////////////////////
         /// @brief Abstract base class for application UI panels
         ////////////////////////////////////////////////////////////////////////////////////////////////////
         class Panel {
         public:
             /// @brief Panel class virtual destructor
-            virtual ~Panel()
-            {
-                const PanelSettings* settings = GetPanelSettings();
-                if (settings != nullptr) {
+            virtual ~Panel() = default;
 
-                }
-            }
+            /// @brief Get the type of this panel
+            /// @return Panel type associated with this panel 
+            PanelType GetPanelType() const 
+            { 
+                return m_type; 
+            } 
+
+            /// @brief Get the name of this panel
+            /// @return Panel name
+            const char* GetPanelName() const 
+            { 
+                return m_name; 
+            } 
 
         protected:
             /// @brief Panel class custom constructor
@@ -85,22 +72,6 @@ namespace yart
             bool IsPanelHovered() const;
 
         private:
-            /// @brief Reconstruct a panel state from saved panel settings
-            /// @param settings Pointer to object containing settings
-            virtual void ApplyPanelSettings(const PanelSettings* const settings)
-            {
-                // Defaults to no setting loading
-                return; 
-            }
-
-            /// @brief Create a PanelSettings object for the current state of this panel
-            /// @return 
-            virtual const PanelSettings* GetPanelSettings() const
-            {
-                // Defaults to no setting creation
-                return nullptr;
-            }  
-
             /// @brief Handle incoming user inputs
             /// @param should_refresh_viewports Output parameter, used for specifying wether any changes that 
             ///     invalidate viewports have been made
