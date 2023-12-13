@@ -53,8 +53,8 @@ namespace yart
         }
 
         // -- APPLICATION EXIT SEQUENCE -- // 
-        yart::Backend::Close();
         yart::Interface::Shutdown();
+        yart::Backend::Close();
         return EXIT_SUCCESS;
     }
 

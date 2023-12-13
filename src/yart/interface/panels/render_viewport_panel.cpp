@@ -31,6 +31,31 @@ namespace yart
 {
     namespace Interface
     {
+        RenderViewportPanel::RenderViewportPanel(const char *name)
+            : Panel(name, RenderViewportPanel::TYPE), SaveablePanel(this)
+        {
+            LoadAndApplyPanelSettings();
+        }
+
+        RenderViewportPanelSettings RenderViewportPanel::GetPanelSettings() const
+        {
+            const Panel* panel = dynamic_cast<const Panel*>(this);
+            RenderViewportPanelSettings settings(panel);
+
+            settings.viewportScale = m_viewport.GetImageScale();
+            settings.viewportImageSampler = m_viewport.GetImageSampler();
+
+            return settings;
+        }
+
+        void RenderViewportPanel::ApplyPanelSettings(const RenderViewportPanelSettings* const settings)
+        {
+            YART_ASSERT(settings != nullptr);
+
+            m_viewport.SetImageScale(settings->viewportScale);
+            m_viewport.SetImageSampler(settings->viewportImageSampler);
+        }
+
         bool RenderViewportPanel::HandleInputs(bool* should_refresh_viewports)
         {
             bool handled = false;

@@ -8,6 +8,7 @@
 
 #include <imgui.h>
 
+#include "yart/interface/panels/panel_settings.h"
 #include "yart/interface/panel.h"
 #include "yart/core/viewport.h"
 #include "yart/core/camera.h"
@@ -17,15 +18,33 @@ namespace yart
 {
     namespace Interface
     {
+        class RenderViewportPanelSettings : public PanelSettings {
+        public:
+            /// @brief RenderViewportPanelSettings class custom constructor
+            /// @param panel Panel instance, for which the settings apply
+            RenderViewportPanelSettings(const Panel* const panel)
+                : PanelSettings(panel) { }
+
+        public:
+            uint8_t viewportScale; ///< Scale of the render viewport
+            yart::Backend::ImageSampler viewportImageSampler; ///< Sampler type for the render viewport
+
+        };
+
         ////////////////////////////////////////////////////////////////////////////////////////////////////
         /// @brief UI panel for displaying and handling render viewports 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
-        class RenderViewportPanel : public Panel {
+        class RenderViewportPanel : public Panel, public SaveablePanel<RenderViewportPanelSettings> {
         public:
-            /// @brief RenderViewportPanel class constructor
+            /// @brief RenderViewportPanel class custom constructor
             /// @param name Unique name of the panel, for saving and retrieving settings
-            RenderViewportPanel(const char* name)
-                : Panel(name, RenderViewportPanel::TYPE) { }
+            RenderViewportPanel(const char* name);
+
+            /// @brief RenderViewportPanel class custom destructor
+            ~RenderViewportPanel() 
+            { 
+                SavePanelSettings(); 
+            }
 
             /// @brief Get the viewport associated with this panel
             /// @return YART viewport instance 
@@ -42,6 +61,14 @@ namespace yart
             }
 
         private:
+            /// @brief Get the saveable state of this panel 
+            /// @return New panel settings object for this instance
+            RenderViewportPanelSettings GetPanelSettings() const override;
+
+            /// @brief Apply a given settings object to this panel
+            /// @param settings Panel settings object from which to recreate panel state
+            void ApplyPanelSettings(const RenderViewportPanelSettings* const settings) override;
+
             /// @brief Handle incoming user inputs
             /// @param should_refresh_viewports Output parameter, used for specifying wether any changes that 
             ///     invalidate viewports have been made
