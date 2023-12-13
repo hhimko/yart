@@ -10,8 +10,6 @@
 
 #include <imgui.h>
 
-#include "yart/GUI/gui.h"
-
 
 /// @brief Opaque `ImGuiWindow` type to avoid importing `imgui_internal.h` in the header
 struct ImGuiWindow; 
@@ -227,42 +225,6 @@ namespace yart
         private:
             Panel* m_child = nullptr;
             Panel* m_activePanel = nullptr; ///< Currently active panel in the layout
-
-        };
-
-
-        ////////////////////////////////////////////////////////////////////////////////////////////////////
-        /// @brief Panel for building UI layouts with two segments (child panels)
-        ////////////////////////////////////////////////////////////////////////////////////////////////////
-        class LayoutPanel : public ContainerPanel {
-        public:
-            /// @brief Construct a new layout panel
-            /// @param name Unique name of the panel, for saving and retrieving settings
-            /// @param layout_create_info Layout creation specification object
-            /// @param ul_child Either the upper or left child panel, depending on the chosen layout direction
-            /// @param lr_child Either the lower or right child panel, depending on the chosen layout direction
-            LayoutPanel(const char* name, yart::GUI::LayoutCreateInfo& layout_create_info, Panel* ul_child, Panel* lr_child);
-
-            /// @brief Custom destructor
-            ~LayoutPanel();
-
-        private:
-            /// @brief Try retrieving a panel of given type from the container
-            /// @param type Type of the required panel
-            /// @return Panel of required type, or `nullptr` if panel is not a part of the container
-            Interface::Panel* GetPanel(Interface::PanelType type) const;
-
-            /// @brief Issue panel GUI render commands
-            /// @param active_panel Output parameter for propagating the active panel back through the call stack.
-            ///     Should be set to `this` whenever the panel should be activated in the layout
-            /// @return Whether any changes were made by the user during this frame
-            bool OnRender(Panel** active_panel);
-
-        private:
-            yart::GUI::GuiLayout* m_layout = nullptr;
-
-            Panel* m_ul_child = nullptr;
-            Panel* m_lr_child = nullptr;
 
         };
 

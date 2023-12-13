@@ -10,6 +10,7 @@
 #include "yart/interface/panels/render_viewport_panel.h"
 #include "yart/interface/panels/inspector_panel.h"
 #include "yart/interface/panels/context_panel.h"
+#include "yart/interface/panels/layout_panel.h"
 #include "yart/interface/panel.h"
 #include "yart/GUI/gui.h"
 

@@ -18,6 +18,9 @@ namespace yart
 {
     namespace Interface
     {
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        /// @brief Saveable settings class for render viewport panels
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
         class RenderViewportPanelSettings : public PanelSettings {
         public:
             /// @brief RenderViewportPanelSettings class custom constructor
@@ -34,7 +37,7 @@ namespace yart
         ////////////////////////////////////////////////////////////////////////////////////////////////////
         /// @brief UI panel for displaying and handling render viewports 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
-        class RenderViewportPanel : public Panel, public SaveablePanel<RenderViewportPanelSettings> {
+        class RenderViewportPanel : public Panel, SaveablePanel<RenderViewportPanelSettings> {
         public:
             /// @brief RenderViewportPanel class custom constructor
             /// @param name Unique name of the panel, for saving and retrieving settings

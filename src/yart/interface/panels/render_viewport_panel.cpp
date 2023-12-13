@@ -13,6 +13,7 @@
 #include "yart/core/renderer.h"
 #include "yart/application.h"
 #include "yart/GUI/input.h"
+#include "yart/GUI/gui.h"
 
 
 #ifndef DOXYGEN_EXCLUDE // Exclude from documentation

@@ -6,7 +6,7 @@
 #include "panel.h"
 
 
-#include <imgui_internal.h>
+#include <imgui.h>
 
 #include "yart/interface/interface_internal.h"
 
@@ -156,68 +156,6 @@ namespace yart
             }
 
             return false;
-        }
-
-        LayoutPanel::LayoutPanel(const char* name, yart::GUI::LayoutCreateInfo& layout_create_info, Panel* ul_child, Panel* lr_child)
-            : ContainerPanel(name), m_ul_child(ul_child), m_lr_child(lr_child)
-        {
-            // Attach the child panels
-            YART_ASSERT(m_ul_child != nullptr && m_lr_child != nullptr);
-            m_ul_child->m_parent = this;
-            m_lr_child->m_parent = this;
-
-            m_layout = GUI::CreateLayout(layout_create_info);
-            YART_ASSERT(m_layout != nullptr);
-        }
-
-        LayoutPanel::~LayoutPanel()
-        {
-            GUI::DestroyLayout(m_layout);
-
-            delete m_ul_child;
-            delete m_lr_child;
-        }
-
-        Interface::Panel* LayoutPanel::GetPanel(Interface::PanelType type) const
-        {
-            if (m_ul_child->m_type == type)
-                return m_ul_child;
-
-            if (m_lr_child->m_type == type)
-                return m_lr_child;
-
-            if (m_ul_child->m_type == Interface::PanelType::CONTAINER_PANEL) {
-                Interface::ContainerPanel* container = dynamic_cast<ContainerPanel*>(m_ul_child);
-
-                Interface::Panel* panel = container->GetPanel(type);
-                if (panel != nullptr)
-                    return panel;
-            }
-
-            if (m_lr_child->m_type == Interface::PanelType::CONTAINER_PANEL) {
-                Interface::ContainerPanel* container = dynamic_cast<ContainerPanel*>(m_lr_child);
-                return container->GetPanel(type);
-            }
-
-            return nullptr;
-        }
-
-        bool LayoutPanel::OnRender(Panel** active_panel)
-        {
-            ImGuiContext* g = ImGui::GetCurrentContext();
-            bool made_changes = false;
-
-            GUI::BeginLayout(m_layout);
-            {
-                made_changes |= m_ul_child->Render(g->CurrentWindow, active_panel);
-            }
-            GUI::LayoutSeparator(m_layout);
-            {
-                made_changes |= m_lr_child->Render(g->CurrentWindow, active_panel);
-            }
-            GUI::EndLayout(m_layout);
-
-            return made_changes;
         }
 
     } // namespace Interface

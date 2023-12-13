@@ -12,6 +12,7 @@
 #include "yart/interface/interface_internal.h"
 #include "yart/common/utils/yart_utils.h"
 #include "yart/interface/views/view.h"
+#include "yart/GUI/gui.h"
 
 
 namespace yart
