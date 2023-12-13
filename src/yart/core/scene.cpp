@@ -28,7 +28,29 @@ namespace yart
         delete cube_mesh;
     }
 
-    float Scene::IntersectRay(const Ray& ray, Object** hit_obj, float* u, float* v)
+    void Scene::ToggleSelection(SceneCollection* collection)
+    {
+        m_selectedObject = nullptr;
+        if (collection == nullptr) {
+            m_selectedCollection = nullptr;
+            return; 
+        }
+
+        m_selectedCollection = m_selectedCollection == collection ? nullptr : collection;
+    }
+
+    void Scene::ToggleSelection(Object* object)
+    {
+        m_selectedCollection = nullptr;
+        if (object == nullptr) {
+            m_selectedObject = nullptr;
+            return;
+        }
+
+        m_selectedObject = m_selectedObject == object ? nullptr : object;
+    }
+
+    float Scene::IntersectRay(const Ray &ray, Object **hit_obj, float *u, float *v)
     {
         float t;
         for (auto&& obj : m_objects) {

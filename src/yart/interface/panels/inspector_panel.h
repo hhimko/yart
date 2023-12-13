@@ -37,18 +37,24 @@ namespace yart
             bool OnRender(Panel** active_panel);
 
             /// @brief Issue panel UI render commands for the scene tab item
-            void RenderSceneTab();
+            /// @param active_panel Output parameter for propagating the active panel back through the call stack.
+            ///     Should be set to `this` whenever the panel should be activated in the layout
+            void RenderSceneTab(Panel** active_panel);
 
             /// @brief Issue object tree UI render commands for collection rows 
             /// @param row Row number
             /// @param collection Collection instance for which to render the row
-            void RenderObjectTreeRowCollection(size_t row, yart::SceneCollection* collection);
+            /// @param selected Whether the collection is currently selected
+            /// @return Whether the row was clicked
+            bool RenderObjectTreeRowCollection(size_t row, yart::SceneCollection* collection, bool selected);
 
             /// @brief Issue object tree UI render commands for object rows 
             /// @param row Row number
             /// @param indent Item indent level in the hierarchy
             /// @param object Object instance for which to render the row
-            void RenderObjectTreeRowObject(size_t row, uint8_t indent, yart::Object* object);
+            /// @param selected Whether the object is currently selected
+            /// @return Whether the row was clicked
+            bool RenderObjectTreeRowObject(size_t row, uint8_t indent, yart::Object* object, bool selected);
 
             /// @brief Issue object tree UI render commands for empty rows 
             /// @param row Row number

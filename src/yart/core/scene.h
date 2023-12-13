@@ -63,6 +63,21 @@ namespace yart
             return m_selectedCollection;
         }
 
+        /// @brief Get the currently selected object in the scene
+        /// @return Selected object, or `nullptr` if none
+        Object* GetSelectedObject() const 
+        {
+            return m_selectedObject;
+        }
+
+        /// @brief Toggle the selection state for a collection
+        /// @param collection Collection instance, or `nullptr` to deselect all
+        void ToggleSelection(SceneCollection* collection);
+
+        /// @brief Toggle the selection state for an object
+        /// @param collection Object instance, or `nullptr` to deselect all
+        void ToggleSelection(Object* object);
+
         /// @brief Test for ray-scene intersections
         /// @param ray Ray to be intersected with the scene 
         /// @param hit_obj Pointer to the nearest hit object, or `nullptr` on miss
@@ -92,6 +107,7 @@ namespace yart
         std::vector<SceneCollection> m_collections; ///< List of object collections in the scene
         std::vector<Object> m_objects; ///< List of all objects in the scene, sorted by their ID's in ascending order
         SceneCollection* m_selectedCollection = nullptr; ///< Currently selected scene collection, or `nullptr` if none  
+        Object* m_selectedObject = nullptr; ///< Currently selected object in the scene, or `nullptr` if none  
 
     };
 } // namespace yart

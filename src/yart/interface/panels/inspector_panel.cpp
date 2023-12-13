@@ -24,11 +24,17 @@ namespace yart
                 static constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NavFlattened;
                 ImGui::BeginChild("##Content", { 0.0f, 0.0f }, false, flags);
 
-                RenderSceneTab();
+                RenderSceneTab(active_panel);
 
                 ImGui::EndChild();
                 ImGui::EndTabItem();
             }
+
+            yart::Scene* scene = yart::Application::Get().GetScene();
+            Object* selected_object = scene->GetSelectedObject();
+            
+            if (selected_object == nullptr)
+                ImGui::BeginDisabled();
 
             if (ImGui::BeginTabItem("Object")) {
                 static constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NavFlattened | ImGuiWindowFlags_AlwaysUseWindowPadding;
@@ -41,10 +47,13 @@ namespace yart
             }
             GUI::EndTabBar();
 
+            if (selected_object == nullptr)
+                ImGui::EndDisabled();
+
             return false;
         }
 
-        void InspectorPanel::RenderSceneTab()
+        void InspectorPanel::RenderSceneTab(Panel** active_panel)
         {
             ImGuiContext* g = ImGui::GetCurrentContext();
             ImGuiWindow* window = g->CurrentWindow;
@@ -53,19 +62,22 @@ namespace yart
             size_t collections_count;
             yart::Scene* scene = yart::Application::Get().GetScene();
             yart::SceneCollection* collections = scene->GetSceneCollections(&collections_count);
-            yart::SceneCollection* selected_collection = scene->GetSelectedCollection();
+            const yart::SceneCollection* selected_collection = scene->GetSelectedCollection();
+            const yart::Object* selected_object = scene->GetSelectedObject();
 
             // Iterate through all scene collections 
             size_t row = 0;
             for (size_t ci = 0; ci < collections_count; ++ci) {
                 yart::SceneCollection* collection = collections + ci;
-                RenderObjectTreeRowCollection(row++, collection);
+                if (RenderObjectTreeRowCollection(row++, collection, collection == selected_collection))
+                    scene->ToggleSelection(collection);
 
                 // Iterate through all collection objects
                 uint8_t indent_level = 1;
                 for (size_t oi = 0; oi < collection->objects.size(); ++oi) {
                     yart::Object* object = collection->objects[oi];
-                    RenderObjectTreeRowObject(row++, indent_level, object);
+                    if (RenderObjectTreeRowObject(row++, indent_level, object, object == selected_object))
+                        scene->ToggleSelection(object);
                 }
             }
 
@@ -85,10 +97,11 @@ namespace yart
 
             if (g->HoveredWindow == window && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
                 ImGui::OpenPopup("Test popup");
+                *active_panel = this;
             }
         }
 
-        void InspectorPanel::RenderObjectTreeRowCollection(size_t row, yart::SceneCollection* collection)
+        bool InspectorPanel::RenderObjectTreeRowCollection(size_t row, yart::SceneCollection* collection, bool selected)
         {
             ImGuiContext* g = ImGui::GetCurrentContext();
             ImGuiWindow* window = g->CurrentWindow;
@@ -107,11 +120,13 @@ namespace yart
             bool hovered, held;
             const bool clicked = ImGui::ButtonBehavior(item_rect, id, &hovered, &held);
 
-            const ImU32 bg_col = GetObjectTreeRowColorH(row, hovered, false);
+            const ImU32 bg_col = GetObjectTreeRowColorH(row, hovered, selected);
             RenderObjectTreeRowH(item_rect, row, 0, bg_col, ICON_CI_ARCHIVE, collection->name);
+
+            return clicked;
         }
 
-        void InspectorPanel::RenderObjectTreeRowObject(size_t row, uint8_t indent, yart::Object* object)
+        bool InspectorPanel::RenderObjectTreeRowObject(size_t row, uint8_t indent, yart::Object* object, bool selected)
         {
             ImGuiContext* g = ImGui::GetCurrentContext();
             ImGuiWindow* window = g->CurrentWindow;
@@ -130,8 +145,10 @@ namespace yart
             bool hovered, held;
             const bool clicked = ImGui::ButtonBehavior(item_rect, id, &hovered, &held);
             
-            const ImU32 bg_col = GetObjectTreeRowColorH(row, hovered, false);
+            const ImU32 bg_col = GetObjectTreeRowColorH(row, hovered, selected);
             RenderObjectTreeRowH(item_rect, row, indent, bg_col, ICON_CI_CIRCLE_OUTLINE, object->GetName());
+
+            return clicked;
         }
 
         void InspectorPanel::RenderObjectTreeRowEmpty(size_t row)
@@ -165,11 +182,18 @@ namespace yart
 
         ImU32 InspectorPanel::GetObjectTreeRowColorH(size_t row, bool hovered, bool selected)
         {
+            if (selected) {
+                static constexpr ImU32 col_selected = GUI::ColorConvertFloat4ToU32({ YART_GUI_COLOR_DARK_PRIMARY, 1.0f });
+                static constexpr ImU32 col_selected_hover = GUI::ColorConvertFloat4ToU32({ YART_GUI_COLOR_PRIMARY, 1.0f });
+
+                return hovered ? col_selected_hover : col_selected;
+            }
+
             static constexpr ImU32 col_odd   = GUI::ColorConvertFloat4ToU32({ 0.022f, 0.022f, 0.022f, 1.0f });
             static constexpr ImU32 col_even  = GUI::ColorConvertFloat4ToU32({ YART_GUI_COLOR_DARKER_GRAY, 1.0f });
             static constexpr ImU32 col_hover = GUI::ColorConvertFloat4ToU32({ YART_GUI_COLOR_DARK_GRAY, 1.0f });
-            const bool is_even = row % 2 == 0;
 
+            const bool is_even = row % 2 == 0;
             return hovered ? col_hover : is_even ? col_even : col_odd;
         }
 

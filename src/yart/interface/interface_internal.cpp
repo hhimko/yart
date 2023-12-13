@@ -40,7 +40,7 @@ namespace yart
         {
             GUI::LayoutCreateInfo layout_ci(GUI::LayoutDirection::VERTICAL);
             layout_ci.scaling_mode = GUI::LayoutScalingMode::FIRST_SECTION_FIXED;
-            layout_ci.default_size_ratio = 0.4f;
+            layout_ci.default_size_ratio = 0.3f;
 
             InspectorPanel* inspector_panel = new InspectorPanel("Inspector");
             ContextPanel* context_panel = new ContextPanel("Context");
