@@ -40,7 +40,7 @@ namespace yart
                 static constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NavFlattened | ImGuiWindowFlags_AlwaysUseWindowPadding;
                 ImGui::BeginChild("##Content", { 0.0f, 0.0f }, false, flags);
 
-                ImGui::Text("Hello from the Object tab!");
+                RenderObjectTab(selected_object, active_panel);
 
                 ImGui::EndChild();
                 ImGui::EndTabItem();
@@ -99,6 +99,11 @@ namespace yart
                 ImGui::OpenPopup("Test popup");
                 *active_panel = this;
             }
+        }
+
+        void InspectorPanel::RenderObjectTab(Object* selected_object, Panel** active_panel)
+        {
+            GUI::Label("Object name", selected_object->GetName());
         }
 
         bool InspectorPanel::RenderObjectTreeRowCollection(size_t row, yart::SceneCollection* collection, bool selected)
