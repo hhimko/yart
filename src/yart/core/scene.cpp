@@ -6,13 +6,11 @@
 #include "scene.h"
 
 
+#include "yart/common/utils/yart_utils.h"
+
+
 namespace yart
 {
-    Scene::Scene()
-    {
-
-    }
-
     Scene::~Scene()
     {
 
@@ -59,14 +57,58 @@ namespace yart
     Object* Scene::AddMeshObject(const char* name, Mesh* mesh)
     {
         Object::MeshData mesh_data = { };
-
         Object object(name, mesh_data);
+        
         object.verts = { mesh->vertices, mesh->vertices + mesh->verticesCount };
         object.tris = { mesh->triangleIndices, mesh->triangleIndices + mesh->trianglesCount };
         object.UVs = { mesh->uvs, mesh->uvs + mesh->uvsCount };
         object.triangleUVs = { mesh->triangleVerticesUvs, mesh->triangleVerticesUvs + mesh->trianglesCount };
 
-        m_objects.push_back(object);
-        return &object;
+        Object* p_object = &m_objects.emplace_back(object);
+        ObjectAssignCollection(p_object);
+
+        return p_object;
     }
+
+    SceneCollection* Scene::ObjectAssignCollection(Object* object, SceneCollection* collection)
+    {
+        // Remove object from its collection, if it's already assigned
+        if (object->m_collection != nullptr)
+            CollectionRemoveObject(object);
+
+        if (collection == nullptr)
+            collection = m_selectedCollection;
+
+        if (collection == nullptr) {
+            if (m_collections.size() == 0)
+                m_collections.emplace_back("Collection 1");
+
+            collection = &m_collections[0];
+        }
+
+        YART_ASSERT(collection != nullptr);
+        collection->objects.push_back(object);
+        object->m_collection = collection;
+
+        return collection;
+    }
+
+    void Scene::CollectionRemoveObject(Object* object)
+    {
+        SceneCollection* collection = object->m_collection;
+        if (collection == nullptr) return;
+
+        size_t object_index = -1;
+        for (size_t i = 0; i < collection->objects.size(); ++i) {
+            if (collection->objects[i] == object) {
+                object_index = i; 
+                break;
+            }
+        }
+
+        YART_ASSERT(object_index >= 0);
+        collection->objects.erase(collection->objects.begin() + object_index);
+        object->m_collection = nullptr;
+    }
+
 } // namespace yart

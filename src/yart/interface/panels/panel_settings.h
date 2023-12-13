@@ -93,8 +93,6 @@ namespace yart
             void LoadAndApplyPanelSettings()
             {
                 const PanelSettings* const settings = PanelSettings::FindPanelSettings(m_panel);
-                printf("LoadAndApplyPanelSettings, %p\n", settings);
-
                 if (settings != nullptr)
                     ApplyPanelSettings(dynamic_cast<const SettingsT* const>(settings));
             }

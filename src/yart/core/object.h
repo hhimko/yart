@@ -15,14 +15,14 @@
 
 namespace yart
 {
-    // yart::Scene class forward declaration
-    class Scene;
+    class Scene; // yart::Scene class forward declaration
+    class SceneCollection; // yart::SceneCollection class forward declaration
 
 
     /// @brief Scene object types enum
     enum class ObjectType : uint8_t {
-        MESH = 0, /// @brief Mesh object type
-        LIGHT,    /// @brief Light object type
+        MESH = 0, ///< Mesh object type
+        LIGHT,    ///< Light object type
     };
 
 
@@ -34,10 +34,20 @@ namespace yart
         /// @brief Object's uniquely identifying ID type
         using id_t = size_t;
 
-        /// @brief Uniquely identifying ID of the object
-        const id_t id;
-        /// @brief Display name of the object
-        std::string name;
+
+        /// @brief Get the object ID
+        /// @return Uniquely identifying object ID
+        id_t GetId() const 
+        {
+            return m_id;
+        }
+
+        /// @brief Get the object display name
+        /// @return Object name
+        const char* GetName() const
+        {
+            return m_name.c_str();
+        }
 
     private:
         /// @brief Structure containing data required to render a mesh object
@@ -68,8 +78,11 @@ namespace yart
         static id_t GenerateID();
 
     private:
-        /// @brief Underlying type of the object
-        const ObjectType m_type;
+        const id_t m_id; ///< Uniquely identifying ID of the object
+
+        SceneCollection* m_collection = nullptr; ///< Scene object collection, to which the object belongs to
+        const ObjectType m_type; ///< Underlying type of the object
+        const std::string m_name; ///< Display name of the object
 
         union {
             /// @brief Objects mesh data

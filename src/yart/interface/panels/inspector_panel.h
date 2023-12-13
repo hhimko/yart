@@ -7,9 +7,11 @@
 
 
 #include <imgui.h>
+#include <imgui_internal.h>
 
 #include "yart/interface/panel.h"
 #include "yart/core/object.h"
+#include "yart/core/scene.h"
 #include "yart/GUI/gui.h"
 
 
@@ -37,23 +39,44 @@ namespace yart
             /// @brief Issue panel UI render commands for the scene tab item
             void RenderSceneTab();
 
-            /// @brief 
-            /// @param row 
-            /// @param object 
-            void RenderObjectTreeRow(size_t row, yart::Object* object);
+            /// @brief Issue object tree UI render commands for collection rows 
+            /// @param row Row number
+            /// @param collection Collection instance for which to render the row
+            void RenderObjectTreeRowCollection(size_t row, yart::SceneCollection* collection);
 
-            /// @brief 
-            /// @param row 
+            /// @brief Issue object tree UI render commands for object rows 
+            /// @param row Row number
+            /// @param indent Item indent level in the hierarchy
+            /// @param object Object instance for which to render the row
+            void RenderObjectTreeRowObject(size_t row, uint8_t indent, yart::Object* object);
+
+            /// @brief Issue object tree UI render commands for empty rows 
+            /// @param row Row number
             void RenderObjectTreeRowEmpty(size_t row);
+
+            /// @brief Calculate the object tree row bounding box 
+            /// @return Next object tree item bounding rect
+            ImRect GetObjectTreeRowRect();
+
+            /// @brief Helper function for calculating object tree rows background color
+            /// @param row Row number
+            /// @param hovered whether the item is currently hovered
+            /// @param selected whether the item is currently selected
+            /// @return Row background color
+            ImU32 GetObjectTreeRowColorH(size_t row, bool hovered, bool selected);
+
+            /// @brief Helper function for rendering common parts of object tree items
+            /// @param rect Item bounding box
+            /// @param row Row number
+            /// @param indent Item indent level in the hierarchy
+            /// @param color Background color of the item 
+            /// @param icon Icon displayed on the tree item 
+            /// @param text Label text displayed on the tree item 
+            void RenderObjectTreeRowH(const ImRect& rect, size_t row, uint8_t indent, ImU32 color, const char* icon, const char* text);
 
         public:
             /// @brief Type of this panel, used for panel retrieval in a layout
             static constexpr Interface::PanelType TYPE = PanelType::INSPECTOR_PANEL;
-
-        private:
-            static constexpr ImU32 OBJECT_TREE_ROW_BG_COL_ODD   = GUI::ColorConvertFloat4ToU32({ 0.022f, 0.022f, 0.022f, 1.0f });
-            static constexpr ImU32 OBJECT_TREE_ROW_BG_COL_EVEN  = GUI::ColorConvertFloat4ToU32({ YART_GUI_COLOR_DARKER_GRAY, 1.0f });
-            static constexpr ImU32 OBJECT_TREE_ROW_BG_COL_HOVER = GUI::ColorConvertFloat4ToU32({ YART_GUI_COLOR_DARK_GRAY, 1.0f });
 
         };
 

@@ -46,6 +46,13 @@ namespace yart
             return m_renderer.get();
         }
 
+        /// @brief Get the currently loaded scene
+        /// @return Scene instance
+        yart::Scene* GetScene() const
+        {
+            return m_scene.get();
+        }
+
         /// @brief Run the application mainloop if not already running
         /// @return Application exit status code 
         int Run();

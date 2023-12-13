@@ -6,16 +6,19 @@
 #include "object.h"
 
 
+#include "yart/core/scene.h"
+
+
 namespace yart
 {
     Object::Object(const char* name, Object::MeshData& data)
-        : m_type(ObjectType::MESH), id(GenerateID()), name(name)
+        : m_type(ObjectType::MESH), m_id(GenerateID()), m_name(name)
     {
         m_meshData = data;
     }
 
     Object::Object(const char* name, Object::LightData& data)
-        : m_type(ObjectType::LIGHT), id(GenerateID()), name(name)
+        : m_type(ObjectType::LIGHT), m_id(GenerateID()), m_name(name)
     {
         m_lightData = data;
     }
