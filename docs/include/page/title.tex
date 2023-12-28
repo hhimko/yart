@@ -1,0 +1,65 @@
+%--------------------------------------------------------------------------------------------
+%   YART thesis title page definition.
+%--------------------------------------------------------------------------------------------
+
+% === CUSTOM \maketitle DEFINITION === %
+\renewcommand{\maketitle} {
+    % +===+ TITLE PAGE CUSTOM GEOMETRY +===+ %
+    \newgeometry{margin=2.5cm,top=3.5cm,bottom=3.0cm}
+
+    \begin{titlepage}
+        \begin{center}
+            % +===+ UNIVERSITY & FACULTY NAME +===+ %}
+            \textsc{ 
+                \Large UNIVERSITY OF SILESIA IN KATOWICE \\
+                \large FACULTY OF SCIENCE AND TECHNOLOGY
+            }
+    
+            \vspace{3.0cm}
+
+            \textsc{\LARGE{Bachelor's Thesis}}
+            
+            \vspace*{0.25cm}
+            
+            % +===+ THESIS TITLE +===+ %
+            \rule{\linewidth}{0.2mm}\\[0.2cm]
+            \LARGE{\bfseries
+                Implementation of a Ray Tracing Engine \\ 
+                Using a CPU Based Renderer \\[0.2cm]
+            }
+            \rule{\linewidth}{0.2mm}
+
+            \vspace*{1.0cm}
+
+            % +===+ AUTHOR & SUPERVISOR +===+ %}
+            \begin{minipage}[t]{0.37\textwidth}\raggedright\large
+                \textit{Author} \\
+                Dawid \textsc{Cyganek} \\
+                \normalsize{(338241)}  
+            \end{minipage}
+            \begin{minipage}[t]{0.37\textwidth}\raggedleft\large
+                \textit{Supervisor} \\
+                Dr. Krzysztof \textsc{Górny}
+            \end{minipage}
+            
+            \vspace*{1.0 cm} 
+
+            \vspace*{\fill} % float to bottom of the page
+            
+            \normalsize{
+                January 1, 2024 \\
+                Katowice
+            }
+
+        \end{center}
+        
+        \clearpage
+    
+    \end{titlepage}
+
+    \restoregeometry
+}
+
+
+% +===+ RENDER THE TITLE PAGE +===+ %}
+\maketitle
