@@ -12,8 +12,23 @@
 \usepackage{geometry} % For defining custom document geometry
 
 
+% +===+ CUSTOM COMMANDS DEFINITIONS +===+ %
+\newcommand\blankpage{ % Inserts a blank page
+    \null\thispagestyle{empty}
+    \addtocounter{page}{-1}
+    \newpage
+}
+
+
 % +===+ DOCUMENT STRUCTURE +===+ % 
 \begin{document}
-    \input{include/page/title}
+    \input{include/PageTitle}
+
+    \blankpage
+    \tableofcontents
+
+    \include{include/PageAbstract}
+
+    \include{include/SectionIntroduction}
 
 \end{document}
