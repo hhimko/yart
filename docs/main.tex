@@ -10,12 +10,17 @@
 \usepackage[utf8]{inputenc}
 
 \usepackage[top=2cm, bottom=3cm]{geometry} % For defining custom document geometry
+\usepackage[backend=biber,style=numeric-comp]{biblatex} % For citations using BibTeX
+\usepackage{hyperref} % For hyperlink generation
 \usepackage{setspace} % For paragraph indentation
 \usepackage{fancyhdr} % For a custom header/footer formatting
 \usepackage{titlesec} % For defining custom section formats
 \usepackage{tocloft} % For table of contents style formatting
 \usepackage[indent=24pt]{parskip} % For paragraph indentation
 
+
+% +===+ SETUP BibTeX FOR CITING +===+ %
+\addbibresource{references.bib}
 
 % +===+ CUSTOM STYLE FORMATTING +===+ %
 % Custom chapter format
@@ -56,4 +61,7 @@
     % \begin{onehalfspace}
         \include{include/SectionIntroduction}
     % \end{onehalfspace}
+
+    \printbibliography[title=References]
+    \addcontentsline{toc}{chapter}{REFERENCES}
 \end{document}
