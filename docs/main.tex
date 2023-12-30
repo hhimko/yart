@@ -4,15 +4,40 @@
 %   Contains global configuration, imports and document structure definition. 
 %--------------------------------------------------------------------------------------------
 
-\documentclass[twoside, 12pt]{article}
+\documentclass[twoside, 12pt]{report}
 
 % +===+ GLOBAL PACKAGE IMPORTS +===+ % 
 \usepackage[utf8]{inputenc}
 
-\usepackage{geometry} % For defining custom document geometry
+\usepackage[top=2cm, bottom=3cm]{geometry} % For defining custom document geometry
+\usepackage{setspace} % For paragraph indentation
+\usepackage{fancyhdr} % For a custom header/footer formatting
+\usepackage{titlesec} % For defining custom section formats
+\usepackage{tocloft} % For table of contents style formatting
+\usepackage[indent=24pt]{parskip} % For paragraph indentation
 
 
-% +===+ CUSTOM COMMANDS DEFINITIONS +===+ %
+% +===+ CUSTOM STYLE FORMATTING +===+ %
+% Custom chapter format
+\titleformat{\chapter}[display]
+    {\normalfont\bfseries\Large\centering}
+    {\sc Chapter \thechapter}{-10pt}
+    {\MakeUppercase}
+
+% Custom page numbering format
+\pagestyle{fancyplain}
+\fancyhf{} % Clear the default fancy style 
+\renewcommand{\headrulewidth}{0pt} % Remove the header rule
+\fancyfoot[RE,LO]{\thepage}
+
+% Custom TOC format
+\renewcommand{\cftchapleader}{\cftdotfill{\cftdotsep}} % Dotted lines for chapters in TOC
+\renewcommand\cfttoctitlefont{\hfill\Large\bfseries\MakeUppercase}
+\renewcommand\cftaftertoctitle{\hfill\mbox{}}
+% \renewcommand{\contentsname}{Table of Contents}
+
+
+% % +===+ CUSTOM COMMANDS DEFINITIONS +===+ %
 \newcommand\blankpage{ % Inserts a blank page
     \null\thispagestyle{empty}
     \addtocounter{page}{-1}
@@ -23,12 +48,12 @@
 % +===+ DOCUMENT STRUCTURE +===+ % 
 \begin{document}
     \input{include/PageTitle}
+    \input{include/PageAbstract}
 
-    \blankpage
+    % \blankpage
     \tableofcontents
 
-    \include{include/PageAbstract}
-
-    \include{include/SectionIntroduction}
-
+    % \begin{onehalfspace}
+        \include{include/SectionIntroduction}
+    % \end{onehalfspace}
 \end{document}
