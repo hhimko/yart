@@ -17,7 +17,7 @@ Its origin however, dates back to as far as 16th century when it was first descr
 At its core, ray tracing is a graphics rendering technique, used to simulate the way light interacts with objects within a virtual environment. 
 The process involves scattering rays of light from a virtual camera, tracing their paths as they travel and interact with a scene. 
 Individual light rays are traced "backward", originating from the camera's viewpoint, as opposed to how they would be cast from a light source in a more realistic setting.
-Doing so however, is many orders of magnitude more optimal, since only a small percent of rays emitted from a given light source actually make it directly into the camera's lens.
+Doing so however, is many orders of magnitude more optimal, since only a small percent of rays emitted from a given light source actually make it directly into the camera's lens and contribute to the final image \supercite{Glassner1989}.
 Each ray is projected through a pixel on the output image plane, determining it's color by testing for intersections and sampling materials of hit objects, as seen on \cref{fig:Introduction/RayTracing/rt1}. 
 
 \vfill
@@ -38,9 +38,25 @@ Ray tracing generally has a much greater computational cost, as compared to scan
 Until the late 2010s, creating an interactive ray tracing application for consumer hardware was generally considered as impossible.
 Today, the ongoing development of commercial hardware and algorithmic advancements have made real-time ray tracing become feasible, making it a viable option for film production, video games, and commercial graphics applications.
 
-\section{Overview of Existing Implementations}
+\section{Related Work}
 
-\dots
+Numerous high-level ray tracing engines and APIs have been proposed for professional and commercial use since the dawn of physically-based computer graphics.
+Each engine, having distinct capabilities, purpose, and inherent limitations, has contributed greatly to the advancement of computer graphics. 
+Following, is a list of noteworthy entries in the vast catalogue of ray tracing systems.
+
+\subsection{NVIDIA OptiX}
+
+First introduced in 2010, OptiX \supercite{Parker2010} is a programmable ray tracing framework designed for NVIDIA GPUs.
+It has been developed with focus on both high flexibility and performance, targeting highly parallel hardware architectures.
+The core idea behind the OptiX engine, is dividing the rendering pipeline into a small set of programmable operations or \textit{shaders}, akin to how rasterization pipelines are deployed within OpenGL and Direct3D applications.
+These user-specified shaders can be defined to form a variety of ray tracing-based systems, including offline rendering, collision detection systems, and scientific simulations such as sound propagation.
+For representing the scene, OptiX employs a lightweight data structure, called the \textit{context}, used for binding shaders to the object-specific data they require.
+The context bundles together shaders, geometry data, and acceleration structures in the form of connected graph nodes, resulting in high flexibility and reusability.
+While OptiX is a powerful tool for scientific research and professional ray tracing development, it may not be as user-friendly for artists and designers looking for out-of-the-box solutions.
+
+\subsection{Cycles}
+
+Developed by the Blender Foundation, Cycles is an open-source ray tracing renderer 
 
 \section{Outline}
 
