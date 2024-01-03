@@ -42,21 +42,40 @@ Today, the ongoing development of commercial hardware and algorithmic advancemen
 
 Numerous high-level ray tracing engines and APIs have been proposed for professional and commercial use since the dawn of physically-based computer graphics.
 Each engine, having distinct capabilities, purpose, and inherent limitations, has contributed greatly to the advancement of computer graphics. 
-Following, is a list of noteworthy entries in the vast catalogue of ray tracing systems.
+Following, is a list of noteworthy entries in the vast catalogue of existing ray tracing systems.
 
 \subsection{NVIDIA OptiX}
 
-First introduced in 2010, OptiX \supercite{Parker2010} is a programmable ray tracing framework designed for NVIDIA GPUs.
-It has been developed with focus on both high flexibility and performance, targeting highly parallel hardware architectures.
+First introduced in 2010, OptiX \supercite{Parker2010} is a programmable ray tracing framework developed for NVIDIA GPUs.
+It has been designed with focus on both high flexibility and performance, targeting highly parallel hardware architectures.
 The core idea behind the OptiX engine, is dividing the rendering pipeline into a small set of programmable operations or \textit{shaders}, akin to how rasterization pipelines are deployed within OpenGL and Direct3D applications.
 These user-specified shaders can be defined to form a variety of ray tracing-based systems, including offline rendering, collision detection systems, and scientific simulations such as sound propagation.
 For representing the scene, OptiX employs a lightweight data structure, called the \textit{context}, used for binding shaders to the object-specific data they require.
 The context bundles together shaders, geometry data, and acceleration structures in the form of connected graph nodes, resulting in high flexibility and reusability.
 While OptiX is a powerful tool for scientific research and professional ray tracing development, it may not be as user-friendly for artists and designers looking for out-of-the-box solutions.
 
+\subsection{Intel Embree}
+
+Embree \supercite{Wald2014}, is an open-source ray tracing framework developed at Intel, targeting x86 CPUs. 
+Since its first release in 2011, it has become a cornerstone for a variety of leading 3D rendering applications. 
+In contrast to NVIDIA's OptiX, which was designed to simplify development of new renderers, Embree aims to accelerate ray tracing in existing systems. 
+This key design goal leads to highly optimized low-level kernels for accelerating ray generation and traversal that leverage modern CPU architectures.
+All ray tracing operations supported by the Embree kernels can be accessed through an easy to use and compact API.
+It exposes a number of functions for defining custom geometry and issuing intersection queries. 
+The API aims to hide implementation detail such as data structure memory layout, while ensuring high performance intersection testing. 
+Embree's lightweight and flexible API makes it in invaluable tool for developers seeking efficient ray tracing capabilities in their applications, without needing to worry about implementing lower-level optimizations and acceleration structures.
+
 \subsection{Cycles}
 
-Developed by the Blender Foundation, Cycles is an open-source ray tracing renderer 
+Developed by the Blender Foundation, Cycles \supercite{Cycles} is an open-source ray tracing renderer, which can be integrated into commercial software. 
+Since 2011, Cycles has been a part of the Blender 3D creation suite, and Blender's first physically-based rendering method.
+It employs a \textit{path tracing} algorithm, which is a probability-based type of ray tracing.
+Due to the unbiased nature and accuracy of the selected method, Cycles is able to naturally simulate highly realistic lighting scenarios, such as global illumination, soft shadows, and caustics.
+Path tracing, is however prone to generating noise and requires a high number of samples to be made per pixel, until it can produce a relatively noise-free output.
+In order to minimize the number of samples, while still ensuring accurate results, various denoising algorithms have been integrated into the engine, that aid in reducing noise artifacts in rendered images.
+One of Cycles' standout features is its node-based material system, which provides users with a flexible and intuitive means of crafting advanced, physically accurate materials. 
+Additionally, it supports GPU acceleration, which greatly improves the engine's performance using the power of modern hardware.
+The collaborative and open-source nature of Blender makes Cycles is a compelling choice for digital artists and designers seeking for a robust and accessible ray tracing solution.
 
 \section{Outline}
 
