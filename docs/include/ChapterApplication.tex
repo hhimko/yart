@@ -7,33 +7,62 @@ While not prioritizing the engines performance, treading is used in various part
 
 \section{Application Architecture}
 
-threading, ray tracing done on CPU with pixel output (can be reused and used as an offline renderer) streamed to the GPU for presenting to the OS window, GPU for GUI rendering 
+threading, ray tracing done on CPU with pixel output (can be reused and used as an offline renderer) streamed to the GPU for presenting to the OS window, GPU for GUI rendering, short description of the GPU pipeline 
 
 \dots
 
 \section{Functionality Overview}
 
+scene representation
+
 \dots
 
 \section{External Dependencies}
 
+(excluding vulkan SDK) included in the project as git submodules, all reside in the lib directory, built with the yart project, licenses.
+Following, is a list of all external dependencies used throughout the YART application, including a brief description and their purpose within the project.
+
 \dots
+
+\subsection{GLFW}
+
+GLFW \supercite{GLFW} is a lightweight C library for creating and managing windows.
+It provides a multi-platform abstraction layer, primarily designed to work seamlessly with applications made using OpenGL \supercite{Neider1993}.
+The GLFW API includes a straightforward mechanism for handing inputs such as keyboard or mouse, as well as various time management functions, making it easier to control the frame rate of an application.
+YART makes use of GLFW to open a platform-specific window and handle all incoming user inputs. 
+The window is used as a rendering surface, to which the GPU can draw subsequent application frames. 
+GLFW exposes user input in the form of events, which can be polled and handled using specific callbacks. 
+The event system is utilized within YART to handle key presses and mouse events for various interactions, such as viewing camera movement and rotation.
 
 \subsection{Vulkan}
 
-\dots
+Developed by the Khronos Group, Vulkan \supercite{Sellers2016} is a low-level graphics and compute programming interface.
+Designed as a successor to the prominent OpenGL API, it provides an efficient and flexible framework for graphics programming on modern GPUs.
+Unlike some higher-level graphics libraries, Vulkan does not hide, or abstract away the underlying hardware details or perform certain optimizations automatically. 
+Instead, developers are equipped with high degree of control and responsibility.
+Memory, synchronization, and devices have to be managed explicitly, leading to increased verbosity in the code.
+Proper use of Vulkan capabilities can lead to better utilization of system resources and improved performance in graphics-intensive applications.
+
+Vulkan, along with GLFW, serves as the window rendering backend for the YART application.
+On purpose, it does not however play any role in performing actual ray tracing computations, which are made entirely on the CPU. 
+Instead, the backend depends on the pixel output of the engine's renderer, which gets streamed into a texture and displayed every frame within a viewport.
+For this purpose, a specialized graphics pipeline is deployed using Vulkan, that in its core, issues render commands to the GPU and presents frames to the GLFW window. The pipeline was designed to adapt to a high variety of hardware devices, taking advantage of their characteristics.
+For example, depending on the capabilities of a physical device installed on the client's machine, multiple frames can be prepared in parallel, which can greatly improve the application's performance.
+Querying these capabilities, allows the backend to optimize its render pipeline, and to target the most applicable device, in scenarios where multiple GPUs are available.
 
 \subsection{Dear ImGui}
 
-\dots
+Dear ImGui \supercite{DearImGui}, is a versatile, open-source graphical user interface (GUI) library for the C++ language. 
+It is fast, portable, and comes with a variety of UI components, that can easily be customized and styled.
+ImGui is primarily designed as an interactive debugging tool for use in real-time rendering applications, video games, or other environments where GUI creation features are non-standard.
+YART however, extends on Dear ImGui's standard feature set, to define custom widgets and render the final user interface layout. 
+At its core, Dear ImGui is what makes the application interactive, enabling the end user to tinker with the engine's functionality.
 
 \subsection{GLM}
 
-\dots
-
-\subsection{stb}
-
-\dots
+OpenGL Mathematics (GLM \supercite{GLM}), is a C++ mathematics library designed specifically for graphics and game development programming.
+It is lightweight, self contained, and header-only, meaning it does not use any external dependencies, and does not need to be separately compiled or linked.
+YART benefits from vector and matrix operations available in GLM, which are essential for various rendering tasks, such as defining projections and calculating transformations.
 
 \section{Project Structure}
 
