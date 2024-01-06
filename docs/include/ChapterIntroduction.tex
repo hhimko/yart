@@ -13,12 +13,13 @@ While the highly parallel nature of a GPU is often preferred for commercial, rea
 \section{Ray Tracing}
 
 The concept of ray tracing has gained increased interest in most recent years, having seen a convergence of various advancements in hardware, algorithms, and an ever-growing industry demand for realism.
-Its origin however, dates back to as far as 16th century when it was first described by a german artist and theorist Albrecht Dürer \supercite{Hofmann1990}.
+Its origin however, dates back to as far as 16th century, when it was first described by a german artist and theorist Albrecht Dürer \supercite{Hofmann1990}.
 At its core, ray tracing is a graphics rendering technique, used to simulate the way light interacts with objects within a virtual environment. 
 The process involves scattering rays of light from a virtual camera, tracing their paths as they travel and interact with a scene. 
 Individual light rays are traced "backward", originating from the camera's viewpoint, as opposed to how they would be cast from a light source in a more realistic setting.
 Doing so however, is many orders of magnitude more optimal, since only a small percent of rays emitted from a given light source actually make it directly into the camera's lens and contribute to the final image \supercite{Glassner1989}.
-Each ray is projected through a pixel on the output image plane, determining it's color by testing for intersections and sampling materials of hit objects, as seen on \cref{fig:Introduction/RayTracing/rt1}. 
+Each ray is then projected through a pixel on the output image plane, determining it's color by testing for intersections and sampling materials of hit objects.
+This basic idea behind ray tracing is illustrated in \cref{fig:Introduction/RayTracing/rt1}. 
 
 \vfill
 \begin{figure}[!ht]
@@ -29,10 +30,11 @@ Each ray is projected through a pixel on the output image plane, determining it'
 \end{figure}
 \vfill
 
-When colliding with an object, the ray gets reflected of the surface, refracted, or absorbed depending on the object's material. 
+When colliding with an object, the ray gets reflected of the surface, refracted, or absorbed depending on the hit object's material. 
 Reflected rays are traced recursively to calculate the final color of a particular pixel, until being absorbed or reaching a certain limit of bounces.  
 
-By following the physically-based principles of light, ray tracing enables straightforward simulation of highly realistic optical effects, such as refraction, depth of field and soft shadows, in contrast to the traditional rendering method of rasterization, where producing similar results could be a difficult, or even an impossible task. 
+By following the physically-based principles of light, ray tracing enables straightforward simulation of highly realistic optical effects, such as refraction, depth of field and soft shadows.
+This is in contrast to the traditional rendering method of rasterization, where producing similar results could be a difficult, or even an impossible task. 
 The unmatched visual realism of ray tracing however does not come without cost. 
 Ray tracing generally has a much greater computational cost, as compared to scanline rendering methods, which makes it a less performant algorithm of the two.
 Until the late 2010s, creating an interactive ray tracing application for consumer hardware was generally considered as impossible.
@@ -41,7 +43,7 @@ Today, the ongoing development of commercial hardware and algorithmic advancemen
 \section{Related Work}
 
 Numerous high-level ray tracing engines and APIs have been proposed for professional and commercial use since the dawn of physically-based computer graphics.
-Each engine, having distinct capabilities, purpose, and inherent limitations, has contributed greatly to the advancement of computer graphics. 
+Each engine, having its distinct capabilities, purpose, and inherent limitations, has contributed greatly to the advancement of computer graphics. 
 Following, is a list of noteworthy entries in the vast catalogue of existing ray tracing systems.
 
 \subsection{NVIDIA OptiX}
@@ -74,7 +76,7 @@ Due to the unbiased nature and accuracy of the selected method, Cycles is able t
 Path tracing, is however prone to generating noise and requires a high number of samples to be made per pixel, until it can produce a relatively noise-free output.
 In order to minimize the number of samples, while still ensuring accurate results, various denoising algorithms have been integrated into the engine, that aid in reducing noise artifacts in rendered images.
 One of Cycles' standout features is its node-based material system, which provides users with a flexible and intuitive means of crafting advanced, physically accurate materials. 
-Additionally, it supports GPU acceleration, which greatly improves the engine's performance using the power of modern hardware.
+Additionally, it supports GPU acceleration, which greatly improves the engine's performance, using the power of modern hardware.
 The collaborative and open-source nature of Blender makes Cycles is a compelling choice for digital artists and designers seeking for a robust and accessible ray tracing solution.
 
 \section{Outline}
