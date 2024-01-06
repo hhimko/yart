@@ -1,28 +1,92 @@
 \chapter{YART: A Ray Tracing Application} \label{ch:Application}
 
-Proposed by this dissertation, \textit{Yet Another Ray Tracer} (YART) is a cross-platform, interactive 3D rendering application with an integrated ray tracing engine, made entirely on the CPU. 
-It was build using the C++ programming language with a goal of exploring the inner workings of a ray tracing system, and testing the capabilities of modern CPUs.
-As opposed to many state-of-the-art renderers which focus greatly on high performance and efficiency, YART is instead designed as a highly customizable and easily scalable environment. 
+Proposed by this dissertation, \textit{Yet Another Ray Tracer} (YART) is a cross-platform 3D rendering application with an integrated ray tracing engine. 
+It was build using the C++ programming language with a goal of exploring the inner workings of a ray tracing system and testing the capabilities of modern hardware.
+The rendering engine has been entirely prepared on the CPU, using a traditional, object oriented approach.
+As opposed to many state-of-the-art renderers which focus greatly on high performance and efficiency, YART is instead designed to be an easily customizable and scalable environment. 
 While not prioritizing the engines performance, treading is used in various parts of the system to utilize the power of CPU parallelization.
+In parts not directly related to ray tracing, the application's backend makes use of GPU capabilities for creating a window, and presenting subsequent frames onto it.
+Additionally, YART aims to be highly interactive and verbose.
+The application's graphical user interface (GUI) is designed to enable easy access to various parts of the engine, otherwise not exposed in similar, commercial software. 
 
 \section{Application Architecture}
 
-threading, ray tracing done on CPU with pixel output (can be reused and used as an offline renderer) streamed to the GPU for presenting to the OS window, GPU for GUI rendering, short description of the GPU pipeline 
+YART's architecture can be divided into two key components, each with its own distinct purpose.
+The first of which, further referred to as the \textit{backend}, is dedicated to performing lower-level operations, such as opening and managing the application window, polling incoming inputs, as well as creating and displaying application frames. 
+It aims to abstract away platform-dependant functionalities, with the use of a lightweight API, designed to be implemented using various windowing systems and libraries. 
+In general, the backend encapsulates every system-agnostic feature within YART, which could be related to GPU programming.
 
-\dots
+Everything beyond the backend, can be collectively referred to as the \textit{application core}. 
+As the name implies, it consists of key application modules, which primarily include the ray tracing engine and the user interface.
+The renderer does not directly depend on its system's backend, and vice versa. 
+It has been designed to write its pixel output into an ordinary C-style array, not caring what happens to it afterwards.
+Using this methodology, enables the renderer to be easily reused in various parts of the application, such as for rendering material preview viewports within the UI.
+
+The backend and the application core are separated with the aim of decoupling system- and hardware-agnostic functionality from the rendering engine.
+What binds them together, is a central \verb|yart::Application| class, designated to initializing both components and communicating between them using specialized callbacks. 
+Furthermore, it introduces the \textit{mainloop}, which defines the fundamental control flow of every application frame.
+The YART application architecture, with its components and relations made between them, is illustrated in \cref{fig:Application/ApplicationArchitecture/arch}. 
+
+\vfill
+\begin{figure}[!ht]
+    \centering
+
+    \newcommand{\arrowshift}{95pt}
+
+    \begin{tikzpicture}[auto]
+        % Application core inner modules
+        \node[module] (engine) {Ray Tracing Engine};
+        \node[module, right=5mm of engine] (gui) {User Interface (UI)};
+
+        \draw[->, thick] (gui) to (engine);
+
+        % Application core label
+        \node[draw=none, fit=(engine) (gui)] (core-modules) {};
+        \node[font=\large, above=-1mm of core-modules, inner sep=4pt] (core-label) {Application Core};
+
+        % Application core component
+        \begin{pgfonlayer}{background}
+            \node[component, fit=(core-modules) (core-label), minimum width=10cm] (core) {};
+        \end{pgfonlayer}
+
+        % Application class 
+        \node[draw, rounded corners, inner sep=6pt, font=\bfseries\small, below=14mm of core, minimum width=97mm] (mainloop) {mainloop};
+        \node[font=\large, above=0mm of mainloop, inner sep=4pt] (application-label) {\verb|yart::Application| Class};
+
+        \begin{pgfonlayer}{background}
+            \node[main, thick, fill=blue!5, fit=(mainloop) (application-label)] (application) {};
+        \end{pgfonlayer}
+        \draw[->, thick] ([xshift=\arrowshift]application.north west) to ([xshift=\arrowshift]core.south west);
+        \draw[->, thick] ([xshift=-\arrowshift]core.south east) to ([xshift=-\arrowshift]application.north east);
+
+        % Backend component
+        \node[component, below=5mm of application] (backend) {Backend};
+        \draw[<-, thick] ([xshift=\arrowshift]application.south west) to ([xshift=\arrowshift]backend.north west);
+        \draw[<-, thick] ([xshift=-\arrowshift]backend.north east) to ([xshift=-\arrowshift]application.south east);
+    \end{tikzpicture}
+
+    \caption{YART application architecture.}
+    \label{fig:Application/ApplicationArchitecture/arch}
+\end{figure}
+\vfill
+
+Introduction of the \verb|yart::Application| class implies, that the engine can be detached from the windowing backend, and easily transformed into other application types.
+For example, the YART engine could be reused as an offline renderer within a new console application, or used as a ray tracing library in already existing systems.
 
 \section{Functionality Overview}
 
-scene representation
+engine:
+user defined scenes with mesh objects, world with customizable skyboxes (3 types: solid color, linear gradient, and cubemap with external textures, that can be interpolated using bilinear and bicubic interpolations), customizable camera properties (FOV, clipping)
 
-\dots
+application:
+interactive editor with camera movement, resizable viewports with fullscreen mode, a grid overlay that can be turned on or off
 
 \section{External Dependencies}
 
-(excluding vulkan SDK) included in the project as git submodules, all reside in the lib directory, built with the yart project, licenses.
+All dependencies excluding Vulkan are included into, and built with the project, in the form of \textit{git submodules}. 
+A submodule \dots
+In order for the application to build, the Vulkan software development kit (SDK) has to be installed on the users machine. 
 Following, is a list of all external dependencies used throughout the YART application, including a brief description and their purpose within the project.
-
-\dots
 
 \subsection{GLFW}
 
@@ -32,7 +96,7 @@ The GLFW API includes a straightforward mechanism for handing inputs such as key
 YART makes use of GLFW to open a platform-specific window and handle all incoming user inputs. 
 The window is used as a rendering surface, to which the GPU can draw subsequent application frames. 
 GLFW exposes user input in the form of events, which can be polled and handled using specific callbacks. 
-The event system is utilized within YART to handle key presses and mouse events for various interactions, such as viewing camera movement and rotation.
+The event system is utilized within YART to handle key presses and mouse events for various interactions, such as viewing-camera movement and rotation.
 
 \subsection{Vulkan}
 
@@ -60,14 +124,17 @@ At its core, Dear ImGui is what makes the application interactive, enabling the 
 
 \subsection{GLM}
 
-OpenGL Mathematics (GLM \supercite{GLM}), is a C++ mathematics library designed specifically for graphics and game development programming.
+OpenGL Mathematics (GLM \supercite{GLM}), is a C++ mathematics library designed specifically for graphics programming and game development.
 It is lightweight, self contained, and header-only, meaning it does not use any external dependencies, and does not need to be separately compiled or linked.
 YART benefits from vector and matrix operations available in GLM, which are essential for various rendering tasks, such as defining projections and calculating transformations.
 
 \section{Project Structure}
 
-\dots
+In order to enforce YART's scalability and maintainability, the project has been split up into five distinct modules. 
+These include an implementation-specific \textit{backend}, the engines \textit{core}, related \textit{GUI} and \textit{interface} modules, and the \textit{common} module.
 
-\subsection{Modularity}
+The backend is designed as a system-agnostic interface for creating and managing an OS window, as well as for initializing the GPU 
+
+dependencies in the lib directory using big submodules
 
 \dots

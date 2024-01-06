@@ -11,6 +11,7 @@
 
 \usepackage[top=2cm, bottom=3cm]{geometry} % For defining custom document geometry
 \usepackage[backend=biber,style=numeric-comp,sorting=none]{biblatex} % For citations using BibTeX
+\usepackage{tikz} % For defining and drawing diagrams
 \usepackage{graphicx} % For including graphics
 \usepackage{hyperref} % For hyperlink generation
 \usepackage[noabbrev, capitalise]{cleveref} % For \cref
@@ -25,6 +26,21 @@
 \addbibresource{references.bib}
 \emergencystretch=1em % https://tex.stackexchange.com/questions/171999/overfull-hbox-in-biblatex
 
+
+% +===+ SETUP TikZ FOR DIAGRAM DRAWING +===+ %
+\usetikzlibrary{positioning, fit, arrows.meta, backgrounds}
+
+% Declare default render layers
+\pgfdeclarelayer{background} 
+\pgfdeclarelayer{foreground}
+\pgfsetlayers{background, main,foreground}
+
+% Declare global style
+\tikzstyle{module}=[draw, thick, fill=blue!5, rounded corners, inner sep=8pt, font=\bfseries\small]
+\tikzstyle{main}=[draw, rounded corners, font=\large, minimum width=10cm, minimum height=1cm]
+\tikzstyle{component}=[main, fill=yellow!10, dashed]
+
+
 % +===+ CUSTOM STYLE FORMATTING +===+ %
 \raggedbottom % Automatically add vertical spacing at the end of every page 
 
@@ -38,7 +54,7 @@
 \pagestyle{fancyplain}
 \fancyhf{} % Clear the default fancy style 
 \renewcommand{\headrulewidth}{0pt} % Remove the header rule
-\fancyfoot[RE,LO]{\thepage}
+\fancyfoot[RE, LO]{\thepage}
 
 % Custom table of contents format
 \renewcommand{\cftchapleader}{\cftdotfill{\cftdotsep}} % Dotted lines for chapters in TOC
@@ -50,12 +66,14 @@
 \renewcommand\cftloftitlefont{\hfill\Large\bfseries\MakeUppercase}
 \renewcommand\cftafterloftitle{\hfill\mbox{}}
 
+
 % % +===+ CUSTOM COMMANDS DEFINITIONS +===+ %
 \newcommand\blankpage{ % Inserts a blank page
     \null\thispagestyle{empty}
     \addtocounter{page}{-1}
     \newpage
 }
+
 
 % +===+ DOCUMENT STRUCTURE +===+ % 
 \begin{document}
