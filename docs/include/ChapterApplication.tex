@@ -69,7 +69,7 @@ The YART application architecture, with its components and relations made betwee
         \draw[<-, thick] ([xshift=-\arrowshift]backend.north east) to ([xshift=-\arrowshift]application.south east);
     \end{tikzpicture}
 
-    \caption{YART application architecture.}
+    \caption[YART application architecture]{YART application architecture.}
     \label{fig:Application/ApplicationArchitecture/arch}
 \end{figure}
 \vfill
@@ -80,7 +80,7 @@ For example, the YART engine could be reused as an offline renderer within a new
 \section{Functionality Overview}
 
 engine:
-user defined scenes with mesh objects, world with customizable skyboxes (3 types: solid color, linear gradient, and cubemap with external textures, that can be interpolated using bilinear and bicubic interpolations), customizable camera properties (FOV, clipping)
+user defined scenes with mesh objects, world with customizable skies (3 types: solid color, linear gradient, and cubemap with external textures, that can be interpolated using bilinear and bicubic interpolations), customizable camera properties (FOV, clipping)
 
 application:
 interactive editor with camera movement, resizable viewports with fullscreen mode, a grid overlay that can be turned on or off
@@ -112,8 +112,8 @@ Memory, synchronization, and devices have to be managed explicitly, leading to i
 Proper use of Vulkan capabilities can lead to better utilization of system resources and improved performance in graphics-intensive applications.
 
 Vulkan, along with GLFW, serves as the window rendering backend for the YART application.
-On purpose, it does not however play any role in performing actual ray tracing computations, which are made entirely on the CPU. 
-Instead, the backend depends on the pixel output of the engine's renderer, which gets streamed into a texture and displayed every frame within a viewport.
+It does not however play any role in performing actual ray tracing computations, which are made entirely on the CPU. 
+Instead, the backend uses the pixel output of the engine's renderer, which gets streamed into a texture and displayed every frame within a viewport.
 For this purpose, a specialized graphics pipeline is deployed using Vulkan, that in its core, issues render commands to the GPU and presents frames to the GLFW window. The pipeline was designed to adapt to a high variety of hardware devices, taking advantage of their characteristics.
 For example, depending on the capabilities of a physical device installed on the client's machine, multiple frames can be prepared in parallel, which can greatly improve the application's performance.
 Querying these capabilities, allows the backend to optimize its render pipeline, and to target the most applicable device, in scenarios where multiple GPUs are available.

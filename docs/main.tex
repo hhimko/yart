@@ -13,6 +13,7 @@
 \usepackage[backend=biber,style=numeric-comp,sorting=none]{biblatex} % For citations using BibTeX
 \usepackage{tikz} % For defining and drawing diagrams
 \usepackage{graphicx} % For including graphics
+\usepackage{subcaption} % For displaying figures side by side
 \usepackage{hyperref} % For hyperlink generation
 \usepackage[noabbrev, capitalise]{cleveref} % For \cref
 \usepackage{setspace} % For paragraph indentation
@@ -67,25 +68,25 @@
 \renewcommand\cftafterloftitle{\hfill\mbox{}}
 
 
-% % +===+ CUSTOM COMMANDS DEFINITIONS +===+ %
+% % +===+ CUSTOM COMMANDS AND COLOR DEFINITIONS +===+ %
 \newcommand\blankpage{ % Inserts a blank page
     \null\thispagestyle{empty}
     \addtocounter{page}{-1}
     \newpage
 }
 
+% Colors for coordinate system diagrams
+\definecolor{axis_red}{RGB}{244, 36, 84}
+\definecolor{axis_green}{RGB}{84, 244, 36}
+\definecolor{axis_blue}{RGB}{36, 84, 244}
+
 
 % +===+ DOCUMENT STRUCTURE +===+ % 
 \begin{document}
     \input{include/PageTitle}
+    \blankpage
     \input{include/PageAbstract}
-
-    % \blankpage
     \tableofcontents
-
-    \clearpage\phantomsection
-    \addcontentsline{toc}{chapter}{\MakeUppercase\listfigurename}
-    \listoffigures
 
     % \begin{onehalfspace}
         \include{include/ChapterIntroduction}
@@ -94,6 +95,12 @@
         \include{include/ChapterConclusion}
     % \end{onehalfspace}
 
+    % List of figures
+    \clearpage\phantomsection
+    \addcontentsline{toc}{chapter}{\MakeUppercase\listfigurename}
+    \listoffigures
+
+    % BibTeX references
     \renewcommand\bibname{References}
     \printbibliography
     \addcontentsline{toc}{chapter}{\MakeUppercase\bibname}

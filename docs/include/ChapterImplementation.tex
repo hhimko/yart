@@ -4,8 +4,73 @@
 
 \chapter{Implementation} \label{ch:Implementation}
 
+Before delving into the implementation of a ray tracing engine, certain considerations should be made, which will define the entire system's workflow.
+One such example is the choice of a world coordinate system, that will affect the order of mathematical calculations.
+
+\vfill
+\begin{figure}[!ht]
+    \centering
+
+    \begin{subfigure}{.4\textwidth}
+        \centering
+
+        \begin{tikzpicture}[auto]
+            \draw[-{Latex[length=3mm]}, color=axis_red, very thick]   (0, 0) -- (2, -0.7);
+            \draw[-{Latex[length=3mm]}, color=axis_green, very thick] (0, 0) -- (0, 2);
+            \draw[-{Latex[length=3mm]}, color=axis_blue, very thick]  (0, 0) -- (-1.6, -0.9);
+            \node[color=axis_red] (x) at (2.05, -0.4) {\textbf{x}};
+            \node[color=axis_green] (y) at (-0.3, 1.95) {\textbf{y}};
+            \node[color=axis_blue] (y) at (-1.7, -0.6) {\textbf{z}};
+        \end{tikzpicture}
+        \caption{}
+    \end{subfigure}%
+    \begin{subfigure}{.4\textwidth}
+        \centering
+        
+        \begin{tikzpicture}[auto]
+            \draw[-{Latex[length=3mm]}, color=axis_red, very thick]   (0, 0) -- (2, -0.7);
+            \draw[-{Latex[length=3mm]}, color=axis_green, very thick] (0, 0) -- (0, 2);
+            \draw[-{Latex[length=3mm]}, color=axis_blue, very thick]  (0, 0) -- (1.6, 0.9);
+            \node[color=axis_red] (x) at (2.05, -0.4) {\textbf{x}};
+            \node[color=axis_green] (y) at (-0.3, 1.95) {\textbf{y}};
+            \node[color=axis_blue] (y) at (1.5, 1.12) {\textbf{z}};
+        \end{tikzpicture}
+        \caption{}
+    \end{subfigure}
+
+    \caption[RHS and LHS coordinate systems]{RHS (a) and LHS (b) coordinate systems.}
+    \label{fig:Implementation/coordinate_system}
+\end{figure}
+\vfill
+
+\section{Ray Definition}
+
 \dots
 
-\section{}
+\section{The Camera and Ray Generation}
+
+camera sometimes referred to as "eye", view and projection matrixes
+
+\dots
+
+\section{Scene Representation}
+
+mesh definition, normals calculation, uv coordinates, sphere mesh generation(?)
+
+\dots
+
+\section{Intersection Testing}
+
+Möller-Trumbore algorithm for tri-ray intersection
+
+\section{Sky Color Sampling}
+
+\dots
+
+\section{A}
+
+\dots
+
+\section{B}
 
 \dots
