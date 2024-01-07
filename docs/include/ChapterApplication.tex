@@ -85,10 +85,22 @@ user defined scenes with mesh objects, world with customizable skies (3 types: s
 application:
 interactive editor with camera movement, resizable viewports with fullscreen mode, a grid overlay that can be turned on or off
 
+\cref{fig:Application/FunctionalityOverview/render_sample} illustrates a sample scene, rendered using the proposed application's ray tracing engine.
+
+\vfill
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{example-image-b}
+    \caption[Example image rendered using the YART engine]{Example image rendered using the YART engine.}
+    \label{fig:Application/FunctionalityOverview/render_sample}
+\end{figure}
+\vfill
+
 \section{External Dependencies}
 
 All dependencies excluding Vulkan are included into, and built with the project, in the form of \textit{git submodules}. 
-A submodule \dots
+A submodule is a \dots
+The only closed-source dependency used within the project, is the Vulkan library.
 In order for the application to build, the Vulkan software development kit (SDK) has to be installed on the users machine. 
 Following, is a list of all external dependencies used throughout the YART application, including a brief description and their purpose within the project.
 
@@ -113,7 +125,7 @@ Proper use of Vulkan capabilities can lead to better utilization of system resou
 
 Vulkan, along with GLFW, serves as the window rendering backend for the YART application.
 It does not however play any role in performing actual ray tracing computations, which are made entirely on the CPU. 
-Instead, the backend uses the pixel output of the engine's renderer, which gets streamed into a texture and displayed every frame within a viewport.
+Instead, the backend utilizes the pixel output of the engine's renderer, which gets streamed into a texture and displayed every frame within a viewport.
 For this purpose, a specialized graphics pipeline is deployed using Vulkan, that in its core, issues render commands to the GPU and presents frames to the GLFW window. The pipeline was designed to adapt to a high variety of hardware devices, taking advantage of their characteristics.
 For example, depending on the capabilities of a physical device installed on the client's machine, multiple frames can be prepared in parallel, which can greatly improve the application's performance.
 Querying these capabilities, allows the backend to optimize its render pipeline, and to target the most applicable device, in scenarios where multiple GPUs are available.
@@ -138,7 +150,5 @@ In order to enforce YART's scalability and maintainability, the project has been
 These include an implementation-specific \textit{backend}, the engines \textit{core}, related \textit{GUI} and \textit{interface} modules, and the \textit{common} module.
 
 The backend is designed as a system-agnostic interface for creating and managing an OS window, as well as for initializing the GPU 
-
-dependencies in the lib directory using big submodules
 
 \dots
