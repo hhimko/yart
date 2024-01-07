@@ -12,6 +12,8 @@
 \usepackage[top=2cm, bottom=3cm]{geometry} % For defining custom document geometry
 \usepackage[backend=biber,style=numeric-comp,sorting=none]{biblatex} % For citations using BibTeX
 \usepackage{tikz} % For defining and drawing diagrams
+\usepackage{bm} % For bold symbols in maths mode
+\usepackage{listings} % For defining custom listing styles 
 \usepackage{graphicx} % For including graphics
 \usepackage{subcaption} % For displaying figures side by side
 \usepackage{hyperref} % For hyperlink generation
@@ -40,6 +42,30 @@
 \tikzstyle{module}=[draw, thick, fill=blue!5, rounded corners, inner sep=8pt, font=\bfseries\small]
 \tikzstyle{main}=[draw, rounded corners, font=\large, minimum width=10cm, minimum height=1cm]
 \tikzstyle{component}=[main, fill=yellow!10, dashed]
+
+
+% +===+ CUSTOM LISTINGS FORMATTING +===+ %
+\lstset{%
+    language=C++,
+    basicstyle=\small,
+    numberstyle=\footnotesize,
+    commentstyle=\color{darkgray},
+    columns=fullflexible,
+    aboveskip=1.5\bigskipamount,
+    belowskip=\smallskipamount,
+    lineskip=0.5mm,
+    numbers=left,
+    numbersep=1em,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    frame=lines,
+    tabsize=4,
+    captionpos=b,
+    breaklines=true,
+    breakatwhitespace=false,
+    escapeinside={\%*}{*)}
+}
 
 
 % +===+ CUSTOM STYLE FORMATTING +===+ %

@@ -5,7 +5,12 @@
 \chapter{Implementation} \label{ch:Implementation}
 
 Before delving into the implementation of a ray tracing engine, certain considerations should be made, which will define the entire system's workflow.
-One such example is the choice of a world coordinate system, that will affect the order of mathematical calculations.
+One such example is the choice of a coordinate system, that will affect the order of mathematical calculations.
+Coordinate systems provide a standardized way of specifying locations and orientations of objects within a multi-dimensional environment.
+In the context of two-dimensional computer graphics, the system typically consists of a X-axis pointing from left to right, and a Y-axis pointing upwards.
+When adding the third coordinate however, the developer has a choice as to whether the Z-axis should point out of, or into the virtual screen, away from the viewer.
+These two system types are respectively referred to as the right-handed coordinate system (RHS), and the left-handed coordinate system (LHS) (see \cref{fig:Implementation/coordinate_system}).
+The names of these systems derive from the \textit{right-hand rule}, which is a convention used for determining the orientation of axes in three-dimensional space \supercite{RightHandRule}. 
 
 \vfill
 \begin{figure}[!ht]
@@ -14,7 +19,7 @@ One such example is the choice of a world coordinate system, that will affect th
     \begin{subfigure}{.4\textwidth}
         \centering
 
-        \begin{tikzpicture}[auto]
+        \begin{tikzpicture}[scale=1.15, every node/.style={scale=1.15}]
             \draw[-{Latex[length=3mm]}, color=axis_red, very thick]   (0, 0) -- (2, -0.7);
             \draw[-{Latex[length=3mm]}, color=axis_green, very thick] (0, 0) -- (0, 2);
             \draw[-{Latex[length=3mm]}, color=axis_blue, very thick]  (0, 0) -- (-1.6, -0.9);
@@ -27,7 +32,7 @@ One such example is the choice of a world coordinate system, that will affect th
     \begin{subfigure}{.4\textwidth}
         \centering
         
-        \begin{tikzpicture}[auto]
+        \begin{tikzpicture}[scale=1.25, every node/.style={scale=1.25}]
             \draw[-{Latex[length=3mm]}, color=axis_red, very thick]   (0, 0) -- (2, -0.7);
             \draw[-{Latex[length=3mm]}, color=axis_green, very thick] (0, 0) -- (0, 2);
             \draw[-{Latex[length=3mm]}, color=axis_blue, very thick]  (0, 0) -- (1.6, 0.9);
@@ -43,11 +48,36 @@ One such example is the choice of a world coordinate system, that will affect th
 \end{figure}
 \vfill
 
+Both the RHS and LHS are commonly utilized in commercial rendering software.
+While developing YART, the left-handed coordinate system has been used, solely based on personal preference. 
+This information is important to keep in mind, as the choice of a system determines the definition and implementation of projections, and various matrix operations, used throughout a ray tracing engine. 
+
 \section{Ray Definition}
 
-mathematical definition of rays
+The fundamental piece of any ray tracing engine is undeniably the concept of a \textit{ray}.
+In mathematics, a ray can be defined as a straight line extending infinitely in one direction from a specific starting point. 
+It is therefore characterized by its origin point, and a unit vector denoting the directions it's facing.
+Rays can be conceptualized across any number of dimensions, however for the specific application of ray tracing, we will only focus on three-dimensional rays.
 
-\dots
+Let's consider a ray with an origin point $ \bm{P} $, extending infinitely in the direction of a vector $ \bm{\hat{v}} $.
+To sample a specific point along this ray, we define a function $ \bm{r} $:
+\begin{equation}
+    \bm{r}(t) = \bm{P} + t\bm{\hat{v}}
+\end{equation}
+It returns all possible points on the ray, which are $ t $ units apart from its origin.
+Knowing the distance from the ray's origin to the closest object hit along its path, function $ \bm{r} $ will enable us to find the exact point of collision on the object's surface.
+For this purpose, it's important to make the direction vector $ \bm{\hat{v}} $ an unit vector, as a vector of length different than $ 1 $ would scale the distance disproportionately.
+
+In the code, we can define a ray as a lightweight structure containing two three-dimensional vector members, representing the ray's origin and direction (see \cref{lst:Implementation/RayDefinition/ray}).
+This structure can later be extended with related operations, such as testing for ray-object intersections or reflecting of a given surface.
+
+\vfill
+\lstinputlisting[
+    xleftmargin=1.5em, 
+    caption={Ray structure definition.},
+    label={lst:Implementation/RayDefinition/ray}
+]{include/listings/ListingRay.cpp}
+\vfill
 
 \section{The Camera and Ray Generation}
 
