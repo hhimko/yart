@@ -97,23 +97,104 @@ Ray generation in YART can be divided into four stages:
 Before we can generate a ray, we first need to explain the basic concept behind a \textit{camera}.
 Sometimes referred to as the \textit{eye}, a camera is the engine's virtual viewpoint, giving the ability to "see" into a digital environment.
 At its core, it's used to generate rays for each pixel in the rendered image.
-It is primarily represented by its position in world-space, a viewing direction, and the camera's field of view (FOV).
-A camera's field of view represents the angular extent of the scene captured in the rendered image. 
+It is primarily represented by its position in world-space, a viewing direction (or \textit{look-at-vector}), and the camera's field of view (FOV).
+A camera's field of view represents the angular extent of the scene captured in the output image. 
 FOV might be expressed in one of three different ways, as it can be measured horizontally, vertically, or diagonally.
-The difference between them significant, impacting the calculations made while defining a projection matrix.
-In YART, horizontal measurement is commonly used to determine the field of view.
+The difference between them is significant, impacting the calculations made while defining a projection matrix.
+In YART, horizontal measurement is used to determine camera's field of view.
+
+The camera can be though of as a viewing context for rendering a scene.
+Rays will be cast originating from the camera's position and traced in the direction it is facing, offset by \textit{screen-space} coordinates of subsequent image pixels.
+Screen-space coordinates generally refer to a two-dimensional coordinate system that represents the positions of pixels on a screen.
+In the context of ray tracing, the screen can be represented as an image, positioned at a specific distance from the camera's origin. 
+This concept is otherwise knows as the camera's \textit{image plane} or \textit{viewport}.
+The image plane pixel positions in camera's local-space (or \textit{camera-space}) is what will let us determine ray directions for a particular pixel. 
+\cref{fig:Implementation/RayGeneration/iamge_plane} illustrates a camera with the center of its viewport positioned at the end of the look-at-vector.  
+
+\vfill
+\begin{figure}[!ht]
+    \centering
+
+    % Top margin
+    \vspace{1cm}
+
+    \begin{tikzpicture}[scale=1.0, every node/.style={scale=1.0}]
+        % Plane inner lines
+        \draw[-, color=gray, thin] (6.25, 2.42) -- (9.55, 1.6);
+        \draw[-, color=gray, thin] (6.25, 1.9) -- (9.46, 0.78);
+        \draw[-, color=gray, thin] (6.25, 1.38) -- (9.4, -0.05);
+        \draw[-, color=gray, thin] (6.25, 0.9) -- (9.35, -0.85);
+        \draw[-, color=gray, thin] (6.25, 0.4) -- (9.3, -1.62);
+
+        \draw[-, color=gray, thin] (6.6, 2.92) -- (6.57, -0.35);
+        \draw[-, color=gray, thin] (7, 2.87) -- (6.95, -0.63);
+        \draw[-, color=gray, thin] (7.5, 2.82) -- (7.4, -0.98);
+        \draw[-, color=gray, thin] (8.08, 2.7) -- (7.92, -1.35);
+        \draw[-, color=gray, thin] (8.75, 2.65) -- (8.53, -1.82);
+
+        % Pixel diagonals 
+        \draw[-, color=gray, ultra thin] (7.95, -0.72) -- (8.6, -0.43);
+
+        % Plane outer lines
+        \draw[-, color=darkgray, very thick] (6.25, 2.97) -- (9.6, 2.53)
+        -- (9.25, -2.35) -- (6.25, -0.1) -- (6.25, 2.97) -- (9.6, 2.53);
+        \node[color=darkgray, rotate=-7] (x) at (7.9, 3.1) {\textbf{Image Plane}};
+
+        % Looking direction vector
+        \draw[-{Latex[length=3mm]}, color=axis_blue, very thick] (0.037, 0.005) -- (7.45, 0.835);
+        \node[color=axis_blue, rotate=6.6] (x) at (4.55, 0.75) {\textbf{Look-at-Vector}};
+
+        % Ray 
+        \draw[-{Latex[length=3mm]}, color=axis_red, very thick] (0.037, 0.005) -- (12, -0.855);
+        \node[color=axis_red, rotate=-4] (x) at (11, -0.5) {\textbf{Ray}};
+
+        % Camera to plane lines
+        \draw[-, color=darkgray, thin] (0, 0) -- (6.235, 2.982);
+        \draw[-, color=darkgray, thin] (0, 0) -- (9.6, 2.53);
+        \draw[-, color=darkgray, thin] (0, 0) -- (9.25, -2.366);
+        \draw[-, color=darkgray, thin] (0, 0) -- (6.25, -0.11);
+
+        % Overlays over the ray
+        \draw[{Round Cap[]}-{Round Cap[]}, color=gray, thin] (8.883, -0.5862) -- (9.15, -0.737);
+        \draw[{Round Cap[]}-{Round Cap[]}, color=gray, thin] (8.593, -0.54) -- (8.583, -0.737);
+        \draw[-, color=darkgray, very thick] (9.6, 2.53) -- (9.25, -2.35);
+
+        % Pixel diagonals 
+        \draw[-, color=gray, ultra thin] (7.973, -0.075) -- (8.57, -1.143);
+
+        % Camera origin
+        \node[fill=darkgray, circle, inner sep=0pt, minimum size=2mm] (c) at (0.95mm, 0) {};
+        \node[color=darkgray, align=center] (x) at (-0.9, 0.25) {\textbf{Camera} \\ \textbf{Origin}};
+
+    \end{tikzpicture}
+
+    % Bottom margin
+    \vspace{1cm}
+
+    \caption[Visualization of a camera's image plane]{
+        \centering
+        Visualization of a camera's image plane, with a ray extending through a single pixel. Squares in the plane symbolize individual pixels in the rendered image. 
+    }
+    \label{fig:Implementation/RayGeneration/iamge_plane}
+\end{figure}
+\vfill
 
 In a class defining a simplified camera model, we can introduce the functionality of calculating ray directions with a dedicated \verb|Camera::GetRayDirections| method. 
-This method, can be declared to accept (as a parameter) an array of vectors, which will be populated with subsequent ray directions for each and every pixel in the output image.
+This method, can be declared to accept (as a parameter) an array of vectors, which will be populated with subsequent ray directions for every pixel in the output image.
 Consequently, additional \verb|width| and \verb|height| parameters should be defined, which will specify the dimensions of the image, as well as the array's size.
 \cref{lst:Implementation/RayGeneration/camera} demonstrates an example \verb|Camera| class declaration, constructed basing on the described methodology.
 
 \vfill
-\lstinputlisting[
-    xleftmargin=2em, 
-    caption={\texttt{Camera} class declaration.},
-    label={lst:Implementation/RayGeneration/camera}
-]{include/listings/ListingCamera1.cpp}
+\begin{figure}[!ht]
+    % Top margin
+    \vspace{1cm}
+
+    \lstinputlisting[
+        xleftmargin=2em, 
+        caption={Basic \texttt{Camera} class declaration.},
+        label={lst:Implementation/RayGeneration/camera}
+    ]{include/listings/ListingCamera1.cpp}
+\end{figure}
 \vfill
 
 \subsection{Transformation Matrices}
