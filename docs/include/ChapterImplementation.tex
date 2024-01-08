@@ -4,7 +4,7 @@
 
 \chapter{Implementation} \label{ch:Implementation}
 
-Before delving into the implementation of a ray tracing engine, certain considerations should be made, which will define the entire system's workflow.
+Before delving into the implementation of a ray tracing engine, certain considerations should be made, which will define the entire development workflow.
 One such example is the choice of a coordinate system, that will affect the order of mathematical calculations.
 Coordinate systems provide a standardized way of specifying locations and orientations of objects within a multi-dimensional environment.
 In the context of two-dimensional computer graphics, the system typically consists of a X-axis pointing from left to right, and a Y-axis pointing upwards.
@@ -54,7 +54,7 @@ This information is important to keep in mind, as the choice of a system determi
 
 \section{Ray Definition}
 
-The fundamental piece of any ray tracing engine is undeniably the concept of a \textit{ray}.
+The fundamental piece of any ray tracing engine is undeniably the concept of \textit{rays}.
 In mathematics, a ray can be defined as a straight line extending infinitely in one direction from a specific starting point. 
 It is therefore characterized by its origin point, and a unit vector denoting the directions it's facing.
 Rays can be conceptualized across any number of dimensions, however for the specific application of ray tracing, we will only focus on three-dimensional rays.
@@ -66,7 +66,7 @@ To sample a specific point along this ray, we define a function $ \bm{r} $:
 \end{equation}
 It returns all possible points on the ray, which are $ t $ units apart from its origin.
 Knowing the distance from the ray's origin to the closest object hit along its path, function $ \bm{r} $ will enable us to find the exact point of collision on the object's surface.
-For this purpose, it's important to make the direction vector $ \bm{\hat{v}} $ an unit vector, as a vector of length different than $ 1 $ would scale the distance disproportionately.
+For this purpose, it's important to make the direction vector $ \bm{\hat{v}} $ an unit vector, as a vector of length different than $ 1 $ would scale the distance proportionately, ultimately resulting in inaccurate calculations. 
 
 In the code, we can define a ray as a lightweight structure containing two three-dimensional vector members, representing the ray's origin and direction (see \cref{lst:Implementation/RayDefinition/ray}).
 This structure can later be extended with related operations, such as testing for ray-object intersections or reflecting of a given surface.
@@ -79,11 +79,52 @@ This structure can later be extended with related operations, such as testing fo
 ]{include/listings/ListingRay.cpp}
 \vfill
 
-\section{The Camera and Ray Generation}
+\section{Ray Generation and The Camera}
 
-camera sometimes referred to as "eye", view and projection matrixes
+To render images using ray tracing methodology, generally means to trace a single ray for every pixel in the output image.
+The color seen it the direction of those rays, is what defines the final color of their respective pixels. 
+This initial phase of calculating ray directions for every image pixel, is often referred to as the \textit{ray generation} step of a ray tracing engine.
+Ray generation in YART can be divided into four stages:
+\begin{enumerate}
+    \item defining and querying camera properties,
+    \item computing a screen-space-to-camera-space transformation matrix,
+    \item calculating individual ray directions using the matrix,
+    \item caching the calculated direction vectors.
+\end{enumerate}
 
-\dots
+\subsection{Camera Definition}
+
+Before we can generate a ray, we first need to explain the basic concept behind a \textit{camera}.
+Sometimes referred to as the \textit{eye}, a camera is the engine's virtual viewpoint, giving the ability to "see" into a digital environment.
+At its core, it's used to generate rays for each pixel in the rendered image.
+It is primarily represented by its position in world-space, a viewing direction, and the camera's field of view (FOV).
+A camera's field of view represents the angular extent of the scene captured in the rendered image. 
+FOV might be expressed in one of three different ways, as it can be measured horizontally, vertically, or diagonally.
+The difference between them significant, impacting the calculations made while defining a projection matrix.
+In YART, horizontal measurement is commonly used to determine the field of view.
+
+In a class defining a simplified camera model, we can introduce the functionality of calculating ray directions with a dedicated \verb|Camera::GetRayDirections| method. 
+This method, can be declared to accept (as a parameter) an array of vectors, which will be populated with subsequent ray directions for each and every pixel in the output image.
+Consequently, additional \verb|width| and \verb|height| parameters should be defined, which will specify the dimensions of the image, as well as the array's size.
+\cref{lst:Implementation/RayGeneration/camera} demonstrates an example \verb|Camera| class declaration, constructed basing on the described methodology.
+
+\vfill
+\lstinputlisting[
+    xleftmargin=2em, 
+    caption={\texttt{Camera} class declaration.},
+    label={lst:Implementation/RayGeneration/camera}
+]{include/listings/ListingCamera1.cpp}
+\vfill
+
+\subsection{Transformation Matrices}
+
+\subsection{Calculating Ray Directions}
+
+\subsection{Ray Direction Caching}
+
+YART employs a caching mechanism
+
+Given the output image's pixel coordinates, the 
 
 \section{Scene Representation}
 

@@ -67,6 +67,9 @@
     escapeinside={\%*}{*)}
 }
 
+% Change the list of listings title name
+\renewcommand{\lstlistlistingname}{List of Listings}
+
 
 % +===+ CUSTOM STYLE FORMATTING +===+ %
 \raggedbottom % Automatically add vertical spacing at the end of every page 
@@ -110,7 +113,7 @@
 % +===+ DOCUMENT STRUCTURE +===+ % 
 \begin{document}
     \input{include/PageTitle}
-    \blankpage
+    % \blankpage
     \input{include/PageAbstract}
     \tableofcontents
 
@@ -125,6 +128,11 @@
     \clearpage\phantomsection
     \addcontentsline{toc}{chapter}{\MakeUppercase\listfigurename}
     \listoffigures
+
+    % List of listings
+    \clearpage\phantomsection
+    \addcontentsline{toc}{chapter}{\MakeUppercase\lstlistlistingname}
+    \lstlistoflistings
 
     % BibTeX references
     \renewcommand\bibname{References}
