@@ -17,6 +17,7 @@
 \usepackage{graphicx} % For including graphics
 \usepackage{subcaption} % For displaying figures side by side
 \usepackage{hyperref} % For hyperlink generation
+\usepackage{amsmath} % For generation matrices in equations
 \usepackage[noabbrev, capitalise]{cleveref} % For \cref
 \usepackage{setspace} % For paragraph indentation
 \usepackage{fancyhdr} % For a custom header/footer formatting
@@ -64,7 +65,8 @@
     captionpos=b,
     breaklines=true,
     breakatwhitespace=false,
-    escapeinside={\%*}{*)}
+    escapeinside={\%*}{*)},
+    morekeywords={uint32_t,glm,vec3,mat4x4,vec4}
 }
 
 % Change the list of listings title name
@@ -103,6 +105,12 @@
     \addtocounter{page}{-1}
     \newpage
 }
+
+% Displays a transposition math symbol
+\newcommand*{\tran}{^{\mkern-1.5mu\mathsf{T}}}
+
+% Wraps a vector inside double vertical lines to denote its magnitude
+\newcommand*{\norm}[1]{\lvert\lvert #1 \rvert\rvert}
 
 % Colors for coordinate system diagrams
 \definecolor{axis_red}{RGB}{244, 36, 84}

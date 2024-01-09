@@ -60,10 +60,12 @@ It is therefore characterized by its origin point, and a unit vector denoting th
 Rays can be conceptualized across any number of dimensions, however for the specific application of ray tracing, we will only focus on three-dimensional rays.
 
 Let's consider a ray with an origin point $ \bm{P} $, extending infinitely in the direction of a vector $ \bm{\hat{v}} $.
-To sample a specific point along this ray, we define a function $ \bm{r} $:
+To sample a specific point along this ray, we define a function $ \bm{r} $
+%
 \begin{equation}
     \bm{r}(t) = \bm{P} + t\bm{\hat{v}}
 \end{equation}
+%
 It returns all possible points on the ray, which are $ t $ units apart from its origin.
 Knowing the distance from the ray's origin to the closest object hit along its path, function $ \bm{r} $ will enable us to find the exact point of collision on the object's surface.
 For this purpose, it's important to make the direction vector $ \bm{\hat{v}} $ an unit vector, as a vector of length different than $ 1 $ would scale the distance proportionately, ultimately resulting in inaccurate calculations. 
@@ -97,7 +99,7 @@ Ray generation in YART can be divided into four stages:
 Before we can generate a ray, we first need to explain the basic concept behind a \textit{camera}.
 Sometimes referred to as the \textit{eye}, a camera is the engine's virtual viewpoint, giving the ability to "see" into a digital environment.
 At its core, it's used to generate rays for each pixel in the rendered image.
-It is primarily represented by its position in world-space, a viewing direction (or \textit{look-at-vector}), and the camera's field of view (FOV).
+It is primarily represented by its position in world-space, a viewing direction (or \textit{look-at vector}), and the camera's field of view (FOV).
 A camera's field of view represents the angular extent of the scene captured in the output image. 
 FOV might be expressed in one of three different ways, as it can be measured horizontally, vertically, or diagonally.
 The difference between them is significant, impacting the calculations made while defining a projection matrix.
@@ -142,7 +144,7 @@ The image plane pixel positions in camera's local-space (or \textit{camera-space
 
         % Looking direction vector
         \draw[-{Latex[length=3mm]}, color=axis_blue, very thick] (0.037, 0.005) -- (7.45, 0.835);
-        \node[color=axis_blue, rotate=6.6] (x) at (4.55, 0.75) {\textbf{Look-at-Vector}};
+        \node[color=axis_blue, rotate=6.6] (x) at (4.55, 0.75) {\textbf{Look-at Vector}};
 
         % Ray 
         \draw[-{Latex[length=3mm]}, color=axis_red, very thick] (0.037, 0.005) -- (12, -0.855);
@@ -163,7 +165,7 @@ The image plane pixel positions in camera's local-space (or \textit{camera-space
         \draw[-, color=gray, ultra thin] (7.973, -0.075) -- (8.57, -1.143);
 
         % Camera origin
-        \node[fill=darkgray, circle, inner sep=0pt, minimum size=2mm] (c) at (0.95mm, 0) {};
+        \node[fill=darkgray, circle, inner sep=0pt, minimum size=2.5mm] (c) at (0.95mm, 0) {};
         \node[color=darkgray, align=center] (x) at (-0.9, 0.25) {\textbf{Camera} \\ \textbf{Origin}};
 
     \end{tikzpicture}
@@ -185,19 +187,70 @@ Consequently, additional \verb|width| and \verb|height| parameters should be def
 \cref{lst:Implementation/RayGeneration/camera} demonstrates an example \verb|Camera| class declaration, constructed basing on the described methodology.
 
 \vfill
-\begin{figure}[!ht]
-    % Top margin
-    \vspace{1cm}
-
+\begin{figure}
     \lstinputlisting[
         xleftmargin=2em, 
         caption={Basic \texttt{Camera} class declaration.},
         label={lst:Implementation/RayGeneration/camera}
     ]{include/listings/ListingCamera1.cpp}
 \end{figure}
-\vfill
+\clearpage
 
 \subsection{Transformation Matrices}
+
+In order to convert individual screen-space pixel coordinates to ray directions, we'll first need to transform them into the world-space.
+A common solution to this problem in computer graphics, is to use an \textit{inverse view-projection matrix}, used for transforming vertices in screen-space into the world-space.
+Usually denoted as $ (\bm{VP})^{-1} $, it is defined as the mathematical inverse of combined view and projection matrices.
+Let's consider a point $ \bm{C}_{\textnormal{\small screen}} $ as a certain coordinate in screen-space.
+The transformation to obtain a corresponding point $ \bm{C}_{\textnormal{\small world}} $ in world-space can be expressed as:
+%
+\begin{equation}
+    \bm{C}_{\textnormal{\small world}} = (\bm{VP})^{-1} \cdot \bm{C}_{\textnormal{\small screen}} = (\bm{C}^{-1} \bm{V}^{-1}) \cdot \bm{C}_{\textnormal{\small screen}}
+\end{equation}
+
+To calculate an inverse view-projection matrix, we first need to construct a view matrix, which defines the intermediate step of transforming world-space coordinates into the camera's local space.
+View matrices are often used in rasterization engines, to represent scene geometry relatively to a camera's position and orientation.
+It can therefore be built using four vectors: the camera's world-space $ position $, along with three unit vectors, $ right $, $ up $, and $ forward $, which represent the camera's orientation:
+%
+\begin{equation}
+    \bm{V} =
+    \begin{bmatrix}
+        right_x & up_x & forward_x & position_x\\
+        right_y & up_y & forward_y & position_y\\
+        right_z & up_z & forward_z & position_z\\
+        0       & 0    & 0         & 1
+    \end{bmatrix}
+    \label{eq:Implementation/RayGeneration/view_matrix}
+\end{equation}
+%
+However, since our goal is to only calculate ray directions, we can assume the camera is positioned at the worlds's origin, and just focus on its orientation.
+Knowing the $ forward $ (looking) direction, the $ right $ and $ up $ vectors can be calculated in relation to the world's up (positive y-axis) direction, using vector cross products:  
+%
+{
+    \newcommand*{\worldup}{\begin{bmatrix} 0 & 1 & 0 \end{bmatrix}\tran}
+    \begin{align}
+        right &= - \frac{forward\times\worldup}{\norm{forward\times\worldup}}\label{eq:Implementation/RayGeneration/right}\\[1em]
+        up    &= - right \times forward\label{eq:Implementation/RayGeneration/up}
+    \end{align}
+    
+}
+
+The above equations aid us in implementing a view matrix creation function, seen in \cref{lst:Implementation/RayGeneration/view_matrix}.
+Notice how the $ up $ vector gets negated in the function, as opposed to the general definition in \cref{eq:Implementation/RayGeneration/view_matrix}.
+This is because ray directions are flipped on the y-axis in relation to screen-space pixel coordinates.
+In YART, the $ y $ component of pixel coordinates increase when moving from top to bottom, whereas the ray pitch rotation should instead decrease.
+The matrix returned from this function can later be inverted, ultimately resulting in the desired view matrix inverse.
+
+\clearpage
+\begin{figure}[!ht]
+    \lstinputlisting[
+        xleftmargin=2em, 
+        caption={Implementation of a view matrix creation function.},
+        label={lst:Implementation/RayGeneration/view_matrix}
+    ]{include/listings/ListingViewMatrix.cpp}
+\end{figure}
+
+Another concept worth defining is the \textit{projection matrix}, which in turn is meant for transforming
 
 \subsection{Calculating Ray Directions}
 
