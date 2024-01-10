@@ -76,7 +76,8 @@ This structure can later be extended with related operations, such as testing fo
 \vfill
 \lstinputlisting[
     xleftmargin=1.5em, 
-    caption={Ray structure definition.},
+    caption={[Ray structure definition]
+        Ray structure definition.},
     label={lst:Implementation/RayDefinition/ray}
 ]{include/listings/ListingRay.cpp}
 \vfill
@@ -190,7 +191,8 @@ Consequently, additional \verb|width| and \verb|height| parameters should be def
 \begin{figure}
     \lstinputlisting[
         xleftmargin=2em, 
-        caption={Basic \texttt{Camera} class declaration.},
+        caption={[Basic \texttt{Camera} class declaration]
+            Basic \texttt{Camera} class declaration.},
         label={lst:Implementation/RayGeneration/camera}
     ]{include/listings/ListingCamera1.cpp}
 \end{figure}
@@ -199,13 +201,13 @@ Consequently, additional \verb|width| and \verb|height| parameters should be def
 \subsection{Transformation Matrices}
 
 In order to convert individual screen-space pixel coordinates to ray directions, we'll first need to transform them into the world-space.
-A common solution to this problem in computer graphics, is to use an \textit{inverse view-projection matrix}, used for transforming vertices in screen-space into the world-space.
+A common solution to this problem in computer graphics is to use an \textit{inverse view-projection matrix}, used for transforming vertices in screen-space into the world-space.
 Usually denoted as $ (\bm{VP})^{-1} $, it is defined as the mathematical inverse of combined view and projection matrices.
 Let's consider a point $ \bm{C}_{\textnormal{\small screen}} $ as a certain coordinate in screen-space.
 The transformation to obtain a corresponding point $ \bm{C}_{\textnormal{\small world}} $ in world-space can be expressed as:
 %
 \begin{equation}
-    \bm{C}_{\textnormal{\small world}} = (\bm{VP})^{-1} \cdot \bm{C}_{\textnormal{\small screen}} = (\bm{C}^{-1} \bm{V}^{-1}) \cdot \bm{C}_{\textnormal{\small screen}}
+    \bm{C}_{\textnormal{\small world}} = (\bm{VP})^{-1} \cdot \bm{C}_{\textnormal{\small screen}} = (\bm{P}^{-1} \bm{V}^{-1}) \cdot \bm{C}_{\textnormal{\small screen}}
 \end{equation}
 
 To calculate an inverse view-projection matrix, we first need to construct a view matrix, which defines the intermediate step of transforming world-space coordinates into the camera's local space.
@@ -223,19 +225,19 @@ It can therefore be built using four vectors: the camera's world-space $ positio
     \label{eq:Implementation/RayGeneration/view_matrix}
 \end{equation}
 %
-However, since our goal is to only calculate ray directions, we can assume the camera is positioned at the worlds's origin, and just focus on its orientation.
+However, since our goal is to only calculate ray directions, we can assume the camera is positioned at the world's origin, and just focus on its orientation.
 Knowing the $ forward $ (looking) direction, the $ right $ and $ up $ vectors can be calculated in relation to the world's up (positive y-axis) direction, using vector cross products:  
 %
 {
     \newcommand*{\worldup}{\begin{bmatrix} 0 & 1 & 0 \end{bmatrix}\tran}
     \begin{align}
-        right &= - \frac{forward\times\worldup}{\norm{forward\times\worldup}}\label{eq:Implementation/RayGeneration/right}\\[1em]
-        up    &= - right \times forward\label{eq:Implementation/RayGeneration/up}
+        right &= - \frac{forward\times\worldup}{\norm{forward\times\worldup}}\\[0.5em]
+        up    &= - right \times forward
     \end{align}
     
 }
 
-The above equations aid us in implementing a view matrix creation function, seen in \cref{lst:Implementation/RayGeneration/view_matrix}.
+Above equations aid us in implementing a view matrix creation function, seen in \cref{lst:Implementation/RayGeneration/view_matrix}.
 Notice how the $ up $ vector gets negated in the function, as opposed to the general definition in \cref{eq:Implementation/RayGeneration/view_matrix}.
 This is because ray directions are flipped on the y-axis in relation to screen-space pixel coordinates.
 In YART, the $ y $ component of pixel coordinates increase when moving from top to bottom, whereas the ray pitch rotation should instead decrease.
@@ -244,13 +246,51 @@ The matrix returned from this function can later be inverted, ultimately resulti
 \clearpage
 \begin{figure}[!ht]
     \lstinputlisting[
+        aboveskip=1\bigskipamount,
         xleftmargin=2em, 
-        caption={Implementation of a view matrix creation function.},
+        caption={[Implementation of a view matrix creation function]
+            Implementation of a view matrix creation function.},
         label={lst:Implementation/RayGeneration/view_matrix}
     ]{include/listings/ListingViewMatrix.cpp}
 \end{figure}
 
-Another concept worth defining is the \textit{projection matrix}, which in turn is meant for transforming
+The next step in calculating a view-projection inverse is the definition of an \textit{inverse projection matrix}.
+It is used in 3D computer graphics for transforming screen-space coordinates into camera-space.
+Inverse projection matrices can be defined in numerous ways depending on the system's requirements.
+In YART, this matrix is responsible for normalizing screen coordinates and centering them on the \textit{near clipping plane}. 
+The near clipping plane is a mathematical plane placed in front of the camera, which determines how much of the scene should be \textit{clipped}, or hidden for rendering.
+Given the output image dimensions $ (w, h) $ , and the near plane's distance $ d $, the inverse projection matrix $ \bm{P}^{-1} $ can be defined as follows:
+%
+\begin{equation}
+    \newcommand*{\s}{\hspace{0.7em}}
+    \bm{P}^{-1} =
+    \begin{bmatrix}
+        2u / w & 0      & \s 0 \s & \s 0 \s \\
+        0      & 2v / h & 0       & 0       \\
+        -u     & -v     & d       & 0       \\
+        0      & 0      & 0       & 1
+    \end{bmatrix},
+    \label{eq:Implementation/RayGeneration/inverse_projection_matrix}
+\end{equation}
+%
+where $ (u, v) $ are half the dimensions of the clipping plane, for a specified horizontal camera field of view in radians $ fov $:
+%
+\begin{align}
+    u &= d \cdot \tan(fov / 2),\label{eq:Implementation/RayGeneration/u}\\[0.5em]
+    v &= u \cdot h/w \label{eq:Implementation/RayGeneration/v}
+\end{align}
+
+\cref{lst:Implementation/RayGeneration/ip_matrix} demonstrates an example inverse projection matrix creation function based on Equations (\ref{eq:Implementation/RayGeneration/inverse_projection_matrix}\textendash\ref{eq:Implementation/RayGeneration/v}).
+
+\begin{figure}[!ht]
+    \lstinputlisting[
+        xleftmargin=2em, 
+        caption={[Implementation of an inverse projection matrix creation function]
+            Implementation of an inverse projection matrix creation function.},
+        label={lst:Implementation/RayGeneration/ip_matrix}
+    ]{include/listings/ListingInverseProjectionMatrix.cpp}
+\end{figure}
+
 
 \subsection{Calculating Ray Directions}
 
