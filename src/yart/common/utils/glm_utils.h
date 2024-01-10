@@ -53,7 +53,7 @@ namespace yart
         }
         
         /// @brief Create a modified inverse camera projection matrix, which transforms raw (not normalized) screen coordinates into camera space
-        /// @param fov Horizontal camera field of view 
+        /// @param fov Horizontal camera field of view in radians
         /// @param width Width of the screen in pixels
         /// @param height Height of the screen in pixels
         /// @param near_clip Near clipping plane distance
@@ -67,8 +67,8 @@ namespace yart
             T v = u / aspect_ratio;
 
             glm::mat<4, 4, T, glm::defaultp> inverse_projection_matrix(0);
-            inverse_projection_matrix[0][0] = static_cast<T>(2.0) / width * u;  // | screen coordinate normalization + rescaling to match the aspect ratio
-            inverse_projection_matrix[1][1] = static_cast<T>(2.0) / height * v; // | 
+            inverse_projection_matrix[0][0] = static_cast<T>(2.0) * u / width;  // | screen coordinate normalization + rescaling to match the aspect ratio
+            inverse_projection_matrix[1][1] = static_cast<T>(2.0) * v / height; // | 
             inverse_projection_matrix[2][2] = near_clip; // z translation to the near clipping plane
             inverse_projection_matrix[2][0] = -u; // | x,y translation to lower-left camera view corner
             inverse_projection_matrix[2][1] = -v; // |

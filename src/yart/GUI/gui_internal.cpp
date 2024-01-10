@@ -458,6 +458,88 @@ namespace yart
                 state_updated = true;
         }
 
+
+        // -- RENDER + / - BUTTONS -- //
+        const ImRect buttons_bb = {
+            window->DC.CursorPos,
+            { window->DC.CursorPos.x + ImGui::GetContentRegionAvail().x, window->DC.CursorPos.y + ImGui::GetFrameHeight() }
+        };
+
+        ImGui::ItemSize({ 0.0f, buttons_bb.GetHeight() });
+
+        // - button
+        {
+            const ImVec2 p_max = { buttons_bb.Min.x + buttons_bb.GetWidth() / 2.0f - 1.0f, buttons_bb.Max.y };
+            const ImGuiID minus_button_id = ImGui::GetID("##ColorEdit/buttons/-");
+            ImGui::ItemAdd({ buttons_bb.Min, p_max }, minus_button_id);
+
+            bool hovered, active;
+            const bool clicked = ImGui::ButtonBehavior({ buttons_bb.Min, p_max }, minus_button_id, &hovered, &active);
+            if (clicked && ctx.values.size() > 1) {
+                ctx.values.erase(ctx.values.begin() + ctx.selectedItemIndex);
+                ctx.locations.erase(ctx.locations.begin() + ctx.selectedItemIndex);
+                ctx.selectedItemIndex = glm::max(ctx.selectedItemIndex - 1, 0);
+
+                ctx.ids = nullptr; // force idx recalculation
+                state_updated = true;
+            }
+
+            const ImU32 col = GUI::GetFrameColor(hovered, active);
+            window->DrawList->AddRectFilled(buttons_bb.Min, p_max, col, g->Style.FrameRounding, ImDrawFlags_RoundCornersLeft);
+
+            GUI::DrawText(window->DrawList, buttons_bb.Min, p_max, "-", YART_GUI_TEXT_ALIGN_CENTER, false);
+            ImGui::RenderNavHighlight({ buttons_bb.Min, p_max }, minus_button_id, ImGuiNavHighlightFlags_TypeThin);
+        }
+
+        // + button
+        {
+            const ImVec2 p_min = { buttons_bb.Max.x - buttons_bb.GetWidth() / 2.0f + 1.0f, buttons_bb.Min.y };
+            const ImGuiID plus_button_id = ImGui::GetID("##ColorEdit/buttons/+");
+            ImGui::ItemAdd({ p_min, buttons_bb.Max }, plus_button_id);
+
+            bool hovered, active;
+            const bool clicked = ImGui::ButtonBehavior({ p_min, buttons_bb.Max }, plus_button_id, &hovered, &active);
+            if (clicked && ctx.values.size() < 256) {
+                float max_dist = ctx.locations[0];
+                size_t new_index = 0;
+                glm::vec3 new_val = ctx.values[0];
+                float new_loc = max_dist / 2.0f;
+
+                // pick an index with the biggest space between adjacent values
+                for (size_t i = 0; i < ctx.locations.size(); i++) {
+                    const float next_loc = i < ctx.locations.size() - 1 ? ctx.locations[i + 1] : 1.0f;
+                    const float dist = next_loc - ctx.locations[i];
+
+                    if (dist > max_dist) {
+                        new_index = i + 1;
+                        max_dist = dist;
+
+                        const glm::vec3 grad[2] = {
+                            ctx.values[i],
+                            i < ctx.locations.size() - 1 ? ctx.values[i + 1] : ctx.values[i]
+                        };
+
+                        new_val = yart::utils::LinearGradient(grad, YART_ARRAYSIZE(grad), 0.5f);
+                        new_loc = ctx.locations[i] + dist / 2.0f;
+                    }
+                }
+
+                ctx.values.insert(ctx.values.begin() + new_index, new_val);
+                ctx.locations.insert(ctx.locations.begin() + new_index, new_loc);
+                ctx.selectedItemIndex = new_index;
+
+                ctx.ids = nullptr; // force idx recalculation
+                state_updated = true;
+            }
+
+            const ImU32 col = GUI::GetFrameColor(hovered, active);
+            window->DrawList->AddRectFilled(p_min, buttons_bb.Max, col, g->Style.FrameRounding, ImDrawFlags_RoundCornersRight);
+
+            GUI::DrawText(window->DrawList, p_min, buttons_bb.Max, "+", YART_GUI_TEXT_ALIGN_CENTER, false);
+            ImGui::RenderNavHighlight({ p_min, buttons_bb.Max }, plus_button_id, ImGuiNavHighlightFlags_TypeThin);
+        }
+
+
         if (disable)
             ImGui::EndDisabled();
 
