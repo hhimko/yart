@@ -41,22 +41,22 @@ namespace yart
             { 2, 0, 6 }, { 6, 4, 2 }  // Bottom face
         };
 
-        mesh->uvsCount = 4;
-        mesh->uvs = new glm::vec2[mesh->uvsCount] {
-            { 0.0f, 0.0f },
-            { 0.0f, 1.0f },
-            { 1.0f, 0.0f },
-            { 1.0f, 1.0f }
-        };
+        // mesh->uvsCount = 4;
+        // mesh->uvs = new glm::vec2[mesh->uvsCount] {
+        //     { 0.0f, 0.0f },
+        //     { 0.0f, 1.0f },
+        //     { 1.0f, 0.0f },
+        //     { 1.0f, 1.0f }
+        // };
 
-        mesh->triangleVerticesUvs = new glm::u32vec3[mesh->trianglesCount] {
-            { 0, 1, 3 }, { 3, 2, 0 }, // Front face
-            { 0, 1, 3 }, { 3, 2, 0 }, // Left face
-            { 0, 1, 3 }, { 3, 2, 0 }, // Back face
-            { 0, 1, 3 }, { 3, 2, 0 }, // Right face
-            { 0, 1, 3 }, { 3, 2, 0 }, // Top face
-            { 0, 1, 3 }, { 3, 2, 0 }  // Bottom face
-        };
+        // mesh->triangleVerticesUvs = new glm::u32vec3[mesh->trianglesCount] {
+        //     { 0, 1, 3 }, { 3, 2, 0 }, // Front face
+        //     { 0, 1, 3 }, { 3, 2, 0 }, // Left face
+        //     { 0, 1, 3 }, { 3, 2, 0 }, // Back face
+        //     { 0, 1, 3 }, { 3, 2, 0 }, // Right face
+        //     { 0, 1, 3 }, { 3, 2, 0 }, // Top face
+        //     { 0, 1, 3 }, { 3, 2, 0 }  // Bottom face
+        // };
 
         return mesh;
     }
@@ -117,5 +117,14 @@ namespace yart
         }
 
         return mesh;
+    }
+
+    void MeshFactory::DestroyMesh(Mesh* mesh)
+    {
+        delete[] mesh->vertices;
+        delete[] mesh->triangleIndices;
+        // delete[] mesh->uvs;
+        // delete[] mesh->triangleVerticesUvs;
+        delete mesh;
     }
 } // namespace yart

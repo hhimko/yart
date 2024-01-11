@@ -20,11 +20,13 @@ namespace yart
     {
         bool InspectorPanel::OnRender(Panel** active_panel)
         {
+            bool made_changes = false;
+
             if (GUI::BeginTabBar("Scene")) {
                 static constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NavFlattened;
                 ImGui::BeginChild("##Content", { 0.0f, 0.0f }, false, flags);
 
-                RenderSceneTab(active_panel);
+                made_changes |= RenderSceneTab(active_panel);
 
                 ImGui::EndChild();
                 ImGui::EndTabItem();
@@ -40,7 +42,7 @@ namespace yart
                 static constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NavFlattened | ImGuiWindowFlags_AlwaysUseWindowPadding;
                 ImGui::BeginChild("##Content", { 0.0f, 0.0f }, false, flags);
 
-                RenderObjectTab(selected_object, active_panel);
+                made_changes |= RenderObjectTab(selected_object, active_panel);
 
                 ImGui::EndChild();
                 ImGui::EndTabItem();
@@ -50,13 +52,14 @@ namespace yart
             if (selected_object == nullptr)
                 ImGui::EndDisabled();
 
-            return false;
+            return made_changes;
         }
 
-        void InspectorPanel::RenderSceneTab(Panel** active_panel)
+        bool InspectorPanel::RenderSceneTab(Panel** active_panel)
         {
             ImGuiContext* g = ImGui::GetCurrentContext();
             ImGuiWindow* window = g->CurrentWindow;
+            bool made_changes = false;
 
             // Retrieve scene collections 
             size_t collections_count;
@@ -86,11 +89,29 @@ namespace yart
             while (window->DC.CursorPos.y < max_y)
                 RenderObjectTreeRowEmpty(row++);
 
+            // Render popup menu
             if (ImGui::BeginPopup("Test popup")) {
-                ImGui::LabelText("", "New mesh object");
-                ImGui::Button("Cube mesh");
-                ImGui::Button("Plane mesh");
-                ImGui::Button("UV Sphere mesh");
+                ImGui::LabelText("", "Add mesh object");
+
+                if (ImGui::Button("Cube mesh")) {
+                    Mesh* mesh = MeshFactory::CubeMesh({ 1, 1, 0 });
+                    scene->AddMeshObject("Cube", mesh);
+
+                    MeshFactory::DestroyMesh(mesh);
+                    made_changes = true;
+                }
+
+                if (ImGui::Button("Plane mesh")) {
+
+                }
+
+                if (ImGui::Button("UV Sphere mesh")) {
+                    Mesh* mesh = MeshFactory::UvSphereMesh({ 1, 1, 0 });
+                    scene->AddMeshObject("UV Sphere", mesh);
+
+                    MeshFactory::DestroyMesh(mesh);
+                    made_changes = true;
+                }
                 
                 ImGui::EndPopup();
             }
@@ -99,11 +120,17 @@ namespace yart
                 ImGui::OpenPopup("Test popup");
                 *active_panel = this;
             }
+
+            return made_changes;
         }
 
-        void InspectorPanel::RenderObjectTab(Object* selected_object, Panel** active_panel)
+        bool InspectorPanel::RenderObjectTab(Object* selected_object, Panel** active_panel)
         {
+            bool made_changes = false;
+
             GUI::Label("Object name", selected_object->GetName());
+
+            return made_changes;
         }
 
         bool InspectorPanel::RenderObjectTreeRowCollection(size_t row, yart::SceneCollection* collection, bool selected)

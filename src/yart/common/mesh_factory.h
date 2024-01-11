@@ -21,12 +21,12 @@ namespace yart
         glm::u32vec3* triangleIndices = nullptr; 
         /// @brief Count of triangles in the mesh
         uint32_t trianglesCount; 
-        /// @brief Array of UV coordinates for each vertex in the mesh. Size of the array should be equal to `uvsCount`
-        glm::vec2* uvs = nullptr;
-        /// @brief Size of the `uvs` array 
-        uint32_t uvsCount; 
-        /// @brief Map of triangle vertices to their corresponding UVs. Size of the array should be equal to `trianglesCount`
-        glm::u32vec3* triangleVerticesUvs = nullptr; 
+        // /// @brief Array of UV coordinates for each vertex in the mesh. Size of the array should be equal to `uvsCount`
+        // glm::vec2* uvs = nullptr;
+        // /// @brief Size of the `uvs` array 
+        // uint32_t uvsCount; 
+        // /// @brief Map of triangle vertices to their corresponding UVs. Size of the array should be equal to `trianglesCount`
+        // glm::u32vec3* triangleVerticesUvs = nullptr; 
     };
 
 
@@ -48,6 +48,10 @@ namespace yart
         ///     The ring count should not be less than three
         /// @return Mesh object for the primitive
         static Mesh* UvSphereMesh(const glm::vec3& origin, size_t num_segments = 32U, size_t num_rings = 16U);
+
+        /// @brief Destroy a mesh object
+        /// @param mesh Mesh object to be freed
+        static void DestroyMesh(Mesh* mesh);
 
     };
 } // namespace yart

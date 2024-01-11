@@ -39,13 +39,15 @@ namespace yart
             /// @brief Issue panel UI render commands for the scene tab item
             /// @param active_panel Output parameter for propagating the active panel back through the call stack.
             ///     Should be set to `this` whenever the panel should be activated in the layout
-            void RenderSceneTab(Panel** active_panel);
+            /// @return Whether any changes were made by the user during this frame
+            bool RenderSceneTab(Panel** active_panel);
 
             /// @brief Issue panel UI render commands for the object tab item
             /// @param selected_object Currently selected object
             /// @param active_panel Output parameter for propagating the active panel back through the call stack.
             ///     Should be set to `this` whenever the panel should be activated in the layout
-            void RenderObjectTab(Object* selected_object, Panel** active_panel);
+            /// @return Whether any changes were made by the user during this frame
+            bool RenderObjectTab(Object* selected_object, Panel** active_panel);
 
             /// @brief Issue object tree UI render commands for collection rows 
             /// @param row Row number

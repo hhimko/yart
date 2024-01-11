@@ -65,11 +65,11 @@ namespace yart
     {
         yart::Object* hit_object;
         glm::vec4 overlay_color = { 0.0f, 0.0f, 0.0f, 0.0f };
-        float u, v;
+        glm::vec3 out_vec;
 
         // Intersect the ray with the active scene and gizmos view
         float overlay_distance = m_showOverlays ? SampleOverlaysView(ray, overlay_color) : std::numeric_limits<float>::max();
-        float hit_distance = m_scene->IntersectRay(ray, &hit_object, &u, &v);
+        float hit_distance = m_scene->IntersectRay(ray, &hit_object, false, out_vec);
         payload.hitDistance = hit_distance;
 
         if (hit_distance > camera.GetNearClippingPlane() && hit_distance < camera.GetFarClippingPlane()) {
@@ -77,7 +77,7 @@ namespace yart
                 overlay_color.a = 0.0f; // Fix color ordering
             }
 
-            const glm::vec3 mat_col = { u, v, 0.0f };
+            const glm::vec3 mat_col = out_vec;
             payload.resultColor = mat_col * (1.0f - overlay_color.a) + glm::vec3(overlay_color) * overlay_color.a;
             return; //return ClosestHit(ray, payload);
         }

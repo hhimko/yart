@@ -96,8 +96,8 @@ namespace yart
         // Temporary mesh variables 
         std::vector<glm::vec3> verts;
         std::vector<glm::u32vec3> tris;
-        std::vector<glm::vec2> UVs;
-        std::vector<glm::u32vec3> triangleUVs;
+        // std::vector<glm::vec2> UVs;
+        // std::vector<glm::u32vec3> triangleUVs;
 
 
         // -- FRIEND DECLARATIONS -- //
