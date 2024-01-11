@@ -77,6 +77,11 @@ namespace yart
         /// @return Unique ID
         static id_t GenerateID();
 
+    public:
+        glm::vec3 scale    = { 1.0f, 1.0f, 1.0f };
+        glm::vec3 position = { 0.0f, 0.0f, 0.0f };
+        glm::vec3 rotation = { 0.0f, 0.0f, 0.0f };
+
     private:
         const id_t m_id; ///< Uniquely identifying ID of the object
 
@@ -102,7 +107,6 @@ namespace yart
 
         // -- FRIEND DECLARATIONS -- //
         friend class yart::Scene;
-        friend class Scene;
 
     };
 } // namespace yart

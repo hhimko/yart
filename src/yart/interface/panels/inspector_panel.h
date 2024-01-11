@@ -61,8 +61,9 @@ namespace yart
             /// @param indent Item indent level in the hierarchy
             /// @param object Object instance for which to render the row
             /// @param selected Whether the object is currently selected
+            /// @param selected Output parameter set with wether the row is currently hovered
             /// @return Whether the row was clicked
-            bool RenderObjectTreeRowObject(size_t row, uint8_t indent, yart::Object* object, bool selected);
+            bool RenderObjectTreeRowObject(size_t row, uint8_t indent, yart::Object* object, bool selected, bool* hovered);
 
             /// @brief Issue object tree UI render commands for empty rows 
             /// @param row Row number

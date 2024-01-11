@@ -6,6 +6,8 @@
 #include "inspector_panel.h"
 
 
+#include <iostream>
+
 #include <imgui_internal.h>
 
 #include "yart/interface/interface_internal.h"
@@ -70,6 +72,7 @@ namespace yart
 
             // Iterate through all scene collections 
             size_t row = 0;
+            yart::Object* hovered_object = nullptr;
             for (size_t ci = 0; ci < collections_count; ++ci) {
                 yart::SceneCollection* collection = collections + ci;
                 if (RenderObjectTreeRowCollection(row++, collection, collection == selected_collection))
@@ -77,10 +80,12 @@ namespace yart
 
                 // Iterate through all collection objects
                 uint8_t indent_level = 1;
-                for (size_t oi = 0; oi < collection->objects.size(); ++oi) {
-                    yart::Object* object = collection->objects[oi];
-                    if (RenderObjectTreeRowObject(row++, indent_level, object, object == selected_object))
+                for (yart::Object* object : collection->objects) {
+                    bool hovered = false;
+                    if (RenderObjectTreeRowObject(row++, indent_level, object, object == selected_object, &hovered))
                         scene->ToggleSelection(object);
+                    if (hovered)
+                        hovered_object = object;
                 }
             }
 
@@ -89,36 +94,64 @@ namespace yart
             while (window->DC.CursorPos.y < max_y)
                 RenderObjectTreeRowEmpty(row++);
 
-            // Render popup menu
-            if (ImGui::BeginPopup("Test popup")) {
+
+            // Define and render popup menus
+            static Object* settings_object_context = nullptr;
+            if (g->HoveredWindow == window && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+                if (hovered_object == nullptr) {
+                    ImGui::OpenPopup("Popup_NewObject");
+                } else {
+                    settings_object_context = hovered_object;
+                    ImGui::OpenPopup("Popup_ObjectSettings");
+                }
+                *active_panel = this;
+            }
+
+            if (ImGui::BeginPopup("Popup_NewObject")) {
                 ImGui::LabelText("", "Add mesh object");
 
                 if (ImGui::Button("Cube mesh")) {
-                    Mesh* mesh = MeshFactory::CubeMesh({ 1, 1, 0 });
+                    Mesh* mesh = MeshFactory::CubeMesh({ 0, 0, 0 });
                     scene->AddMeshObject("Cube", mesh);
 
                     MeshFactory::DestroyMesh(mesh);
+
+                    ImGui::CloseCurrentPopup();
                     made_changes = true;
                 }
 
                 if (ImGui::Button("Plane mesh")) {
+                    Mesh* mesh = MeshFactory::PlaneMesh({ 0, 0, 0 }, 5.0f);
+                    scene->AddMeshObject("Plane", mesh);
 
+                    MeshFactory::DestroyMesh(mesh);
+
+                    ImGui::CloseCurrentPopup();
+                    made_changes = true;
                 }
 
                 if (ImGui::Button("UV Sphere mesh")) {
-                    Mesh* mesh = MeshFactory::UvSphereMesh({ 1, 1, 0 });
+                    Mesh* mesh = MeshFactory::UvSphereMesh({ 0, 0, 0 }, 16, 8);
                     scene->AddMeshObject("UV Sphere", mesh);
 
                     MeshFactory::DestroyMesh(mesh);
+
+                    ImGui::CloseCurrentPopup();
                     made_changes = true;
                 }
                 
                 ImGui::EndPopup();
             }
 
-            if (g->HoveredWindow == window && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
-                ImGui::OpenPopup("Test popup");
-                *active_panel = this;
+            if (ImGui::BeginPopup("Popup_ObjectSettings")) {
+                if (ImGui::Button("Remove Object")) {
+                    scene->RemoveObject(settings_object_context);
+
+                    ImGui::CloseCurrentPopup();
+                    made_changes = true;
+                }
+
+                ImGui::EndPopup();
             }
 
             return made_changes;
@@ -126,9 +159,30 @@ namespace yart
 
         bool InspectorPanel::RenderObjectTab(Object* selected_object, Panel** active_panel)
         {
-            bool made_changes = false;
+            bool section_open, made_changes = false;
 
             GUI::Label("Object name", selected_object->GetName());
+
+            section_open = GUI::BeginCollapsableSection("Position");
+            if (section_open) {
+                static const char* names[3] = { "Position x", "Position y", "Position z" };
+                made_changes |= GUI::SliderVec3(names, &selected_object->position);
+            }
+            GUI::EndCollapsableSection(section_open);
+
+            section_open = GUI::BeginCollapsableSection("Scale");
+            if (section_open) {
+                static const char* names[3] = { "Scale x", "Scale y", "Scale z" };
+                made_changes |= GUI::SliderVec3(names, &selected_object->scale);
+            }
+            GUI::EndCollapsableSection(section_open);
+
+            section_open = GUI::BeginCollapsableSection("Rotation");
+            if (section_open) {
+                static const char* names[3] = { "Rotation x", "Rotation y", "Rotation z" };
+                made_changes |= GUI::SliderVec3(names, &selected_object->rotation);
+            }
+            GUI::EndCollapsableSection(section_open);
 
             return made_changes;
         }
@@ -158,7 +212,7 @@ namespace yart
             return clicked;
         }
 
-        bool InspectorPanel::RenderObjectTreeRowObject(size_t row, uint8_t indent, yart::Object* object, bool selected)
+        bool InspectorPanel::RenderObjectTreeRowObject(size_t row, uint8_t indent, yart::Object* object, bool selected, bool* hovered)
         {
             ImGuiContext* g = ImGui::GetCurrentContext();
             ImGuiWindow* window = g->CurrentWindow;
@@ -174,10 +228,11 @@ namespace yart
 
             g->Style.ItemSpacing = backup_item_spacing;
 
-            bool hovered, held;
-            const bool clicked = ImGui::ButtonBehavior(item_rect, id, &hovered, &held);
+            bool hov, held;
+            const bool clicked = ImGui::ButtonBehavior(item_rect, id, &hov, &held);
+            *hovered = hov;
             
-            const ImU32 bg_col = GetObjectTreeRowColorH(row, hovered, selected);
+            const ImU32 bg_col = GetObjectTreeRowColorH(row, hov, selected);
             RenderObjectTreeRowH(item_rect, row, indent, bg_col, ICON_CI_CIRCLE_OUTLINE, object->GetName());
 
             return clicked;

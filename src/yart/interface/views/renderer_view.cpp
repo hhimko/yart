@@ -34,11 +34,32 @@ namespace yart
             yart::Renderer* renderer = static_cast<yart::Renderer*>(target);
             bool section_open, made_changes = false;
 
+            section_open = GUI::BeginCollapsableSection("Materials");
+            if (section_open) {
+                made_changes |= RenderMaterialsSection(renderer);
+            }
+            GUI::EndCollapsableSection(section_open);
+
             section_open = GUI::BeginCollapsableSection("Overlays");
             if (section_open) {
                 made_changes |= RenderOverlaysSection(renderer);
             }
             GUI::EndCollapsableSection(section_open);
+
+            return made_changes;
+        }
+
+        bool RendererView::RenderMaterialsSection(yart::Renderer* target)
+        {
+            bool made_changes = false;
+
+            static constexpr size_t materials_count = 2;
+            static const char* materials[materials_count] = { "Normals", "UVs" };
+            int selection = static_cast<int>(target->m_materialUvs);
+            if (GUI::ComboHeader("Render material", materials, materials_count, &selection)) {
+                target->m_materialUvs ^= 0x1;
+                made_changes = true;
+            }
 
             return made_changes;
         }

@@ -46,6 +46,11 @@ namespace yart
             RendererView(const RendererView&) = delete;
             RendererView& operator=(RendererView const&) = delete;
 
+            /// @brief Issue "Materials" section GUI render commands
+            /// @param target View target instance
+            /// @returns Whether any changes were made by the user since the last frame
+            static bool RenderMaterialsSection(yart::Renderer* target);
+
             /// @brief Issue "Overlays" section GUI render commands
             /// @param target View target instance
             /// @returns Whether any changes were made by the user since the last frame

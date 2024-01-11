@@ -35,6 +35,12 @@ namespace yart
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     class MeshFactory {
     public:
+        /// @brief Generate a new plane mesh, centered around a given origin point
+        /// @param origin Center point, around which to build the mesh
+        /// @param size Size of the plane's sides
+        /// @return Mesh object for the primitive
+        static Mesh* PlaneMesh(const glm::vec3& origin, float size);
+
         /// @brief Generate a new unit cube mesh, centered around a given origin point
         /// @param origin Center point, around which to build the mesh
         /// @return Mesh object for the primitive

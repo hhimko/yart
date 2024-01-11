@@ -7,6 +7,7 @@
 
 
 #include <vector>
+#include <list>
 
 #include <glm/glm.hpp>
 
@@ -39,7 +40,7 @@ namespace yart
     class Scene {
     public:
         /// @brief Construct a new empty scene 
-        Scene();
+        Scene() = default;
 
         /// @brief Scene class custom destructor
         ~Scene();
@@ -92,6 +93,10 @@ namespace yart
         /// @return The newly created object 
         Object* AddMeshObject(const char* name, Mesh* mesh);
 
+        /// @brief Remove a given object from the scene
+        /// @param object Object to be removed
+        void RemoveObject(Object* object);
+
     private:
         /// @brief Assign a specified object to a collection
         /// @param object Object to be added to a collection
@@ -105,7 +110,7 @@ namespace yart
 
     private:
         std::vector<SceneCollection> m_collections; ///< List of object collections in the scene
-        std::vector<Object> m_objects; ///< List of all objects in the scene, sorted by their ID's in ascending order
+        std::list<Object> m_objects; ///< List of all objects in the scene, sorted by their ID's in ascending order
         SceneCollection* m_selectedCollection = nullptr; ///< Currently selected scene collection, or `nullptr` if none  
         Object* m_selectedObject = nullptr; ///< Currently selected object in the scene, or `nullptr` if none  
 

@@ -13,6 +13,28 @@
 
 namespace yart
 {
+    Mesh* MeshFactory::PlaneMesh(const glm::vec3& origin, float size)
+    {
+        Mesh* mesh = new Mesh();
+        const float half = size / 2.0f;
+
+        mesh->verticesCount = 4;
+        mesh->vertices = new glm::vec3[mesh->verticesCount] {
+            { origin.x - half, origin.y, origin.z - half },
+            { origin.x - half, origin.y, origin.z + half },
+            { origin.x + half, origin.y, origin.z + half },
+            { origin.x + half, origin.y, origin.z - half }
+        };
+
+        mesh->trianglesCount = 2;
+        mesh->triangleIndices = new glm::u32vec3[mesh->trianglesCount] {
+            { 0, 1, 2 }, 
+            { 0, 2, 3 }
+        };
+
+        return mesh;
+    }
+
     Mesh* MeshFactory::CubeMesh(const glm::vec3& origin)
     {
         Mesh* mesh = new Mesh();

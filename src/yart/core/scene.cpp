@@ -8,19 +8,16 @@
 
 #include <limits>
 
+#include <glm/gtc/matrix_transform.hpp>
+
 #include "yart/common/utils/yart_utils.h"
 
 
 namespace yart
 {
-    Scene::Scene()
-    {
-        m_objects.reserve(100);
-    }
-
     Scene::~Scene()
     {
-
+        m_objects.clear();
     }
 
     void Scene::LoadDefault()
@@ -59,10 +56,17 @@ namespace yart
         float min_dist = FLOAT_MAX;
 
         for (auto&& obj : m_objects) {
+
+            glm::mat4x4 transformation(0);
+            transformation[0][0] = obj.scale.x;
+            transformation[1][1] = obj.scale.y;
+            transformation[2][2] = obj.scale.z;
+            transformation[3][3] = 1.0f;
+
             for (size_t i = 0; i < obj.tris.size(); ++i) {
-                const glm::vec3 v0 = obj.verts[obj.tris[i].x];
-                const glm::vec3 v1 = obj.verts[obj.tris[i].y];
-                const glm::vec3 v2 = obj.verts[obj.tris[i].z];
+                const glm::vec3 v0 = transformation * glm::vec4(obj.verts[obj.tris[i].x], 1.0f);
+                const glm::vec3 v1 = transformation * glm::vec4(obj.verts[obj.tris[i].y], 1.0f);
+                const glm::vec3 v2 = transformation * glm::vec4(obj.verts[obj.tris[i].z], 1.0f);
 
                 float t, u, v;
                 if (yart::Ray::IntersectTriangle(ray, v0, v1, v2, &t, &u, &v) && t < min_dist) {
@@ -104,6 +108,21 @@ namespace yart
         ObjectAssignCollection(p_object);
 
         return p_object;
+    }
+
+    void Scene::RemoveObject(Object* object)
+    {
+        for (auto& it = m_objects.begin(); it != m_objects.end(); ++it) {
+            Object* o = &(*it);
+            if (o == object) {
+                if (o == m_selectedObject)
+                    m_selectedObject = nullptr;
+
+                CollectionRemoveObject(object);
+                m_objects.erase(it);
+                break;
+            }
+        }
     }
 
     SceneCollection* Scene::ObjectAssignCollection(Object* object, SceneCollection* collection)
