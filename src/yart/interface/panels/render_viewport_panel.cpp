@@ -66,7 +66,7 @@ namespace yart
             // Forward/backward movement
             float vertical_speed = yart::GUI::Input::GetVerticalAxis();
             if (vertical_speed != 0) {
-                camera->position += camera->GetLookDirection() * vertical_speed * s_cameraMoveSpeed;
+                camera->position += camera->GetLookDirection() * vertical_speed * s_cameraMoveSpeed * yart::GUI::Input::DeltaTime();
                 handled = true;
             }
 
@@ -74,7 +74,7 @@ namespace yart
             float horizontal_speed = yart::GUI::Input::GetHorizontalAxis();
             if (horizontal_speed != 0) {
                 const glm::vec3 u = -glm::normalize(glm::cross(camera->GetLookDirection(), yart::Camera::UP_DIRECTION)); // Camera view horizontal (right) direction vector
-                camera->position += u * horizontal_speed * s_cameraMoveSpeed;
+                camera->position += u * horizontal_speed * s_cameraMoveSpeed * yart::GUI::Input::DeltaTime();
                 handled = true;
             }
 
@@ -82,7 +82,7 @@ namespace yart
             float elevation_speed = static_cast<float>(ImGui::IsKeyDown(ImGuiKey_Space));
             elevation_speed -= static_cast<float>(ImGui::IsKeyDown(ImGuiKey_LeftCtrl));
             if (elevation_speed != 0) {
-                camera->position += yart::Camera::UP_DIRECTION * elevation_speed * s_cameraMoveSpeed;
+                camera->position += yart::Camera::UP_DIRECTION * elevation_speed * s_cameraMoveSpeed * yart::GUI::Input::DeltaTime();
                 handled = true;
             }
 

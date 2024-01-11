@@ -52,6 +52,15 @@ namespace yart
             /// @return Vector containing the amount of pixels moved
             static ImVec2 GetMouseMoveDelta();
 
+
+            ////////////////////////////////////////////////////////////////////////////////////////////////////
+            /// Input helper utility methods 
+            ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+            /// @brief Get the time interval from the last frame to the current one
+            /// @return Delta time for the current frame
+            static float DeltaTime();
+
         };
 
     } // namespace GUI

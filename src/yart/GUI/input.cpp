@@ -92,5 +92,11 @@ namespace yart
             return g->IO.MouseDelta;
         }
 
+        float Input::DeltaTime()
+        {
+            ImGuiContext* g = ImGui::GetCurrentContext();
+            return g->IO.DeltaTime;
+        }
+
     } // namespace GUI
 } // namespace yart
