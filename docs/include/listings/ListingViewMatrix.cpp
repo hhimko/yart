@@ -1,4 +1,4 @@
-/// @brief Create a world space to camera space transformation matrix
+/// @brief Create a world-space to camera-space transformation matrix
 /// @param look_dir Camera's normalized look-at vector
 /// @return The view matrix
 glm::mat4x4 CreateViewMatrix(glm::vec3 const& look_dir)

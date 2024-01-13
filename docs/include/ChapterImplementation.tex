@@ -294,11 +294,29 @@ where $ (u, v) $ are half the dimensions of the clipping plane, for a specified 
 
 \subsection{Calculating Ray Directions}
 
+Functions outlined in Listings (\ref{lst:Implementation/RayGeneration/camera} - \ref{lst:Implementation/RayGeneration/ip_matrix}) can be used in combination to develop a simple ray generation procedure.
+The view matrix can be inverted and combined with the inverse projection matrix to construct an inverse view-projection matrix.
+This matrix will ultimately be used for transforming screen-space pixel coordinates into ray directions.
+\cref{lst:Implementation/RayGeneration/ray_generation} proposes an example implementation of such functionality, in the form of the \verb|Camera| class's \verb|GetRayDirections| method.
+Subsequent $ (x, y) $ pixel coordinates are offset by half an unit to obtain their centers, and applied to the inverse view-projection matrix. 
+Finally, the vectors get truncated into three dimensions and normalized, resulting in the desired ray directions.
+
+\vfill
+\begin{figure}[!ht]
+    \lstinputlisting[
+        xleftmargin=2em, 
+        caption={[\texttt{Camera::GetRayDirections} method implementation]
+            \texttt{Camera::GetRayDirections} method implementation.},
+        label={lst:Implementation/RayGeneration/ray_generation}
+    ]{include/listings/ListingRayGeneration1.cpp}
+\end{figure}
+\vfill
+
 \subsection{Ray Direction Caching}
 
-YART employs a caching mechanism
+A number of optimization techniques can be applied to the ray generation procedure, which can greatly impact its performance.
 
-Given the output image's pixel coordinates, the 
+YART employs a caching mechanism
 
 \section{Scene Representation}
 
