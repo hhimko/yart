@@ -294,8 +294,8 @@ where $ (u, v) $ are half the dimensions of the clipping plane, for a specified 
 
 \subsection{Calculating Ray Directions}
 
-Functions outlined in Listings (\ref{lst:Implementation/RayGeneration/camera} - \ref{lst:Implementation/RayGeneration/ip_matrix}) can be used in combination to develop a simple ray generation procedure.
-The view matrix can be inverted and combined with the inverse projection matrix to construct an inverse view-projection matrix.
+Functions outlined in Listings \ref{lst:Implementation/RayGeneration/camera}--\ref{lst:Implementation/RayGeneration/ip_matrix} can be used in combination to develop a simple ray generation procedure.
+The computed view matrix can be inverted and combined with the inverse projection matrix to construct an inverse view-projection matrix.
 This matrix will ultimately be used for transforming screen-space pixel coordinates into ray directions.
 \cref{lst:Implementation/RayGeneration/ray_generation} proposes an example implementation of such functionality, in the form of the \verb|Camera| class's \verb|GetRayDirections| method.
 Subsequent $ (x, y) $ pixel coordinates are offset by half an unit to obtain their centers, and applied to the inverse view-projection matrix. 
@@ -314,9 +314,44 @@ Finally, the vectors get truncated into three dimensions and normalized, resulti
 
 \subsection{Ray Direction Caching}
 
-A number of optimization techniques can be applied to the ray generation procedure, which can greatly impact its performance.
+A number of optimization techniques can be applied to the ray generation procedure, which can greatly impact its performance. 
+One notable example involves the utilization of a caching mechanism, a strategy employed in the YART engine.
+It is built on the key observation, that once calculated ray directions may be cached under certain conditions and reused between subsequent frames.
+As seen in \cref{lst:Implementation/RayGeneration/ray_generation}, our implementation of ray generation depends on just a couple of variables: the camera's looking direction, FOV, and the output image's size.
+Consequently, change in the camera's position, as well as changes not directly related to the camera, should not require the ray directions to be recalculated. 
+They can therefore be stored in memory and reused until specific camera properties are modified, or the screen is resized.
+The current \verb|Camera| class implementation can be slightly altered to reflect this methodology, as seen in \cref{lst:Implementation/RayGeneration/camera_caching}.
 
-YART employs a caching mechanism
+\vfill
+\begin{figure}[!ht]
+    \lstinputlisting[
+        xleftmargin=2em, 
+        caption={[Modified \texttt{Camera} class declaration for ray direction caching]
+            Modified \texttt{Camera} class declaration for ray direction caching.},
+        label={lst:Implementation/RayGeneration/camera_caching}
+    ]{include/listings/ListingCamera2.cpp}
+\end{figure}
+\vfill
+
+The resizable cache, along with its current dimensions, can be stored as private members within the \verb|Camera| class.
+Additionally, a \verb|Camera::RecalculateCache| method can be introduced.
+It will be used under certain conditions for recalculating the ray directions cache. 
+This method has intentionally been declared to mirror the definition of \verb|Camera::GetRayDirections|, presented in \cref{lst:Implementation/RayGeneration/ray_generation}, as its implementation can effectively be reused for this task.
+Conversely, the method for retrieving ray directions should be redefined to reflect this change (see \cref{lst:Implementation/RayGeneration/ray_generation_cache}).
+
+\vfill
+\begin{figure}[!ht]
+    \lstinputlisting[
+        xleftmargin=2em, 
+        caption={[Modified \texttt{Camera::GetRayDirections} method implementation]
+            Modified \texttt{Camera::GetRayDirections} method implementation.},
+        label={lst:Implementation/RayGeneration/ray_generation_cache}
+    ]{include/listings/ListingRayGeneration2.cpp}
+\end{figure}
+\vfill
+
+In the modified version of the \verb|Camera::GetRayDirections| method, ray directions are returned from the cache, which only gets recalculated when a change in screen resolution is detected.
+This methodology can later be extended upon, to recalculate the cache when the camera's rotation or field of view changes, possibly with the use of property setters and additional state.  
 
 \section{Scene Representation}
 
