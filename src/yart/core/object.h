@@ -99,6 +99,8 @@ namespace yart
         glm::vec3 position = { 0.0f, 0.0f, 0.0f };
         // glm::vec3 rotation = { 0.0f, 0.0f, 0.0f };
 
+        glm::vec3 materialColor = { 1.0f, 0.0f, 0.0f };
+
     private:
         const id_t m_id; ///< Uniquely identifying ID of the object
 

@@ -41,7 +41,7 @@ namespace yart
 
             // Trace a ray from the camera's origin into the scene
             HitPayload payload;
-            yart::Ray ray = { camera.position, ray_direction, ray_direction_ddx, ray_direction_ddy };
+            const yart::Ray ray = { camera.position, ray_direction, ray_direction_ddx, ray_direction_ddy };
             TraceRay(camera, ray, payload);
 
             buffer[i * 4 + 0] = payload.resultColor.r;
@@ -69,21 +69,55 @@ namespace yart
 
         // Intersect the ray with the active scene and gizmos view
         float overlay_distance = m_showOverlays ? SampleOverlaysView(ray, overlay_color) : std::numeric_limits<float>::max();
-        float hit_distance = m_scene->IntersectRay(ray, &hit_object, m_materialUvs, out_vec);
+        float hit_distance = m_scene->IntersectRay(ray, &hit_object, m_debugShading && m_materialUvs, out_vec);
         payload.hitDistance = hit_distance;
 
-        if (hit_distance > camera.GetNearClippingPlane() && hit_distance < camera.GetFarClippingPlane()) {
-            if (overlay_distance > hit_distance) {
-                overlay_color.a = 0.0f; // Fix color ordering
-            }
-
-            const glm::vec3 mat_col = out_vec;
-            payload.resultColor = mat_col * (1.0f - overlay_color.a) + glm::vec3(overlay_color) * overlay_color.a;
-            return; //return ClosestHit(ray, payload);
+        if (hit_distance < camera.GetNearClippingPlane() || hit_distance > camera.GetFarClippingPlane()) {
+            Miss(ray, payload);
+            payload.resultColor = payload.resultColor * (1.0f - overlay_color.a) + glm::vec3(overlay_color) * overlay_color.a;
+            return;
         }
 
-        Miss(ray, payload);
-        payload.resultColor = payload.resultColor * (1.0f - overlay_color.a) + glm::vec3(overlay_color) * overlay_color.a;
+        if (overlay_distance > hit_distance) {
+            overlay_color.a = 0.0f; // Fix color ordering
+        }
+
+        if (m_debugShading) {
+            payload.resultColor = out_vec * (1.0f - overlay_color.a) + glm::vec3(overlay_color) * overlay_color.a;
+            return;
+        } 
+
+        const glm::vec3 hit_pos = ray.origin + ray.direction * hit_distance;
+        const glm::vec3 normal = out_vec;
+
+        static constexpr size_t num_lights = 3;
+        static constexpr glm::vec3 light_positions[num_lights] = { { -2.0f, 4.0f, -3.0f }, { 2.0f, 1.0f, -2.0f }, { -0.5f, 0.5f, -4.0f } };
+        static constexpr float light_intensities[num_lights] = { 0.8f, 0.5f, 0.2f };
+
+        float diffuse = 0.0f;
+        for (size_t i = 0; i < num_lights; ++i) {
+            const float dist = glm::distance(hit_pos, light_positions[i]);
+            const glm::vec3 dir = glm::normalize(light_positions[i] - hit_pos);
+            
+            float shadow = 1.0f;
+            if (glm::dot(dir, normal) > 0) {
+                const yart::Ray shadow_ray = { hit_pos, dir, dir, dir };
+
+                glm::vec3 _ignored;
+                yart::Object* shadow_hit_object;
+                const float shadow_hit_distance = m_scene->IntersectRay(shadow_ray, &shadow_hit_object, false, _ignored);
+
+                if (shadow_hit_distance > 0.0f && shadow_hit_distance < dist)
+                    shadow = 1.0f + 1.0f / (-4.0f * shadow_hit_distance - 1.0f);
+            }
+
+            diffuse += shadow * light_intensities[i] * glm::max(0.0f, glm::dot(normal, dir));
+        }
+
+        static constexpr glm::vec3 ambient = 0.03f * glm::vec3(0.316f, 0.544f, 0.625f);
+        const glm::vec3 mat_col = ambient + hit_object->materialColor * diffuse;
+        payload.resultColor = mat_col * (1.0f - overlay_color.a) + glm::vec3(overlay_color) * overlay_color.a;
+        //return ClosestHit(ray, payload);
     }
 
     float Renderer::SampleOverlaysView(const yart::Ray& ray, glm::vec4& color)

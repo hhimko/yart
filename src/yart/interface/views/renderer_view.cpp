@@ -53,6 +53,11 @@ namespace yart
         {
             bool made_changes = false;
 
+            made_changes |= GUI::CheckBox("Debug materials", &target->m_debugShading);
+
+            if (!target->m_debugShading) 
+                ImGui::BeginDisabled();
+
             static constexpr size_t materials_count = 2;
             static const char* materials[materials_count] = { "Normals", "UVs" };
             int selection = static_cast<int>(target->m_materialUvs);
@@ -60,6 +65,9 @@ namespace yart
                 target->m_materialUvs ^= 0x1;
                 made_changes = true;
             }
+
+            if (!target->m_debugShading) 
+                ImGui::EndDisabled();
 
             return made_changes;
         }

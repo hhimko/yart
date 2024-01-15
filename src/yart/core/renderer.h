@@ -98,7 +98,8 @@ namespace yart
 
         bool m_showOverlays = true; // Whether the overlays layer should be rendered
         bool m_useThickerGrid = false; // Whether the overlay grid should use a thicker outline
-        bool m_materialUvs = false; // Whether to render the surface uvs as the object's material 
+        bool m_debugShading = false; // Whether to render the surface uvs or normals as the object's material 
+        bool m_materialUvs = false; // Whether to render the surface uvs as the object's material when `m_debugShading` is true
 
 
         // -- FRIEND DECLARATIONS -- //
