@@ -129,7 +129,7 @@ namespace yart
 
         private:
             inline static yart::Camera s_camera; ///< YART camera instance, shared between all viewport panels
-            inline static float s_cameraMoveSpeed = 2.0f; ///< Speed multiplier for camera translation
+            inline static float s_cameraMoveSpeed = 2.5f; ///< Speed multiplier for camera translation
 
             yart::Viewport m_viewport { 1, 1, 2 };
 

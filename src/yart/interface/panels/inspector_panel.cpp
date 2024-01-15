@@ -139,6 +139,13 @@ namespace yart
                     ImGui::CloseCurrentPopup();
                     made_changes = true;
                 }
+
+                if (ImGui::Button("SDF Sphere")) {
+                    scene->AddSdfObject("Sphere", 0.5f);
+
+                    ImGui::CloseCurrentPopup();
+                    made_changes = true;
+                }
                 
                 ImGui::EndPopup();
             }
@@ -177,12 +184,8 @@ namespace yart
             }
             GUI::EndCollapsableSection(section_open);
 
-            section_open = GUI::BeginCollapsableSection("Rotation");
-            if (section_open) {
-                static const char* names[3] = { "Rotation x", "Rotation y", "Rotation z" };
-                made_changes |= GUI::SliderVec3(names, &selected_object->rotation);
-            }
-            GUI::EndCollapsableSection(section_open);
+            if (made_changes)
+                selected_object->TransformationChanged();
 
             return made_changes;
         }

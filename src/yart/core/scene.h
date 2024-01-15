@@ -93,6 +93,12 @@ namespace yart
         /// @return The newly created object 
         Object* AddMeshObject(const char* name, Mesh* mesh);
 
+        /// @brief Add a new SDF type object to the scene 
+        /// @param name Name of the object
+        /// @param radius SDF sphere radius
+        /// @return The newly created object 
+        Object* AddSdfObject(const char* name, float radius);
+
         /// @brief Remove a given object from the scene
         /// @param object Object to be removed
         void RemoveObject(Object* object);

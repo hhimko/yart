@@ -23,6 +23,7 @@ namespace yart
     enum class ObjectType : uint8_t {
         MESH = 0, ///< Mesh object type
         LIGHT,    ///< Light object type
+        SDF       ///< Signed Distance Field object type
     };
 
 
@@ -49,19 +50,30 @@ namespace yart
             return m_name.c_str();
         }
 
+        /// @brief Signal to the object that its transformation has changed
+        /// @details Calling this method ensures that the transformation matrix gets recalculated
+        void TransformationChanged() 
+        {
+            m_shouldRecalculateTransformationMatrix = true;
+        }
+
+        glm::mat4 GetTransformationMatrix(); 
+
     private:
         /// @brief Structure containing data required to render a mesh object
         struct MeshData {
-        public:
 
         };
 
         /// @brief Structure containing data required to render a light object
         struct LightData {
-        public:
 
         };
 
+        /// @brief Structure containing data required to render a SDF object
+        struct SdfData {
+            float radius; ///< Sphere radius
+        };
 
         /// @brief Construct a new mesh type object 
         /// @param name Display name of the object
@@ -73,6 +85,11 @@ namespace yart
         /// @param data Light object type data
         Object(const char* name, LightData& data);
 
+        /// @brief Construct a new light type object 
+        /// @param name Display name of the object
+        /// @param data Light object type data
+        Object(const char* name, SdfData& data);
+
         /// @brief Generate a new unique ID
         /// @return Unique ID
         static id_t GenerateID();
@@ -80,7 +97,7 @@ namespace yart
     public:
         glm::vec3 scale    = { 1.0f, 1.0f, 1.0f };
         glm::vec3 position = { 0.0f, 0.0f, 0.0f };
-        glm::vec3 rotation = { 0.0f, 0.0f, 0.0f };
+        // glm::vec3 rotation = { 0.0f, 0.0f, 0.0f };
 
     private:
         const id_t m_id; ///< Uniquely identifying ID of the object
@@ -96,7 +113,13 @@ namespace yart
             /// @brief Objects light data
             /// @details Valid only when the `m_type` member variable is equal to ObjectType::LIGHT
             LightData m_lightData;
+            /// @brief Objects SDF data
+            /// @details Valid only when the `m_type` member variable is equal to ObjectType::SDF
+            SdfData m_sdfData;
         };
+
+        glm::mat4 m_transformationMatrix { 0 }; ///< Cached object transformation matrix
+        bool m_shouldRecalculateTransformationMatrix = true; 
 
         // Temporary mesh variables 
         std::vector<glm::vec3> verts;

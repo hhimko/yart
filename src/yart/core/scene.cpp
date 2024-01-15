@@ -8,8 +8,6 @@
 
 #include <limits>
 
-#include <glm/gtc/matrix_transform.hpp>
-
 #include "yart/common/utils/yart_utils.h"
 
 
@@ -56,35 +54,61 @@ namespace yart
         float min_dist = FLOAT_MAX;
 
         for (auto&& obj : m_objects) {
+            switch (obj.m_type) {
+            case ObjectType::MESH: {
+                glm::mat4 transformation = obj.GetTransformationMatrix();
 
-            glm::mat4x4 transformation(0);
-            transformation[0][0] = obj.scale.x;
-            transformation[1][1] = obj.scale.y;
-            transformation[2][2] = obj.scale.z;
-            transformation[3][3] = 1.0f;
+                for (size_t i = 0; i < obj.tris.size(); ++i) {
+                    const glm::vec3 v0 = transformation * glm::vec4(obj.verts[obj.tris[i].x], 1.0f);
+                    const glm::vec3 v1 = transformation * glm::vec4(obj.verts[obj.tris[i].y], 1.0f);
+                    const glm::vec3 v2 = transformation * glm::vec4(obj.verts[obj.tris[i].z], 1.0f);
 
-            for (size_t i = 0; i < obj.tris.size(); ++i) {
-                const glm::vec3 v0 = transformation * glm::vec4(obj.verts[obj.tris[i].x], 1.0f);
-                const glm::vec3 v1 = transformation * glm::vec4(obj.verts[obj.tris[i].y], 1.0f);
-                const glm::vec3 v2 = transformation * glm::vec4(obj.verts[obj.tris[i].z], 1.0f);
+                    float t, u, v;
+                    if (yart::Ray::IntersectTriangle(ray, v0, v1, v2, &t, &u, &v) && t < min_dist) {
+                        *hit_obj = &obj;
+                        min_dist = t;
 
-                float t, u, v;
-                if (yart::Ray::IntersectTriangle(ray, v0, v1, v2, &t, &u, &v) && t < min_dist) {
-                    *hit_obj = &obj;
-                    min_dist = t;
-
-                    if (uv) {
-                        // const float w = 1 - (*u) - (*v);
-                        // const glm::u32vec3& uv_indices = obj.triangleUVs[i];
-                        // const glm::vec2 tex_uv = w * obj.UVs[uv_indices.x] + (*u) * obj.UVs[uv_indices.y] + (*v) * obj.UVs[uv_indices.z];
-                        out.x = u;
-                        out.y = v;
-                        out.z = 0.0f;
-                    } else {
-                        // Calculate the surface's normal vector
-                        out = glm::normalize(glm::cross(v1 - v0, v2 - v1));
+                        if (uv) {
+                            // const float w = 1 - (*u) - (*v);
+                            // const glm::u32vec3& uv_indices = obj.triangleUVs[i];
+                            // const glm::vec2 tex_uv = w * obj.UVs[uv_indices.x] + (*u) * obj.UVs[uv_indices.y] + (*v) * obj.UVs[uv_indices.z];
+                            out.x = u;
+                            out.y = v;
+                            out.z = 0.0f;
+                        } else {
+                            // Calculate the surface's normal vector
+                            out = glm::normalize(glm::cross(v1 - v0, v2 - v1));
+                        }
                     }
                 }
+                break;
+            }
+            case ObjectType::SDF: {
+                const glm::vec3 pos = obj.position;
+                const float radius = obj.m_sdfData.radius * obj.scale.x;
+                glm::vec3 dir = ray.origin - pos; 
+
+                const float a = 1.0f;
+                const float half_b = glm::dot(dir, ray.direction);
+                const float dir_len = glm::length(dir);
+                const float c = dir_len * dir_len - radius * radius;
+                const float discriminant = half_b * half_b - a * c;
+
+                if (discriminant < 0) {
+                    break;
+                }
+
+                const float dist = -half_b - glm::sqrt(discriminant);
+                if (dist < min_dist) {
+                    *hit_obj = &obj;
+                    min_dist = dist;
+
+                    const glm::vec3 hit_pos = ray.origin + dist * ray.direction;
+                    out = glm::normalize(hit_pos - pos);
+                }
+
+                break;
+            }
             }
         }
 
@@ -104,6 +128,21 @@ namespace yart
         // object.UVs = { mesh->uvs, mesh->uvs + mesh->uvsCount };
         // object.triangleUVs = { mesh->triangleVerticesUvs, mesh->triangleVerticesUvs + mesh->trianglesCount };
 
+        Object* p_object = &m_objects.emplace_back(object);
+        ObjectAssignCollection(p_object);
+
+        return p_object;
+    }
+
+    Object* Scene::AddSdfObject(const char* name, float radius)
+    {
+        if (m_objects.size() == 100) 
+            YART_ABORT("For now, scenes accept for up to 100 objects");
+
+        Object::SdfData sdf_data = { };
+        sdf_data.radius = radius;
+        Object object(name, sdf_data);
+        
         Object* p_object = &m_objects.emplace_back(object);
         ObjectAssignCollection(p_object);
 
