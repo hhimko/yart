@@ -444,7 +444,7 @@ To define a single triangle, every element in the face list consists of three in
 The high fidelity of triangle meshes renders them a great choice for accurately representing practically any shapes and models.
 A diverse array of three-dimensional primitives, such as cubes, spheres, and cones, can easily be modeled using this representation with a controlled level of detail. 
 Additionally, triangle meshes provide a straightforward way of calculating surface normals, used throughout ray tracing engines for reflecting rays and shading objects.
-Given two triangle edges $ |AB|, |BC| $, the surface normal $ \bm{\hat{n}} $ can easily be computed using vector cross product:
+Given two non-parallel triangle edges $ |AB|, |BC| $, the surface normal $ \bm{\hat{n}} $ can be found as the cross product:
 %
 \begin{equation}
     \bm{\hat{n}} = \frac{|AB|\times|BC|}{\norm{|AB|\times|BC|}}
@@ -452,17 +452,45 @@ Given two triangle edges $ |AB|, |BC| $, the surface normal $ \bm{\hat{n}} $ can
 
 \subsection{Materials}
 
-\dots
+Numerous types of materials can be implemented in ray tracing applications to simulate the appearance of different surfaces.
+These can vary between highly realistic, physically based approaches, and simpler, although typically much more efficient, surface shading methods.
+YART does not aim to achieve the highest possible levels of realism, and instead puts more effort into being flexible and interactive. 
+For this reason, the engine employs diffuse materials with specular highlights, which is a simplistic and easy to implement shading model.
+The diffuse shading model (also known as \textit{Lambertian reflectance} \supercite{Goral1984}) is used to model ideal light reflectance scenarios of perfectly matte objects. 
+It is based on the Lambert's law, which states that the modelled surface will diffuse incident light equally in all directions, regardless of the observer's angle of view.
+Specular reflections are commonly added to diffuse materials, which additionally provide realistic highlights from direct light source reflections.
+Together with diffuse shading and an ambient illumination term, the specular reflection model is commonly referred to as the \textit{Blinn-Phong} model \supercite{Blinn1977}.
+\cref{fig:Implementation/SceneRepresentation/materials} illustrates a sample scene with multiple diffuse objects, rendered using the Blinn-Phong reflection model employed in YART.
+
+\vfill
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[height=7cm]{example-image-c}
+    \caption[Diffuse materials with specular highlights modelled using Blinn-Phong]{
+        Diffuse materials with specular highlights modelled using the Blinn-Phong shading model.}
+    \label{fig:Implementation/SceneRepresentation/materials}
+\end{figure}
+\vfill
 
 \subsection{Lights}
 
-mesh definition, normals calculation, uv coordinates, sphere mesh generation(?), light objects
-
-\dots
+Light sources are without a doubt one of the most important concepts in ray tracing, as they contribute to the overall illumination of the rendered scene.
+The choice of light types depends on the desired visual effects and the characteristics of the scene being rendered.
+In order to effectively illuminate the scene, YART defines two types of light sources: point lights and ambient illumination.
+Point lights are ofter used to represent small, concentrated light sources, such as a light bulb. 
+They are generally defined using some intensity value, and a single point in space that emits light uniformly in all directions.
+On the other hand, ambient lighting is a basic form of global illumination, which defines the baseline intensity of the scene.
+While not a physically accurate light source, it helps to enhance poorly-lit surfaces and areas in shadows. 
+As opposed to point lights, ambient lighting does not generate shadows in the rendered image.
 
 \section{Intersection Testing and Shading}
 
-Möller-Trumbore algorithm for tri-ray intersection, solid color materials, shading using blinn-phong reflection model
+
+
+
+% \section{Shading}
+
+Möller-Trumbore algorithm for tri-ray intersection
 
 \dots
 
@@ -472,7 +500,7 @@ solid color skies, linear gradients, and cubemap skyboxes
 
 \dots
 
-\section{Shadows}
+\section{Hard Shadows}
 
 hard shadows implementation
 
