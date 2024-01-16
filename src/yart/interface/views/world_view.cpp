@@ -34,11 +34,17 @@ namespace yart
         bool WorldView::Render(void* target) const
         {
             yart::World* world = static_cast<yart::World*>(target);
-
             bool section_open, made_changes = false;
+
             section_open = GUI::BeginCollapsableSection("Sky");
             if (section_open) {
                 made_changes |= RenderSkySection(world);
+            }
+            GUI::EndCollapsableSection(section_open);
+
+            section_open = GUI::BeginCollapsableSection("Ambient");
+            if (section_open) {
+                made_changes |= RenderAmbientSection(world);
             }
             GUI::EndCollapsableSection(section_open);
 
@@ -115,6 +121,16 @@ namespace yart
             }
 
             target->m_skyType = items_LUT[selected_item];
+            return made_changes;
+        }
+
+        bool WorldView::RenderAmbientSection(yart::World* target)
+        {
+            bool made_changes = false;
+
+            static_assert(sizeof(glm::vec3) == 3 * sizeof(float));
+            made_changes |= GUI::ColorEdit("Ambient color", reinterpret_cast<float*>(&target->ambientColor));
+
             return made_changes;
         }
 

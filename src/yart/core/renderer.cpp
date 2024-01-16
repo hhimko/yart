@@ -114,7 +114,7 @@ namespace yart
             diffuse += shadow * light_intensities[i] * glm::max(0.0f, glm::dot(normal, dir));
         }
 
-        static constexpr glm::vec3 ambient = 0.03f * glm::vec3(0.316f, 0.544f, 0.625f);
+        const glm::vec3 ambient = 0.03f * m_world->ambientColor;
         const glm::vec3 mat_col = ambient + hit_object->materialColor * diffuse;
         payload.resultColor = mat_col * (1.0f - overlay_color.a) + glm::vec3(overlay_color) * overlay_color.a;
         //return ClosestHit(ray, payload);

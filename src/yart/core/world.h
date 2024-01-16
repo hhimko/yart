@@ -26,6 +26,9 @@ namespace yart
         /// @return Color at the sampled point
         glm::vec3 SampleSkyColor(const glm::vec3& direction);
 
+    public:
+        glm::vec3 ambientColor = { 0.131f, 0.241f, 0.500f };
+
     private:
         /// @brief Types of renderable environment skies
         enum class SkyType : uint8_t {

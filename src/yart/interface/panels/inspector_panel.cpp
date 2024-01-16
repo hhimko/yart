@@ -172,15 +172,22 @@ namespace yart
 
             section_open = GUI::BeginCollapsableSection("Position");
             if (section_open) {
-                static const char* names[3] = { "Position x", "Position y", "Position z" };
+                static const char* names[3] = { "Position X", "Position Y", "Position Z" };
                 made_changes |= GUI::SliderVec3(names, &selected_object->position);
             }
             GUI::EndCollapsableSection(section_open);
 
             section_open = GUI::BeginCollapsableSection("Scale");
             if (section_open) {
-                static const char* names[3] = { "Scale x", "Scale y", "Scale z" };
+                static const char* names[3] = { "Scale X", "Scale Y", "Scale Z" };
                 made_changes |= GUI::SliderVec3(names, &selected_object->scale);
+            }
+            GUI::EndCollapsableSection(section_open);
+
+            section_open = GUI::BeginCollapsableSection("Material");
+            if (section_open) {
+                static_assert(sizeof(glm::vec3) == 3 * sizeof(float));
+                made_changes |= GUI::ColorEdit("Diffuse color", reinterpret_cast<float*>(&selected_object->materialColor));
             }
             GUI::EndCollapsableSection(section_open);
 

@@ -49,6 +49,11 @@ namespace yart
             /// @returns Whether any changes were made by the user since the last frame
             static bool RenderSkySection(yart::World* target);
 
+            /// @brief Issue "Ambient" section UI render commands
+            /// @param target View target instance
+            /// @returns Whether any changes were made by the user since the last frame
+            static bool RenderAmbientSection(yart::World* target);
+
         private:
             static constexpr char* NAME = "World";
             static constexpr char* ICON = ICON_CI_GLOBE;
