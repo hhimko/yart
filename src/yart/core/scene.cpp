@@ -20,32 +20,32 @@ namespace yart
 
     void Scene::LoadDefault()
     {
-        // Mesh* cube_mesh = MeshFactory::CubeMesh({ 0, 0, 0 });
-        // AddMeshObject("Default Cube", cube_mesh);
+        Mesh* cube_mesh = MeshFactory::CubeMesh({ 0, 0, 0 });
+        AddMeshObject("Default Cube", cube_mesh);
 
-        // MeshFactory::DestroyMesh(cube_mesh);
+        MeshFactory::DestroyMesh(cube_mesh);
 
-        const float xoff = 0.3f;
-        const float zoff = -0.5f;
+        // const float xoff = 0.3f;
+        // const float zoff = -0.5f;
 
-        Object* object;
-        object = AddSdfObject("Sphere 1", 0.5f);
-        object->position = { -0.8f + xoff, 0.5f, -0.2f + zoff };
-        object->materialColor = { 0.1f, 0.8f, 0.1f };
+        // Object* object;
+        // object = AddSdfObject("Sphere", 0.5f);
+        // object->position = { -0.8f + xoff, 0.5f, -0.2f + zoff };
+        // object->materialColor = { 0.1f, 0.8f, 0.1f };
 
-        object = AddSdfObject("Sphere 2", 0.3f);
-        object->position = { 0.0f + xoff, 0.3f, -0.35f + zoff };
-        object->materialColor = { 0.1f, 0.1f, 0.8f };
+        // object = AddSdfObject("Sphere", 0.3f);
+        // object->position = { 0.0f + xoff, 0.3f, -0.35f + zoff };
+        // object->materialColor = { 0.1f, 0.1f, 0.8f };
 
-        object = AddSdfObject("Sphere 3", 1.0f);
-        object->position = { 0.1f + xoff, 1.0f, 0.8f + zoff };
-        object->materialColor = { 1.0f, 0.1f, 0.1f };
+        // object = AddSdfObject("Sphere", 1.0f);
+        // object->position = { 0.1f + xoff, 1.0f, 0.8f + zoff };
+        // object->materialColor = { 1.0f, 0.1f, 0.1f };
 
-        Mesh* plane_mesh = MeshFactory::PlaneMesh({ 0, 0, 0 }, 1000.0f);
-        object = AddMeshObject("Ground Plane", plane_mesh);
-        object->materialColor = { 0.3f, 0.3f, 0.3f };
+        // Mesh* plane_mesh = MeshFactory::PlaneMesh({ 0, 0, 0 }, 1000.0f);
+        // object = AddMeshObject("Ground Plane", plane_mesh);
+        // object->materialColor = { 0.3f, 0.3f, 0.3f };
 
-        MeshFactory::DestroyMesh(plane_mesh);
+        // MeshFactory::DestroyMesh(plane_mesh);
     }
 
     void Scene::ToggleSelection(SceneCollection* collection)
@@ -142,8 +142,14 @@ namespace yart
         if (m_objects.size() == 100) 
             YART_ABORT("For now, scenes accept for up to 100 objects");
 
+        // Get unique name
+        static int id = 1;
+        std::string name_str(name);
+        name_str += " ";
+        name_str += std::to_string(id++);
+
         Object::MeshData mesh_data = { };
-        Object object(name, mesh_data);
+        Object object(name_str, mesh_data);
         
         object.verts = { mesh->vertices, mesh->vertices + mesh->verticesCount };
         object.tris = { mesh->triangleIndices, mesh->triangleIndices + mesh->trianglesCount };
@@ -161,9 +167,15 @@ namespace yart
         if (m_objects.size() == 100) 
             YART_ABORT("For now, scenes accept for up to 100 objects");
 
+        // Get unique name
+        static int id = 1;
+        std::string name_str(name);
+        name_str += " ";
+        name_str += std::to_string(id++);
+
         Object::SdfData sdf_data = { };
         sdf_data.radius = radius;
-        Object object(name, sdf_data);
+        Object object(name_str, sdf_data);
         
         Object* p_object = &m_objects.emplace_back(object);
         ObjectAssignCollection(p_object);

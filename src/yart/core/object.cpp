@@ -29,19 +29,19 @@ namespace yart
         return m_transformationMatrix;
     }
 
-    Object::Object(const char* name, Object::MeshData& data)
+    Object::Object(std::string& name, Object::MeshData& data)
         : m_type(ObjectType::MESH), m_id(GenerateID()), m_name(name)
     {
         m_meshData = data;
     }
 
-    Object::Object(const char* name, Object::LightData& data)
+    Object::Object(std::string& name, Object::LightData& data)
         : m_type(ObjectType::LIGHT), m_id(GenerateID()), m_name(name)
     {
         m_lightData = data;
     }
 
-    Object::Object(const char* name, SdfData& data)
+    Object::Object(std::string& name, SdfData& data)
         : m_type(ObjectType::SDF), m_id(GenerateID()), m_name(name)
     {
         m_sdfData = data;

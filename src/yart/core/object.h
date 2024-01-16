@@ -78,17 +78,17 @@ namespace yart
         /// @brief Construct a new mesh type object 
         /// @param name Display name of the object
         /// @param data Mesh object type data
-        Object(const char* name, MeshData& data);
+        Object(std::string& name, MeshData& data);
 
         /// @brief Construct a new light type object 
         /// @param name Display name of the object
         /// @param data Light object type data
-        Object(const char* name, LightData& data);
+        Object(std::string& name, LightData& data);
 
         /// @brief Construct a new light type object 
         /// @param name Display name of the object
         /// @param data Light object type data
-        Object(const char* name, SdfData& data);
+        Object(std::string& name, SdfData& data);
 
         /// @brief Generate a new unique ID
         /// @return Unique ID
@@ -99,7 +99,7 @@ namespace yart
         glm::vec3 position = { 0.0f, 0.0f, 0.0f };
         // glm::vec3 rotation = { 0.0f, 0.0f, 0.0f };
 
-        glm::vec3 materialColor = { 1.0f, 0.0f, 0.0f };
+        glm::vec3 materialColor = { 0.5f, 0.5f, 0.5f };
 
     private:
         const id_t m_id; ///< Uniquely identifying ID of the object
