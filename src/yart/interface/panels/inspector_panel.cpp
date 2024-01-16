@@ -188,6 +188,21 @@ namespace yart
             if (section_open) {
                 static_assert(sizeof(glm::vec3) == 3 * sizeof(float));
                 made_changes |= GUI::ColorEdit("Diffuse color", reinterpret_cast<float*>(&selected_object->materialColor));
+
+                float diffuse_percent = selected_object->materialDiffuse * 100.0f;
+                if (GUI::SliderFloat("Diffuse", &diffuse_percent, 0.0f, 100.0f, "%.1f%%")) {
+                    selected_object->materialDiffuse = diffuse_percent / 100.0f;
+                    made_changes = true;
+                }
+
+                float specular_percent = selected_object->materialSpecular * 100.0f;
+                if (GUI::SliderFloat("Specular", &specular_percent, 0.0f, 100.0f, "%.1f%%")) {
+                    selected_object->materialSpecular = specular_percent / 100.0f;
+                    made_changes = true;
+                }
+
+                float* spec_off = &selected_object->materialSpecularFalloff;
+                made_changes |= GUI::SliderFloat("Specular falloff", spec_off, 1.0f, 512.0f, "%.0f");
             }
             GUI::EndCollapsableSection(section_open);
 

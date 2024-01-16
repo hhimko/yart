@@ -95,6 +95,7 @@ namespace yart
         static constexpr float light_intensities[num_lights] = { 0.8f, 0.5f, 0.2f };
 
         float diffuse = 0.0f;
+        float specular = 0.0f;
         for (size_t i = 0; i < num_lights; ++i) {
             const float dist = glm::distance(hit_pos, light_positions[i]);
             const glm::vec3 dir = glm::normalize(light_positions[i] - hit_pos);
@@ -111,11 +112,19 @@ namespace yart
                     shadow = 1.0f + 1.0f / (-4.0f * shadow_hit_distance - 1.0f);
             }
 
-            diffuse += shadow * light_intensities[i] * glm::max(0.0f, glm::dot(normal, dir));
+            
+            const glm::vec3 h = glm::normalize(dir - ray.direction); // Half vector for specular
+            const float intensity = light_intensities[i] * 1.0f / (0.01f * dist * dist + 1.0f); // Inverse-square falloff 
+
+            const float ld = glm::max(0.0f, glm::dot(normal, dir));
+            const float ls = glm::pow(glm::max(0.0f, glm::dot(normal, h)), hit_object->materialSpecularFalloff);
+
+            diffuse += shadow * hit_object->materialDiffuse * intensity * ld;
+            specular += shadow * hit_object->materialSpecular * intensity * hit_object->materialSpecularFalloff / 256.0f * ls;
         }
 
         const glm::vec3 ambient = 0.03f * m_world->ambientColor;
-        const glm::vec3 mat_col = ambient + hit_object->materialColor * diffuse;
+        const glm::vec3 mat_col = ambient + hit_object->materialColor * diffuse + specular;
         payload.resultColor = mat_col * (1.0f - overlay_color.a) + glm::vec3(overlay_color) * overlay_color.a;
         //return ClosestHit(ray, payload);
     }

@@ -95,11 +95,14 @@ namespace yart
         static id_t GenerateID();
 
     public:
-        glm::vec3 scale    = { 1.0f, 1.0f, 1.0f };
-        glm::vec3 position = { 0.0f, 0.0f, 0.0f };
-        // glm::vec3 rotation = { 0.0f, 0.0f, 0.0f };
+        glm::vec3 scale    = { 1.0f, 1.0f, 1.0f }; ///< Object scale for each axis
+        glm::vec3 position = { 0.0f, 0.0f, 0.0f }; ///< Object origin position in world-space
+        // glm::vec3 rotation = { 0.0f, 0.0f, 0.0f }; ///< Object rotation
 
-        glm::vec3 materialColor = { 0.5f, 0.5f, 0.5f };
+        glm::vec3 materialColor = { 0.5f, 0.5f, 0.5f }; ///< Solid color of the object's material 
+        float materialDiffuse = 1.0f; ///< Diffuse coefficient of the object's material 
+        float materialSpecular = 1.0f; ///< Specular reflectance coefficient of the object's material 
+        float materialSpecularFalloff = 64.0f; ///< Specular falloff exponent of the object's material 
 
     private:
         const id_t m_id; ///< Uniquely identifying ID of the object
