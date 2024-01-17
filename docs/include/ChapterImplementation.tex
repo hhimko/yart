@@ -64,6 +64,7 @@ To sample a specific point along this ray, we define a function $ \bm{r} $
 %
 \begin{equation}
     \bm{r}(t) = \bm{P} + t\bm{\hat{v}}
+    \label{eq:Implementation/RayDefinition/ray}
 \end{equation}
 %
 It returns all possible points on the ray, which are $ t $ units apart from its origin.
@@ -355,7 +356,7 @@ This methodology can later be extended upon, to recalculate the cache when the c
 
 \section{Scene Representation}
 
-Various means for representing three-dimensional scenes can be employed within ray tracing systems, and the choice of representation can have a significant impact on the efficiency and quality of the rendering process.  
+Numerous means for representing three-dimensional scenes can be employed within ray tracing systems, and the choice of representation can have a significant impact on the efficiency and quality of the rendering process.  
 A scene might typically consist of various types of objects, such as geometry, its materials, and lights. 
 The method for defining and storing geometry in a virtual environment varies across existing ray tracing applications.
 
@@ -465,7 +466,7 @@ Together with diffuse shading and an ambient illumination term, the specular ref
 \vfill
 \begin{figure}[!ht]
     \centering
-    \includegraphics[height=7cm]{example-image-c}
+    \includegraphics[height=8cm]{example-image-c}
     \caption[Diffuse materials with specular highlights modelled using Blinn-Phong]{
         Diffuse materials with specular highlights modelled using the Blinn-Phong shading model.}
     \label{fig:Implementation/SceneRepresentation/materials}
@@ -485,14 +486,63 @@ As opposed to point lights, ambient lighting does not generate shadows in the re
 
 \section{Intersection Testing and Shading}
 
+Solving for intersections between rays and subsequent scene objects is an important aspect of the ray tracing process.
+For each ray, intersection testing is performed to determine whether it intersects with any object in the scene, yielding the exact position of the hit.
+Generally, a single ray must compute intersections for every primitive in the scene, in order to find the closest point of intersection along its path.
+Depending on the selected geometric primitives used for representing objects, different intersection algorithms can be employed in a ray tracing system.
+A common choice for triangle meshes is the use of the \textit{M{\"o}ller-Trumbore} \supercite{Moller2005} algorithm.
+It is a highly efficient, minimal-storage method for determining whether a ray intersects a triangle.
+Historically, similar algorithms for solving this problem depended on computing the plane on which the triangle lies, to first check for intersections with that plane and then test wether the intersection point in inside the triangle edges \supercite{Bogart1988}. 
+A clear advantage of the M{\"o}ller-Trumbore algorithm is that the plane equation does not need to be neither computed nor stored, resulting in efficient memory usage for triangle meshes.
 
+Knowing the triangle vertices $ (\bm{V}_0, \bm{V}_1, \bm{V}_2) $, a point on it's surface $ \bm{T}(u, v) $, can be given by:
+%
+\begin{equation}
+    \bm{T}(u, v) = (1 - u - v)\bm{V}_0 + u \bm{V}_1 + v \bm{V}_2,
+\end{equation}
+%
+where $ (u, v) $ are \textit{barycentric coordinates}, used for describing a point in terms of a triangle, which must fulfill $ u \ge 0, v \ge 0 $ and $ u + v \le 1 $.
+Intuitively, barycentric coordinates can be thought of as weights of the triangle vertices, with $ w = 1 - u - v $ being the third barycentric coordinate. 
+The closer a given barycentric coordinate gets to $ 1 $, the closer the resulting point will rest to its respective vertex.
+Solving for intersections between a ray $ \bm{r}(t) $, and a triangle $ \bm{T}(u, v) $, is equivalent to computing  $ \bm{r}(t) = \bm{T}(u, v) $, which, using the ray definition from \cref{eq:Implementation/RayDefinition/ray} yields:
+%
+\begin{equation}
+    \bm{P} + t\bm{\hat{v}} = (1 - u - v)\bm{V}_0 + u \bm{V}_1 + v \bm{V}_2
+\end{equation}
+%
+The above equation can be rearranged, giving:
+%
+\begin{equation}
+    \bm{P} - \bm{V}_0 = -t\bm{\hat{v}} + u(\bm{V}_1 - \bm{V}_0) + v(\bm{V}_2 - \bm{V}_0),
+\end{equation}
+%
+which can further be rewritten into row-column vector multiplication:
+\begin{equation}
+    \begin{bmatrix}
+        -\bm{\hat{v}}, & \bm{V}_1 - \bm{V}_0, & \bm{V}_2 - \bm{V}_0
+    \end{bmatrix}%
+    \begin{bmatrix}
+        \; t \; \\ \; u \; \\ \; v \;
+    \end{bmatrix} = \bm{P} - \bm{V}_0,
+\end{equation}
+%
+ultimately resulting in a system of linear equations with three unknown scalars: the hit distance $ t $ and barycentric coordinates $ (u, v) $.
+To solve this equation, M{\"o}ller and Trumbore, in their original paper, use a technique known in mathematics as the Cramer's rule, which is a formula for solving systems of linear equations in terms of determinants. 
+Listing xx demonstrates an example implementation of the M{\"o}ller-Trumbore algorithm, used in YART for efficient ray-triangle intersection testing.
 
+\vfill
+\begin{figure}[!ht]
+    \lstinputlisting[
+        xleftmargin=2em, 
+        caption={[Ray-triangle intersection testing using the M{\"o}ller-Trumbore algorithm]
+            Ray-triangle intersection testing using the M{\"o}ller-Trumbore algorithm.},
+        label={lst:Implementation/IntersectionTesting/moller_trumbore}
+    ]{include/listings/ListingMollerTrumbore.cpp}
+\end{figure}
+\vfill
+\clearpage
 
 % \section{Shading}
-
-Möller-Trumbore algorithm for tri-ray intersection
-
-\dots
 
 \section{Sky Color Sampling}
 
