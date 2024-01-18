@@ -1,4 +1,4 @@
-/// @brief Ray-triangle intersection testing using Moller-Trumbore algorithm
+/// @brief Ray-triangle intersection testing using the Moller-Trumbore algorithm
 /// @param ray Traced ray
 /// @param v0 First vertex of the triangle in world space
 /// @param v1 Second vertex of the triangle in world space

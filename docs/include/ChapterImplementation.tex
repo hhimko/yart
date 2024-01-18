@@ -378,7 +378,7 @@ To define a single triangle, every element in the face list consists of three in
 \begin{figure}[!ht]
     \centering
 
-    \vspace{1em}
+    \vspace{0.5em}
     \begin{subfigure}{.25\textwidth}
         \centering
 
@@ -451,7 +451,18 @@ Given two non-parallel triangle edges $ |AB|, |BC| $, the surface normal $ \bm{\
     \bm{\hat{n}} = \frac{|AB|\times|BC|}{\norm{|AB|\times|BC|}}
 \end{equation}
 
-\subsection{Materials}
+\subsection{Lights}
+
+Light sources are without a doubt one of the most important concepts in ray tracing, as they contribute to the overall illumination of the rendered scene.
+The choice of light types depends on the desired visual effects and the characteristics of the scene being rendered.
+In order to effectively illuminate the scene, YART defines two types of light sources: point lights and ambient illumination.
+Point lights are often used to represent small, concentrated light sources, such as a light bulb. 
+They are generally defined using some intensity value, and a single point in space that emits light uniformly in all directions.
+On the other hand, ambient lighting is a basic form of global illumination, which defines the baseline intensity of the scene.
+While not a physically accurate light source, it helps to enhance poorly-lit surfaces and areas in shadows. 
+As opposed to point lights, ambient lighting does not generate shadows in the rendered image.
+
+\subsection{Materials}\label{ch:Implementation/SceneRepresentation/Materials}
 
 Numerous types of materials can be implemented in ray tracing applications to simulate the appearance of different surfaces.
 These can vary between highly realistic, physically based approaches, and simpler, although typically much more efficient, surface shading methods.
@@ -461,30 +472,45 @@ The diffuse shading model (also known as \textit{Lambertian reflectance} \superc
 It is based on the Lambert's law, which states that the modelled surface will diffuse incident light equally in all directions, regardless of the observer's angle of view.
 Specular reflections are commonly added to diffuse materials, which additionally provide realistic highlights from direct light source reflections.
 Together with diffuse shading and an ambient illumination term, the specular reflection model is commonly referred to as the \textit{Blinn-Phong} model \supercite{Blinn1977}.
-\cref{fig:Implementation/SceneRepresentation/materials} illustrates a sample scene with multiple diffuse objects, rendered using the Blinn-Phong reflection model employed in YART.
+The output light intensity $ L $ can therefore be defined as a sum of three separate terms -- ambient light $ L_a $, diffuse illumination $ L_d $, and a specular term $ L_s $:
+%
+\begin{equation}
+    L = L_a + L_d + L_s
+\end{equation}
 
-\vfill
-\begin{figure}[!ht]
-    \centering
-    \includegraphics[height=8cm]{example-image-c}
-    \caption[Diffuse materials with specular highlights modelled using Blinn-Phong]{
-        Diffuse materials with specular highlights modelled using the Blinn-Phong shading model.}
-    \label{fig:Implementation/SceneRepresentation/materials}
-\end{figure}
-\vfill
+The ambient term basically acts as an indirect illumination source in the scene, which defines an object's baseline light intensity.
+It is defined using an ambient reflectance value $ k_a $, local to a particular object, and the ambient light intensity $ I_a $, which is globally applied to all scene geometry:
+%
+\begin{equation}
+    L_a = k_a  I_a
+\end{equation}
 
-\subsection{Lights}
+On the other hand, the diffuse reflectance term is determined for a specific light source in the scene.
+It produces a matte appearance of rough materials, which scatter light equally in all directions.
+Given the surface normal $ \bm{\hat{n}} $, a normalized direction vector $ \bm{\hat{l}}, $ pointing from the point of intersection on the surface to the light source, and the angle $ \theta $ between those vectors, the diffuse term $ L_d $ can be expressed as:
+%
+\begin{equation}
+    L_d = k_d  I_{s} \max(0, \cos{\theta}) = k_d  I_{s} \max(0, \, \bm{\hat{n}} \cdot \bm{\hat{l}} \,),
+\end{equation}
+%
+where $ I_s $ is the light source intensity, a=nd $ k_d $ is the surface's local diffuse coefficient.
 
-Light sources are without a doubt one of the most important concepts in ray tracing, as they contribute to the overall illumination of the rendered scene.
-The choice of light types depends on the desired visual effects and the characteristics of the scene being rendered.
-In order to effectively illuminate the scene, YART defines two types of light sources: point lights and ambient illumination.
-Point lights are ofter used to represent small, concentrated light sources, such as a light bulb. 
-They are generally defined using some intensity value, and a single point in space that emits light uniformly in all directions.
-On the other hand, ambient lighting is a basic form of global illumination, which defines the baseline intensity of the scene.
-While not a physically accurate light source, it helps to enhance poorly-lit surfaces and areas in shadows. 
-As opposed to point lights, ambient lighting does not generate shadows in the rendered image.
+Finally, specular reflectance is used to model view-dependant highlights for shiny surfaces.
+Similarly to diffuse shading, specular illumination is solved for a given light source. 
+The specular term $ L_s $ is given by:
+%
+\begin{equation}
+    L_s = k_s  I_{s} \max(0, \, \bm{\hat{n}} \cdot \bm{\hat{h}} \,),
+\end{equation}
+%
+where $ k_s $ is the object's specular reflectance coefficient, and $ \bm{\hat{h}} $ is a half vector between the direction $ \bm{\hat{l}} $ and a negated ray direction vector $ -\bm{\hat{v}} $:
+%
+\begin{equation}
+    \newcommand{\hvec}{-\bm{\hat{v}} + \bm{\hat{l}} \,}
+    \bm{\hat{h}} = \frac{\hvec}{\norm{\hvec}}
+\end{equation}
 
-\section{Intersection Testing and Shading}
+\section{Intersection Testing}
 
 Solving for intersections between rays and subsequent scene objects is an important aspect of the ray tracing process.
 For each ray, intersection testing is performed to determine whether it intersects with any object in the scene, yielding the exact position of the hit.
@@ -492,7 +518,7 @@ Generally, a single ray must compute intersections for every primitive in the sc
 Depending on the selected geometric primitives used for representing objects, different intersection algorithms can be employed in a ray tracing system.
 A common choice for triangle meshes is the use of the \textit{M{\"o}ller-Trumbore} \supercite{Moller2005} algorithm.
 It is a highly efficient, minimal-storage method for determining whether a ray intersects a triangle.
-Historically, similar algorithms for solving this problem depended on computing the plane on which the triangle lies, to first check for intersections with that plane and then test wether the intersection point in inside the triangle edges \supercite{Bogart1988}. 
+Historically, similar algorithms for solving this problem depended on computing the plane on which the triangle lies, to first check for intersections with that plane, and then test wether the intersection point in inside the triangle edges \supercite{Bogart1988}. 
 A clear advantage of the M{\"o}ller-Trumbore algorithm is that the plane equation does not need to be neither computed nor stored, resulting in efficient memory usage for triangle meshes.
 
 Knowing the triangle vertices $ (\bm{V}_0, \bm{V}_1, \bm{V}_2) $, a point on it's surface $ \bm{T}(u, v) $, can be given by:
@@ -517,6 +543,7 @@ The above equation can be rearranged, giving:
 \end{equation}
 %
 which can further be rewritten into row-column vector multiplication:
+%
 \begin{equation}
     \begin{bmatrix}
         -\bm{\hat{v}}, & \bm{V}_1 - \bm{V}_0, & \bm{V}_2 - \bm{V}_0
@@ -528,7 +555,7 @@ which can further be rewritten into row-column vector multiplication:
 %
 ultimately resulting in a system of linear equations with three unknown scalars: the hit distance $ t $ and barycentric coordinates $ (u, v) $.
 To solve this equation, M{\"o}ller and Trumbore, in their original paper, use a technique known in mathematics as the Cramer's rule, which is a formula for solving systems of linear equations in terms of determinants. 
-Listing xx demonstrates an example implementation of the M{\"o}ller-Trumbore algorithm, used in YART for efficient ray-triangle intersection testing.
+\cref{lst:Implementation/IntersectionTesting/moller_trumbore} demonstrates an example implementation of the M{\"o}ller-Trumbore algorithm, used in YART for efficient ray-triangle intersection testing.
 
 \vfill
 \begin{figure}[!ht]
@@ -542,13 +569,61 @@ Listing xx demonstrates an example implementation of the M{\"o}ller-Trumbore alg
 \vfill
 \clearpage
 
-% \section{Shading}
+\section{Shading}
 
-\section{Sky Color Sampling}
+While tracing a ray through the scene, the engine must typically handle two, most important cases: hitting the closest object along the rays path, and when it misses every geometry, effectively extending into infinity.
+In the most basic configuration, this condition can be examined by solving for intersections with every single geometric primitive in the scene.
+While looping over scene objects, it's important to keep track of the smallest hit distance, in order to find the closest possible point of intersection, for which the pixel will eventually be shaded.
 
-solid color skies, linear gradients, and cubemap skyboxes
+\subsection{Miss Shader}
 
-\dots
+For scenarios when the ray misses every possible geometry, a specialized procedure of rendering the world's sky is usually implemented. 
+Numerous ways of rendering the environment can be employed within a ray tracing system, ranging from solid color and gradient skies, to highly detailed, textured skyboxes. 
+This functionality is often referred to as the \textit{miss shader} of a rendering pipeline. 
+The core purpose of a miss shader is to sample and return the color of the background for a given ray direction.
+For the sake of simplicity, the presented implementation will render solid color skies, which are defined by a singular color value, independent of the ray's direction.
+This idea is illustrated in \cref{lst:Implementation/Shading/miss_shader}, with an example \verb|MissShader| method, which simply returns the constant sky color.
+
+\begin{figure}[!ht]
+    \lstinputlisting[
+        xleftmargin=2em, 
+        caption={[Solid color \texttt{MissShader} function implementation]
+        Solid color \texttt{MissShader} function implementation.},
+        label={lst:Implementation/Shading/miss_shader}
+    ]{include/listings/ListingMissShader.cpp}
+\end{figure}
+
+\subsection{Closest Hit Shader}
+
+When a ray reaches an object's surface, it consumes the illumination level at that point of intersection, which is eventually used to shade the pixel associated with this ray.
+The functionality of calculating the color at the closes intersection point is usually referred to as the \textit{closest hit shader}.
+This shader is typically responsible for evaluating materials, calculating lighting, and generating shadows. 
+
+At its core, the closest hit shader employed in the YART engine computes diffuse and specular illumination based on the Blinn-Phong shading model, described in section \ref{ch:Implementation/SceneRepresentation/Materials}.
+
+\begin{figure}[!ht]
+    \lstinputlisting[
+        xleftmargin=2em, 
+        caption={[Solid color \texttt{MissShader} function implementation]
+        Solid color \texttt{MissShader} function implementation.},
+        label={lst:Implementation/Shading/hit_shader}
+    ]{include/listings/ListingClosestHitShader.cpp}
+\end{figure}
+
+\cref{fig:Implementation/SceneRepresentation/materials} illustrates a sample scene with multiple diffuse objects, rendered using the Blinn-Phong reflection model employed in YART.
+
+\vfill
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[height=8cm]{example-image-c}
+    \caption[Diffuse materials with specular highlights modelled using Blinn-Phong]{
+        Diffuse materials with specular highlights modelled using the Blinn-Phong shading model.}
+    \label{fig:Implementation/SceneRepresentation/materials}
+\end{figure}
+\vfill
+
+% \addtocontents{toc}{\protect\newpage}
+\subsection{The Ray Tracing Loop}
 
 \section{Hard Shadows}
 
