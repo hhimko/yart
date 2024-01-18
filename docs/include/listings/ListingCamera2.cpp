@@ -14,10 +14,11 @@ private:
     /// @param height Rendered image height in pixels
     void RecalculateCache(glm::vec3* dirs, uint32_t width, uint32_t height);
 
-private:
+public:
     /// @brief World space position 
-    glm::vec3 m_position = { 0.0f, 0.0f, -5.0f };
+    glm::vec3 position = { 0.0f, 0.0f, -5.0f };
 
+private:
     /// @brief Normalized look-at vector
     glm::vec3 m_lookDirection = { .0f, .0f, 1.0f };
 

@@ -18,7 +18,7 @@ bool RayTriangleIntersection(const Ray& ray,
     float det = glm::dot(E01, P);
 
     // Back-face culling
-    if (det < 0.0001f) 
+    if (det < EPSILON) 
         return false;
 
     float inv_det = 1.f / det;

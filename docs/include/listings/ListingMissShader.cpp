@@ -5,6 +5,5 @@ glm::vec3 MissShader([[maybe_unused]] const Ray& ray)
 {
     // Solid color sky shader
     static constexpr glm::vec3 sky_color = { 0.131f, 0.241f, 0.500f };
-    
     return sky_color;
 }

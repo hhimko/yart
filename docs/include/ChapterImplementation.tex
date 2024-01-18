@@ -327,18 +327,18 @@ The current \verb|Camera| class implementation can be slightly altered to reflec
 \begin{figure}[!ht]
     \lstinputlisting[
         xleftmargin=2em, 
+        aboveskip=0pt,
         caption={[Modified \texttt{Camera} class declaration for ray direction caching]
             Modified \texttt{Camera} class declaration for ray direction caching.},
         label={lst:Implementation/RayGeneration/camera_caching}
     ]{include/listings/ListingCamera2.cpp}
 \end{figure}
-\vfill
 
 The resizable cache, along with its current dimensions, can be stored as private members within the \verb|Camera| class.
 Additionally, a \verb|Camera::RecalculateCache| method can be introduced.
 It will be used under certain conditions for recalculating the ray directions cache. 
 This method has intentionally been declared to mirror the definition of \verb|Camera::GetRayDirections|, presented in \cref{lst:Implementation/RayGeneration/ray_generation}, as its implementation can effectively be reused for this task.
-Conversely, the method for retrieving ray directions should be redefined to reflect this change (see \cref{lst:Implementation/RayGeneration/ray_generation_cache}).
+Conversely, the method for retrieving ray directions should be redefined to reflect this change, as seen in \cref{lst:Implementation/RayGeneration/ray_generation_cache}.
 
 \vfill
 \begin{figure}[!ht]
@@ -475,7 +475,7 @@ Together with diffuse shading and an ambient illumination term, the specular ref
 The output light intensity $ L $ can therefore be defined as a sum of three separate terms -- ambient light $ L_a $, diffuse illumination $ L_d $, and a specular term $ L_s $:
 %
 \begin{equation}
-    L = L_a + L_d + L_s
+    L = L_a + L_d + L_s \label{eq:Implementation/SceneRepresentation/lighting}
 \end{equation}
 
 The ambient term basically acts as an indirect illumination source in the scene, which defines an object's baseline light intensity.
@@ -596,43 +596,68 @@ This idea is illustrated in \cref{lst:Implementation/Shading/miss_shader}, with 
 \subsection{Closest Hit Shader}
 
 When a ray reaches an object's surface, it consumes the illumination level at that point of intersection, which is eventually used to shade the pixel associated with this ray.
-The functionality of calculating the color at the closes intersection point is usually referred to as the \textit{closest hit shader}.
+The functionality of calculating this value at the closes intersection point is usually referred to as the \textit{closest hit shader}.
 This shader is typically responsible for evaluating materials, calculating lighting, and generating shadows. 
-
-At its core, the closest hit shader employed in the YART engine computes diffuse and specular illumination based on the Blinn-Phong shading model, described in section \ref{ch:Implementation/SceneRepresentation/Materials}.
+At its core, the closest hit shader employed in the YART engine computes diffuse and specular illumination based on the Blinn-Phong shading model.
+The reflectance model described in section \ref{ch:Implementation/SceneRepresentation/Materials}, has been defined for a single light source, whereas our scene might accommodate multiple point lights.
+The lighting equation (see \cref{eq:Implementation/SceneRepresentation/lighting}) can easily be modified to reflect this, simply by summing over every $ i $-th light source in the scene:
+%
+\begin{equation}
+    L = L_a + \sum_{i=1}^{N}[(L_d)_i + (L_s)_i]
+\end{equation}
+%
+\cref{lst:Implementation/Shading/hit_shader} presents an example closest hit shader function implementation, which computes Blinn-Phong illumination for a given scene. A \verb|HitPayload| object is additionally employed, which is a lightweight structure used for storying the hit context.
 
 \begin{figure}[!ht]
     \lstinputlisting[
         xleftmargin=2em, 
-        caption={[Solid color \texttt{MissShader} function implementation]
-        Solid color \texttt{MissShader} function implementation.},
+        caption={[\texttt{ClosestHitShader} function implementation for Blinn-Phong shading]
+            \texttt{ClosestHitShader} function implementation for Blinn-Phong shading.},
         label={lst:Implementation/Shading/hit_shader}
     ]{include/listings/ListingClosestHitShader.cpp}
 \end{figure}
 
-\cref{fig:Implementation/SceneRepresentation/materials} illustrates a sample scene with multiple diffuse objects, rendered using the Blinn-Phong reflection model employed in YART.
+\addtocontents{toc}{\protect\newpage}
+\section{The Ray Tracing Loop}\label{ch:Implementation/RayTracingLoop}
+
+All the methodologies described up until this point aid us in implementing the key component of any ray tracing system -- the ray tracing loop. 
+It is the fundamental piece of a rendering pipeline, which binds together all processes related to ray tracing, starting with ray generation and ending with pixel shading.
+
+\cref{lst:Implementation/Shading/ray_tracing} introduces the ray tracing loop implemented in YART, which at its core renders a given scene, from a particular camera's view, to the specified buffer of pixels.
+It first retrieves all ray direction for the given image dimensions, using \verb|Camera| class's \verb|GetRayDirections|, defined in \cref{lst:Implementation/RayGeneration/ray_generation_cache}.
+These directions are used to create subsequent \verb|Ray| objects, which originate from the camera's position.
+In order to determine if, and where a ray has hit the scene, it is then tested for intersections against every triangular geometry in the scene, iterating thorough all mesh objects and the triangles that define them.
+The minimal hit distance is recorded between every iteration, in order to find the closest possible intersection point along the rays path.
+When a closer intersection is found than the one currently recorded, information about that hit is stored into a \verb|HitPayload| structure.
+This payload can be defined in a multitude of ways, depending on what information is needed for the closest hit shader to shade a surface.
+In YART, hit payloads are used to describe the hit object, distance to, and position of the intersection, along with the normal of the intersected surface. 
+Finally, the ray tracing loop sets the output image's pixel, to a color returned by either the miss, or closest hit shader, declared respectively in Listings \ref{lst:Implementation/Shading/miss_shader} and \ref{lst:Implementation/Shading/hit_shader}.
+\cref{fig:Implementation/SceneRepresentation/materials} illustrates a sample scene with multiple objects and point lights, rendered using the ray tracing loop described in this section.
 
 \vfill
 \begin{figure}[!ht]
     \centering
     \includegraphics[height=8cm]{example-image-c}
-    \caption[Diffuse materials with specular highlights modelled using Blinn-Phong]{
-        Diffuse materials with specular highlights modelled using the Blinn-Phong shading model.}
+    \caption[Sample scene rendered using the basic ray tracing loop]{
+        Sample scene rendered using the basic ray tracing loop.}
     \label{fig:Implementation/SceneRepresentation/materials}
 \end{figure}
 \vfill
 
-% \addtocontents{toc}{\protect\newpage}
-\subsection{The Ray Tracing Loop}
+\begin{figure}
+    \lstinputlisting[
+        xleftmargin=2em, 
+        aboveskip=0pt,
+        belowskip=0pt,
+        caption={[Implementation of YART's ray tracing loop]
+            Implementation of YART's ray tracing loop.},
+        label={lst:Implementation/Shading/ray_tracing}
+    ]{include/listings/ListingRayTracingLoop.cpp}
+\end{figure}\clearpage
 
 \section{Hard Shadows}
 
-hard shadows implementation
+The results of the ray tracing loop presented in \cref{ch:Implementation/RayTracingLoop} can still be improved in various ways.
+One such example is the addition of shadows, which help convey a sense of depth in the final rendered image.
+As with any visual effect in rendering engines, shadows can be implemented in a multitude of different ways.
 
-\dots
-
-\section{Bounding Volume Hierarchies}
-
-optimization strategies using BVH trees, AABB tree implementation
-
-\dots
