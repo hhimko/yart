@@ -48,6 +48,12 @@ namespace yart
         /// @brief Load the default scene objects
         void LoadDefault();
 
+        /// @brief Load the "Spheres" scene objects
+        void LoadSpheres();
+
+        /// @brief Load the "UvSpheres" scene objects
+        void LoadUvSpheres();
+
         /// @brief Get an array of all object collections in the scene
         /// @param count Output parameter, set to the returned array size
         /// @return Array of scene collections
@@ -102,6 +108,9 @@ namespace yart
         /// @brief Remove a given object from the scene
         /// @param object Object to be removed
         void RemoveObject(Object* object);
+
+        /// @brief Remove all objects from the scene
+        void Clear();
 
     private:
         /// @brief Assign a specified object to a collection

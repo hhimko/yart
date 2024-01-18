@@ -20,25 +20,28 @@ namespace yart
 
     void Scene::LoadDefault()
     {
-        // Mesh* cube_mesh = MeshFactory::CubeMesh({ 0, 0, 0 });
-        // AddMeshObject("Default Cube", cube_mesh);
+        Mesh* cube_mesh = MeshFactory::CubeMesh({ 0, 0, 0 });
+        AddMeshObject("Default Cube", cube_mesh);
 
-        // MeshFactory::DestroyMesh(cube_mesh);
+        MeshFactory::DestroyMesh(cube_mesh);
+    }
 
-        const float xoff = 0.3f;
-        const float zoff = -0.5f;
+    void Scene::LoadSpheres()
+    {
+        static constexpr float x_off = 0.3f;
+        static constexpr float z_off = -0.5f;
 
         Object* object;
         object = AddSdfObject("Sphere", 0.5f);
-        object->position = { -0.8f + xoff, 0.5f, -0.2f + zoff };
+        object->position = { -0.8f + x_off, 0.5f, -0.2f + z_off };
         object->materialColor = { 0.1f, 0.8f, 0.1f };
 
         object = AddSdfObject("Sphere", 0.3f);
-        object->position = { 0.0f + xoff, 0.3f, -0.35f + zoff };
+        object->position = { 0.0f + x_off, 0.3f, -0.35f + z_off };
         object->materialColor = { 0.1f, 0.1f, 0.8f };
 
         object = AddSdfObject("Sphere", 1.0f);
-        object->position = { 0.1f + xoff, 1.0f, 0.8f + zoff };
+        object->position = { 0.1f + x_off, 1.0f, 0.8f + z_off };
         object->materialColor = { 1.0f, 0.1f, 0.1f };
 
         Mesh* plane_mesh = MeshFactory::PlaneMesh({ 0, 0, 0 }, 1000.0f);
@@ -46,6 +49,46 @@ namespace yart
         object->materialColor = { 0.3f, 0.3f, 0.3f };
 
         MeshFactory::DestroyMesh(plane_mesh);
+    }
+
+    void Scene::LoadUvSpheres()
+    {
+        static constexpr float x_off = 0.3f;
+        static constexpr float z_off = -0.5f;
+
+        Object* object;
+        Mesh* mesh;
+
+        mesh = MeshFactory::CubeMesh({ 0, 0, 0 });
+        object = AddMeshObject("UV Sphere", mesh);
+        object->scale *= 0.8f;
+        object->position = { -0.8f + x_off, 0.4f, -0.3f + z_off };
+        object->materialColor = { 0.1f, 0.8f, 0.1f };
+
+        MeshFactory::DestroyMesh(mesh);
+
+        mesh = MeshFactory::UvSphereMesh({ 0, 0, 0 }, 4, 2);
+        object = AddMeshObject("UV Sphere", mesh);
+        object->scale *= 0.8f;
+        object->scale.y += 1.0f;
+        object->position = { 0.4f + x_off, 0.0f, -0.35f + z_off };
+        object->materialColor = { 0.1f, 0.1f, 0.8f };
+
+        MeshFactory::DestroyMesh(mesh);
+
+        mesh = MeshFactory::UvSphereMesh({ 0, 0, 0 }, 16, 8);
+        object = AddMeshObject("UV Sphere", mesh);
+        object->scale *= 2.0f;
+        object->position = { 0.1f + x_off, 1.0f, 0.8f + z_off };
+        object->materialColor = { 1.0f, 0.1f, 0.1f };
+
+        MeshFactory::DestroyMesh(mesh);
+
+        mesh = MeshFactory::PlaneMesh({ 0, 0, 0 }, 1000.0f);
+        object = AddMeshObject("Ground Plane", mesh);
+        object->materialColor = { 0.3f, 0.3f, 0.3f };
+
+        MeshFactory::DestroyMesh(mesh);
     }
 
     void Scene::ToggleSelection(SceneCollection* collection)
@@ -196,6 +239,18 @@ namespace yart
                 break;
             }
         }
+    }
+
+    void Scene::Clear()
+    {
+        for (auto& it = m_objects.begin(); it != m_objects.end(); ++it) {
+            Object* object = &(*it);
+            CollectionRemoveObject(object);
+        }
+
+        m_selectedCollection = nullptr;
+        m_selectedObject = nullptr;
+        m_objects.clear();
     }
 
     SceneCollection* Scene::ObjectAssignCollection(Object* object, SceneCollection* collection)

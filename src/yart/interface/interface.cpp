@@ -69,10 +69,11 @@ namespace yart
         ImGui::Text("%.1f FPS", fps);
 
         // Render the YART application UI layout
-        float menu_bar_height = Interface::RenderMainMenuBar();
+        float menu_bar_height;
+        bool made_changes = Interface::RenderMainMenuBar(&menu_bar_height);
 
         RootAppPanel* rap = RootAppPanel::Get();
-        bool made_changes = rap->Render(menu_bar_height);
+        made_changes |= rap->Render(menu_bar_height);
 
         // Render registered global callbacks
         for (auto callback : ctx->registeredCallbacks)

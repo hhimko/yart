@@ -47,8 +47,9 @@ namespace yart
         void ApplyFullscreenLayout();
 
         /// @brief Render the YART application window main menu bar
-        /// @return Height of the menu bar, used for determining the content area size
-        float RenderMainMenuBar();
+        /// @param menu_bar_height Height of the menu bar, used for determining the content area size
+        /// @return Whether any changes were made this frame
+        bool RenderMainMenuBar(float* menu_bar_height);
 
         /// @brief Issue "View" menu render commands for the main menu bar
         void RenderViewMenu();

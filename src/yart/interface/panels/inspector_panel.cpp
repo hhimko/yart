@@ -30,6 +30,7 @@ namespace yart
 
                 made_changes |= RenderSceneTab(active_panel);
 
+                
                 ImGui::EndChild();
                 ImGui::EndTabItem();
             }
@@ -37,14 +38,20 @@ namespace yart
             yart::Scene* scene = yart::Application::Get().GetScene();
             Object* selected_object = scene->GetSelectedObject();
             
-            if (selected_object == nullptr)
+            if (selected_object == nullptr) {
                 ImGui::BeginDisabled();
+
+                // Avoid rendering the Object tab when the selected object is null
+                ImGuiTabBar* tab_bar = ImGui::GetCurrentTabBar();
+                ImGui::TabBarQueueFocus(tab_bar, &tab_bar->Tabs[0]);
+            }
 
             if (ImGui::BeginTabItem("Object")) {
                 static constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NavFlattened | ImGuiWindowFlags_AlwaysUseWindowPadding;
                 ImGui::BeginChild("##Content", { 0.0f, 0.0f }, false, flags);
 
-                made_changes |= RenderObjectTab(selected_object, active_panel);
+                if (selected_object != nullptr)
+                    made_changes |= RenderObjectTab(selected_object, active_panel);
 
                 ImGui::EndChild();
                 ImGui::EndTabItem();

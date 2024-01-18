@@ -12,6 +12,7 @@
 #include "yart/interface/panels/context_panel.h"
 #include "yart/interface/panels/layout_panel.h"
 #include "yart/interface/panel.h"
+#include "yart/application.h"
 #include "yart/GUI/gui.h"
 
 
@@ -73,9 +74,10 @@ namespace yart
         root_panel->SetActivePanel(render_viewport_panel);
     }
 
-    float Interface::RenderMainMenuBar()
+    bool Interface::RenderMainMenuBar(float* menu_bar_height)
     {
         ImGuiContext* g = ImGui::GetCurrentContext();
+        bool made_changes = false;
 
         ImVec4 backup_color = g->Style.Colors[ImGuiCol_MenuBarBg];
         g->Style.Colors[ImGuiCol_MenuBarBg] = { YART_GUI_COLOR_BLACK, YART_GUI_ALPHA_OPAQUE };
@@ -84,18 +86,42 @@ namespace yart
 
         // Render menu items
         if (ImGui::BeginMenu("File")) {
-            ImGui::MenuItem("New");
-            ImGui::MenuItem("Create");
+            yart::Scene* scene = yart::Application::Get().GetScene();
+            if (ImGui::MenuItem("New")) {
+                scene->Clear();
+                made_changes = true;
+            }
+
+            if (ImGui::BeginMenu("Load Scene")) {
+                if (ImGui::MenuItem("Default")) {
+                    scene->Clear();
+                    scene->LoadDefault();
+                    made_changes = true;
+                }
+                if (ImGui::MenuItem("Spheres")) {
+                    scene->Clear();
+                    scene->LoadSpheres();
+                    made_changes = true;
+                }
+                if (ImGui::MenuItem("UV Spheres")) {
+                    scene->Clear();
+                    scene->LoadUvSpheres();
+                    made_changes = true;
+                }
+
+                ImGui::EndMenu();
+            }
+
             ImGui::EndMenu();
         }
 
         RenderViewMenu();
 
         // Store and return the menu bar height, used for determining content area sizes
-        float menu_bar_height = g->CurrentWindow->Size.y;
+        *menu_bar_height = g->CurrentWindow->Size.y;
 
         ImGui::EndMainMenuBar();
-        return menu_bar_height;
+        return made_changes;
     }
 
     void Interface::RenderViewMenu()
