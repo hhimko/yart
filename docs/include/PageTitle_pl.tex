@@ -1,0 +1,70 @@
+%--------------------------------------------------------------------------------------------
+%   YART thesis polish title page definition.
+%--------------------------------------------------------------------------------------------
+
+% === CUSTOM \maketitle DEFINITION === %
+\renewcommand{\maketitle} {
+    % +===+ TITLE PAGE CUSTOM GEOMETRY +===+ %
+    \newgeometry{margin=2.5cm,top=1.8cm,bottom=3.0cm}
+
+    \begin{titlepage}
+
+        \begin{figure}
+            \includegraphics[trim={120px 250px 160px 255px},clip,width=200px]{res/university-of-silesia_logo_horizontal_cmyk.pdf}
+        \end{figure}
+        
+        \begin{flushright}
+            \large
+            Uniwersytet Śląski w Katowicach \\
+            Wydział Nauk Ścisłych i Technicznych
+        \end{flushright}
+
+        \vspace*{1.0 cm}
+
+        \begin{center}
+
+            \textbf{\Large Dawid Cyganek}\\
+
+            \vspace*{5px}
+
+            \large 338241
+            
+            \vspace*{2.5 cm}
+            
+            \LARGE
+            Implementation of a ray tracing engine using
+            a CPU based renderer
+            
+            \vspace*{3.0 cm}
+            
+            \textbf{\normalsize PRACA DYPLOMOWA}\\
+
+            \vspace*{5px}
+
+            \textbf{\normalsize INŻYNIERSKA}\\
+
+            \vspace*{3.0 cm}
+
+            \begin{flushright}
+                \large Promotor: dr. Krzysztof Górny
+            \end{flushright}
+            
+            \vspace*{\fill} % float to bottom of the page
+            
+            \small 
+            Chorzów 2024
+            
+        \end{center}
+        
+        \clearpage
+    
+    \end{titlepage}
+
+    \restoregeometry
+}
+
+
+% +===+ RENDER THE TITLE PAGE +===+ %
+\begin{otherlanguage}{polish}
+    \maketitle
+\end{otherlanguage}

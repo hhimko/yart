@@ -8,9 +8,12 @@
 
 % +===+ GLOBAL PACKAGE IMPORTS +===+ % 
 \usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[main=english, polish]{babel}
 
 \usepackage[top=2cm, bottom=3cm]{geometry} % For defining custom document geometry
 \usepackage[backend=biber,style=numeric-comp,sorting=none]{biblatex} % For citations using BibTeX
+\usepackage{csquotes} % Required by biblatex
 \usepackage{tikz} % For defining and drawing diagrams
 \usepackage{bm} % For bold symbols in maths mode
 \usepackage{listings} % For defining custom listing styles 
@@ -124,7 +127,8 @@
 
 % +===+ DOCUMENT STRUCTURE +===+ % 
 \begin{document}
-    \input{include/PageTitle}
+    % \input{include/PageTitle_en}
+    \input{include/PageTitle_pl}
     % \blankpage
     \input{include/PageAbstract}
     \tableofcontents
