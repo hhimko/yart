@@ -212,7 +212,7 @@ The transformation to obtain a corresponding point $ \bm{C}_{\textnormal{\small 
 \end{equation}
 
 To calculate an inverse view-projection matrix, we first need to construct a view matrix, which defines the intermediate step of transforming world-space coordinates into the camera's local space.
-View matrices are often used in rasterization engines, to represent scene geometry relatively to a given camera's position and orientation.
+View matrices are often used in rasterization engines to represent scene geometry relatively to a given camera's position and orientation.
 It can therefore be built using four vectors: the camera's world-space $ \bm{position} $, along with three unit vectors, $ \bm{right} $, $ \bm{up} $, and $ \bm{forward} $, which collectively represent the camera's orientation:
 %
 \begin{equation}
@@ -445,10 +445,10 @@ To define a single triangle, every element in the face list consists of three in
 The high fidelity of triangle meshes renders them a great choice for accurately representing practically any shapes and models.
 A diverse array of three-dimensional primitives, such as cubes, spheres, and cones, can easily be modeled using this representation with a controlled level of detail. 
 Additionally, triangle meshes provide a straightforward way of calculating surface normals, used throughout ray tracing engines for reflecting rays and shading objects.
-Given two non-parallel triangle edges $ |AB|, |BC| $, the surface normal $ \bm{\hat{n}} $ can be found as the cross product:
+Given two non-parallel triangle edges $ |\bm{AB}|, |\bm{BC}| $, the surface normal $ \bm{\hat{n}} $ can be found as the cross product:
 %
 \begin{equation}
-    \bm{\hat{n}} = \frac{|AB|\times|BC|}{\norm{|AB|\times|BC|}}
+    \bm{\hat{n}} = \frac{|\bm{AB}|\times|\bm{BC}|}{\norm{|\bm{AB}|\times|\bm{BC}|}}
 \end{equation}
 
 \subsection{Lights}
