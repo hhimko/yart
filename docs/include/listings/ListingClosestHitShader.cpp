@@ -26,5 +26,5 @@ glm::vec3 ClosestHitShader(const Ray& ray, const HitPayload& payload,
     }
 
     const glm::vec3 i_a = scene.worldAmbientIntensity * scene.worldAmbientColor;
-    return i_a + payload.hitObject.materialColor * diffuse + specular
+    return i_a + payload.hitObject.materialColor * diffuse + specular;
 }

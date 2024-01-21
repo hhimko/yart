@@ -623,7 +623,7 @@ The lighting equation (see \cref{eq:Implementation/SceneRepresentation/lighting}
 All the methodologies described up until this point aid us in implementing the key component of any ray tracing system -- the ray tracing loop. 
 It is the fundamental piece of a rendering pipeline, which binds together all processes related to ray tracing, starting with ray generation and ending with pixel shading.
 
-\cref{lst:Implementation/Shading/ray_tracing} introduces the ray tracing loop implemented in YART, which at its core renders a given scene, from a particular camera's view, to the specified buffer of pixels.
+\cref{lst:Implementation/TheRayTracingLoop/ray_tracing} introduces the ray tracing loop implemented in YART, which at its core renders a given scene, from a particular camera's view, to the specified buffer of pixels.
 It first retrieves all ray direction for the given image dimensions, using \verb|Camera| class's \verb|GetRayDirections|, defined in \cref{lst:Implementation/RayGeneration/ray_generation_cache}.
 These directions are used to create subsequent \verb|Ray| objects, which originate from the camera's position.
 In order to determine if, and where a ray has hit the scene, it is then tested for intersections against every triangular geometry in the scene, iterating thorough all mesh objects and the triangles that define them.
@@ -632,15 +632,15 @@ When a closer intersection is found than the one currently recorded, information
 This payload can be defined in a multitude of ways, depending on what information is needed for the closest hit shader to shade a surface.
 In YART, hit payloads are used to describe the hit object, distance to, and position of the intersection, along with the normal of the intersected surface. 
 Finally, the ray tracing loop sets the output image's pixel, to a color returned by either the miss, or closest hit shader, declared respectively in Listings \ref{lst:Implementation/Shading/miss_shader} and \ref{lst:Implementation/Shading/hit_shader}.
-\cref{fig:Implementation/SceneRepresentation/materials} illustrates a sample scene with multiple objects and point lights, rendered using the ray tracing loop described in this section.
+\cref{fig:Implementation/TheRayTracingLoop/render} illustrates a sample scene with multiple objects and point lights, rendered using the ray tracing loop described in this section.
 
 \vfill
 \begin{figure}[!ht]
     \centering
-    \includegraphics[height=8cm]{example-image-c}
+    \includegraphics[height=9cm]{example-image-b}
     \caption[Sample scene rendered using the basic ray tracing loop]{
         Sample scene rendered using the basic ray tracing loop.}
-    \label{fig:Implementation/SceneRepresentation/materials}
+    \label{fig:Implementation/TheRayTracingLoop/render}
 \end{figure}
 \vfill
 
@@ -651,16 +651,21 @@ Finally, the ray tracing loop sets the output image's pixel, to a color returned
         belowskip=0pt,
         caption={[Implementation of YART's ray tracing loop]
             Implementation of YART's ray tracing loop.},
-        label={lst:Implementation/Shading/ray_tracing}
+        label={lst:Implementation/TheRayTracingLoop/ray_tracing}
     ]{include/listings/ListingRayTracingLoop.cpp}
 \end{figure}\clearpage
 
 \section{Hard Shadows}
 
-The results of the ray tracing loop presented in \cref{ch:Implementation/RayTracingLoop} can still be improved in various ways.
+The results of the ray tracing loop presented in \cref{ch:Implementation/RayTracingLoop} can be improved in a variety of ways.
 One such example is the addition of shadows, which help convey a sense of depth in the final rendered image.
 As with any visual effect in rendering engines, shadows can be implemented in a multitude of different ways.
-
+The most straightforward technique involves casting an additional ray for every intersection with the scene, checking whether light is blocked by an object, preventing it from reaching a particular surface.
+This methodology is generally referred to as \textit{hard shadows}, due to the characteristic, sharp and well-defined boundaries of shadows generated in resulting renders.
+While colliding with an object's surface, a \textit{shadow ray} is additionally traced from the point of intersection, in the direction of a particular light source.
+A shadow ray does not evaluate surface illumination nor does it sample the sky's color.
+Instead, it only tests for intersections along its path, determining wether a light's path is obstructed by scene geometry.
+The core idea behind hard shadows is illustrated in \cref{fig:Implementation/Shadows/shadows}.
 
 \begin{figure}[!ht]
     \centering
@@ -680,6 +685,7 @@ As with any visual effect in rendering engines, shadows can be implemented in a 
     }
     \pgfdeclarefading{fadeout}{\pgfuseshading{tikzfadeout}}
 
+    \vspace*{1em}
     \begin{tikzpicture}[scale=1.0, every node/.style={scale=1.0}]
         % Plane
         \draw[{Round Cap[length=40pt]}-{Round Cap[length=20pt]}, color=darkgray, very thick] 
@@ -776,8 +782,53 @@ As with any visual effect in rendering engines, shadows can be implemented in a 
         \node[color=darkgray, align=left] (x) at (103mm, 19mm) {\textbf{Light} \\ \textbf{Source}};
 
     \end{tikzpicture}
+    \vspace*{1em}
 
-    \caption[Shadows]{
-        Shadows.}
+    \caption[Simplified model of rendering hard shadows]{
+        Simplified model of rendering hard shadows.}
     \label{fig:Implementation/Shadows/shadows}
+\end{figure}
+
+The rendering loop introduced in \cref{lst:Implementation/TheRayTracingLoop/ray_tracing} can easily be modified for casting hard shadows. 
+Firstly, the functionality of testing for intersections with all scene objects might be extracted from the \verb|RayTrace| method for reuse. 
+\cref{lst:Implementation/Shadows/intersect_scene} presents an example \verb|IntersectScene| function, created for this purpose.
+
+\clearpage
+\begin{figure}[!ht]
+    \lstinputlisting[
+        xleftmargin=2em, 
+        caption={[\texttt{IntersectScene} method implementation]
+            \texttt{IntersectScene} method implementation.},
+        label={lst:Implementation/Shadows/intersect_scene}
+    ]{include/listings/ListingIntersectScene.cpp}
+\end{figure}
+
+Making use of the above function, the \verb|RayTrace| method can be further modified to cast and handle shadow rays. 
+\cref{lst:Implementation/Shading/intersect_scene} demonstrates an example implementation reflecting this change.
+Shadow rays are traced from a determined point of intersection, in the directions of every light source in the scene. 
+When one of these rays collides with an object before reaching a light source, the lights intensity value gets subtracted from a \verb|shadow| variable, which determines how much a surface point is in shadow.
+The lower the value of this variable, the less a surface point is lit.
+Finally, the output color returned by the closest hit shader is multiplied by this value, effectively darkening specific areas in the output image. 
+
+\clearpage
+\begin{figure}
+    \lstinputlisting[
+        xleftmargin=1.1em, 
+        aboveskip=0pt,
+        belowskip=0pt,
+        caption={[Modification of the ray tracing loop for generating hard shadows]
+            Modification of the ray tracing loop for generating hard shadows.},
+        label={lst:Implementation/Shading/intersect_scene}
+    ]{include/listings/ListingShadows.cpp}
+\end{figure}
+\clearpage
+
+\cref{fig:Implementation/Shadows/render} illustrates a sample scene with multiple objects and point lights, rendered using the modified ray tracing loop described in this section.
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[height=9cm]{example-image-c}
+    \caption[Sample scene rendered using the modified ray tracing loop]{
+        Sample scene rendered using the modified ray tracing loop.}
+    \label{fig:Implementation/Shadows/render}
 \end{figure}
