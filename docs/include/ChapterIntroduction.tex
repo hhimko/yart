@@ -4,10 +4,10 @@
 
 \chapter{Introduction} \label{ch:Introduction}
 
-Vision is the single most advanced of human senses, which plays a vital role in determining how we perceive and experience the world.
+Vision is the most advanced of human senses, which plays a vital role in determining how we perceive and experience the world.
 It is not a surprise, that an ever-increasing amount of research and advancement has been made in pursuit of creating more photorealistic imagery in the field of computer graphics. 
 In recent years, the dynamic landscape of computer graphics has witnessed a revolutionary shift with the rise and advancement of ray tracing technology. 
-Unlike conventional rasterization techniques, ray tracing follows physical principles of light propagation, resulting in unparalleled level of visual realism. 
+Unlike conventional rasterization methods, ray tracing follows physical principles of light propagation, resulting in unparalleled levels of visual realism. 
 
 This dissertation aims to explore and elucidate the intricate inner workings behind a ray tracing engine, delving into the underlying principles and various considerations involved in the creation of such a system.
 In contrast to a more conventional approach of implementing ray tracing within a specialized graphics processing unit (GPU) pipeline, the proposed solution has instead been developed entirely on the central processing unit (CPU). 
@@ -28,7 +28,81 @@ This basic idea behind ray tracing is illustrated in \cref{fig:Introduction/RayT
 \vfill
 \begin{figure}[!ht]
     \centering
-    \includegraphics[width=0.8\textwidth]{example-image-a}
+
+    % Path that follows the edges of the current page for clipping
+    \tikzstyle{reverseclip}=[insert path={(current page.north east) --
+        (current page.south east) --
+        (current page.south west) --
+        (current page.north west) --
+        (current page.north east)}
+    ]
+
+    \pgfdeclareradialshading{tikzfadeout}{\pgfpointorigin}{
+        color(1.5mm)=(pgftransparent!0); 
+        % color(4mm)=(pgftransparent!20); 
+        color(9mm)=(pgftransparent!100)
+    }
+    \pgfdeclarefading{fadeout}{\pgfuseshading{tikzfadeout}}
+
+    \begin{tikzpicture}[scale=1.0, every node/.style={scale=1.0}]
+        % Plane
+        \draw[{Round Cap[length=40pt]}-{Round Cap[length=20pt]}, color=darkgray, very thick] 
+            (12.7mm, -55mm) -- (-11.5mm, -40.5mm) -- (53mm, -20.5mm) -- (133mm, -44mm) -- (118mm, -55mm);
+
+        % Camera Lens
+        \draw[darkgray, thick] (0,0) ellipse (3mm and 3.6mm);
+        \draw[darkgray] (-4.9mm,4.45mm) arc (105:260:3mm and 3.67mm);
+
+        % Camera Body
+        \draw[-, color=darkgray, thick] (-0.7mm, -3.5mm) -- (-4.6mm, -2.8mm) -- (-8.7mm, -3.4mm) -- 
+            (-8.9mm, 4mm) -- (0.6mm, 5.3mm) -- (-3mm, 6.1mm) -- (-12.7mm, 4.8mm)  -- (-12.4mm, -2.3mm) --
+            (-8.7mm, -3.4mm) -- (-8.9mm, 4mm) -- (-12.7mm, 4.8mm);
+        \draw[-, color=darkgray, thin] (0.6mm, 3.62mm) -- (-4.7mm, 4.55mm);
+        \draw[-, color=darkgray, thick] (1.2mm, 3.4mm) -- (1.2mm, 5.3mm);
+
+        % Sphere
+        \node[draw=axis_blue!20!darkgray, very thick, fill=axis_blue!65, circle, inner sep=0pt, minimum size=36mm] (c) at (79.6mm, -20mm) {};
+
+        % Rays background
+        \draw[{Round Cap[]}-, color=axis_red, very thick] (0, 0) -- (24.5mm, -0.95mm);
+        \draw[{Round Cap[]}-, color=axis_red, very thick] (0, 0) -- (29mm, -18.34mm);
+
+        % Image Plane fill
+        \draw[-, color=white!0, fill=white, fill opacity=0.65] (6.8mm, -27.5mm) -- (6.2mm, 6.2mm) --
+            (44mm, 11mm) -- (43.3mm, -17.5mm) -- (6.8mm, -27.5mm) -- (6.2mm, 6.2mm);
+
+        \node[draw=axis_blue!20!darkgray, thin, fill=axis_blue!65, circle, inner sep=0pt, minimum size=16mm, rotate=90, xslant=-0.1, fill opacity=0.65, draw opacity=0.65] (c) at (26.3mm, -7mm) {};
+
+        % Image Plane inner lines 
+        \draw[-, color=gray, thin] (12mm, -26mm) -- (11.6mm, 6.8mm);
+        \draw[-, color=gray, thin] (17.3mm, -24.7mm) -- (16.9mm, 7.4mm);
+        \draw[-, color=gray, thin] (22mm, -23.5mm) -- (21.9mm, 8mm);
+        \draw[-, color=gray, thin] (26.8mm, -22.2mm) -- (26.7mm, 8.6mm);
+        \draw[-, color=gray, thin] (31.2mm, -21mm) -- (31.2mm, 9.2mm);
+        \draw[-, color=gray, thin] (35.2mm, -19.5mm) -- (35.5mm, 9.8mm);
+        \draw[-, color=gray, thin] (39.5mm, -18.5mm) -- (39.8mm, 10.4mm);
+
+        \draw[-, color=gray, thin] (6.8mm, -20.6mm) -- (43.5mm, -12mm);
+        \draw[-, color=gray, thin] (6.7mm, -14mm) -- (43.5mm, -6.3mm);
+        \draw[-, color=gray, thin] (6.5mm, -7.6mm) -- (43.6mm, -0.4mm);
+        \draw[-, color=gray, thin] (6.2mm, -0.2mm) -- (44mm, 5.2mm);
+
+        % Image Plane outer lines 
+        \draw[-, color=darkgray, very thick] (6.8mm, -27.5mm) -- (6.2mm, 6.2mm) -- (44mm, 11mm) -- 
+            (43.3mm, -17.5mm) -- (6.8mm, -27.5mm) -- (6.2mm, 6.2mm);
+
+        % Rays foreground
+        \draw[-{Latex[length=3mm]}, color=axis_red, very thick] (29mm, -18.34mm) -- (72.5mm, -45.8mm);
+        \draw[-{Latex[length=3mm]}, color=axis_red, very thick] (24.5mm, -0.95mm) -- (73.5mm, -2.9mm);
+
+        % Labels
+        \node[color=darkgray] (x) at (-7mm, 10mm) {\textbf{Camera}};
+        \node[color=axis_red,rotate=-2] (x) at (57mm, 1mm) {\textbf{Ray}};
+        \node[color=darkgray, rotate=6, xslant=0.15] (x) at (25mm, 12mm) {\textbf{Image}};
+        \node[color=axis_blue!80, align=left] (x) at (103mm, -8mm) {\textbf{Scene} \\ \textbf{\;\;Object}};
+
+    \end{tikzpicture}
+
     \caption[Simplified ray tracing model]{Simplified ray tracing model.}
     \label{fig:Introduction/RayTracing/rt1}
 \end{figure}
@@ -46,7 +120,7 @@ Today, the ongoing development of commercial hardware and algorithmic advancemen
 
 \section{Related Work}
 
-Numerous high-level ray tracing engines and APIs have been proposed for professional and commercial use since the dawn of physically-based computer graphics.
+Numerous ray tracing engines and application programming interfaces (APIs) have been proposed for professional and commercial use since the dawn of physically-based computer graphics.
 Each engine, having its distinct capabilities, purpose, and inherent limitations, has contributed greatly to the advancement of computer graphics. 
 Following, is a list of noteworthy entries in the vast catalogue of existing ray tracing systems.
 
@@ -88,5 +162,5 @@ The collaborative and open-source nature of Blender makes Cycles is a compelling
 This introductory chapter highlights the key purpose of this dissertation, provides background, and gives an outline of existing solutions. 
 \cref{ch:Application} serves as a high-level overview of the proposed application, briefly describing its capabilities and architectural design. 
 \cref{ch:Implementation} delves into implementation detail and various considerations involved with development of the ray tracing engine. 
-The implementation has been divided into a set of smaller iterations, presented in an order a developer might follow when creating a new system.
-Finally, \cref{ch:Conclusion} acts as the project's conclusion, describing possible future work, and giving a list of papers that might be found useful for further research.
+The implementation has been divided into a set of smaller iterations, presented in an easy to follow, bottom-up approach.
+Finally, \cref{ch:Conclusion} gives a brief conclusion, and describes possible future work related to the presented application.
