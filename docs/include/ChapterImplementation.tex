@@ -212,8 +212,8 @@ The transformation to obtain a corresponding point $ \bm{C}_{\textnormal{\small 
 \end{equation}
 
 To calculate an inverse view-projection matrix, we first need to construct a view matrix, which defines the intermediate step of transforming world-space coordinates into the camera's local space.
-View matrices are often used in rasterization engines, to represent scene geometry relatively to a camera's position and orientation.
-It can therefore be built using four vectors: the camera's world-space $ position $, along with three unit vectors, $ right $, $ up $, and $ forward $, which represent the camera's orientation:
+View matrices are often used in rasterization engines, to represent scene geometry relatively to a given camera's position and orientation.
+It can therefore be built using four vectors: the camera's world-space $ \bm{position} $, along with three unit vectors, $ \bm{right} $, $ \bm{up} $, and $ \bm{forward} $, which collectively represent the camera's orientation:
 %
 \begin{equation}
     \bm{V} =
@@ -227,19 +227,19 @@ It can therefore be built using four vectors: the camera's world-space $ positio
 \end{equation}
 %
 However, since our goal is to only calculate ray directions, we can assume the camera is positioned at the world's origin, and just focus on its orientation.
-Knowing the $ forward $ (looking) direction, the $ right $ and $ up $ vectors can be calculated in relation to the world's up (positive y-axis) direction, using vector cross products:  
+Knowing the forward (looking) direction, the $ \bm{right} $ and $ \bm{up} $ vectors can be calculated in relation to the world's up (positive y-axis) direction, using vector cross products:  
 %
 {
     \newcommand*{\worldup}{\begin{bmatrix} 0 & 1 & 0 \end{bmatrix}\tran}
     \begin{align}
-        right &= \frac{\worldup\times forward}{\norm{\worldup\times forward\,}}\\[0.5em]
-        up    &= forward \times right
+        \bm{right} &= \frac{\worldup\times \bm{forward}}{\norm{\worldup\times \bm{forward}\,}}\\[0.5em]
+        \bm{up}    &= \bm{forward} \times \bm{right}
     \end{align}
     
 }
 
 Above equations aid us in implementing a view matrix creation function, seen in \cref{lst:Implementation/RayGeneration/view_matrix}.
-Notice how the $ up $ vector gets negated in the function, as opposed to the general definition in \cref{eq:Implementation/RayGeneration/view_matrix}.
+Notice how the $ \bm{up} $ vector gets negated in the function, as opposed to the general definition in \cref{eq:Implementation/RayGeneration/view_matrix}.
 This is because ray directions are flipped on the y-axis in relation to screen-space pixel coordinates.
 In YART, the $ y $ component of pixel coordinates increase when moving from top to bottom, whereas the ray pitch rotation should instead decrease.
 The matrix returned from this function can later be inverted, ultimately resulting in the desired view matrix inverse.
@@ -260,7 +260,7 @@ It is used in 3D computer graphics for transforming screen-space coordinates int
 Inverse projection matrices can be defined in numerous ways depending on the system's requirements.
 In YART, this matrix is responsible for normalizing screen coordinates and centering them on the \textit{near clipping plane}. 
 The near clipping plane is a mathematical plane placed in front of the camera, which determines how much of the scene should be \textit{clipped}, or hidden for rendering.
-Given the output image dimensions $ (w, h) $ , and the near plane's distance $ d $, the inverse projection matrix $ \bm{P}^{-1} $ can be defined as follows:
+Given the output image dimensions $ (w, h) $ and the near plane's distance $ d $, the inverse projection matrix $ \bm{P}^{-1} $ can be defined as follows:
 %
 \begin{equation}
     \newcommand*{\s}{\hspace{0.7em}}
@@ -305,7 +305,7 @@ Finally, the vectors get truncated into three dimensions and normalized, resulti
 \vfill
 \begin{figure}[!ht]
     \lstinputlisting[
-        xleftmargin=2em, 
+        xleftmargin=1.95em, 
         caption={[\texttt{Camera::GetRayDirections} method implementation]
             \texttt{Camera::GetRayDirections} method implementation.},
         label={lst:Implementation/RayGeneration/ray_generation}
@@ -326,7 +326,7 @@ The current \verb|Camera| class implementation can be slightly altered to reflec
 \vfill
 \begin{figure}[!ht]
     \lstinputlisting[
-        xleftmargin=2em, 
+        xleftmargin=1.69em, 
         aboveskip=0pt,
         caption={[Modified \texttt{Camera} class declaration for ray direction caching]
             Modified \texttt{Camera} class declaration for ray direction caching.},
@@ -661,3 +661,123 @@ The results of the ray tracing loop presented in \cref{ch:Implementation/RayTrac
 One such example is the addition of shadows, which help convey a sense of depth in the final rendered image.
 As with any visual effect in rendering engines, shadows can be implemented in a multitude of different ways.
 
+
+\begin{figure}[!ht]
+    \centering
+
+    % Path that follows the edges of the current page for clipping
+    \tikzstyle{reverseclip}=[insert path={(current page.north east) --
+        (current page.south east) --
+        (current page.south west) --
+        (current page.north west) --
+        (current page.north east)}
+    ]
+
+    \pgfdeclareradialshading{tikzfadeout}{\pgfpointorigin}{
+        color(1.5mm)=(pgftransparent!0); 
+        % color(4mm)=(pgftransparent!20); 
+        color(9mm)=(pgftransparent!100)
+    }
+    \pgfdeclarefading{fadeout}{\pgfuseshading{tikzfadeout}}
+
+    \begin{tikzpicture}[scale=1.0, every node/.style={scale=1.0}]
+        % Plane
+        \draw[{Round Cap[length=40pt]}-{Round Cap[length=20pt]}, color=darkgray, very thick] 
+            (12.7mm, -55mm) -- (-11.5mm, -40.5mm) -- (53mm, -20.5mm) -- (133mm, -44mm) -- (118mm, -55mm);
+
+        % Shadow
+        \draw[darkgray!40, fill=darkgray!40, rotate=85] (-41mm,-74mm) ellipse (13mm and 34mm) {};
+
+        % Camera Lens
+        \draw[darkgray, thick] (0,0) ellipse (3mm and 3.6mm);
+        \draw[darkgray] (-4.9mm,4.45mm) arc (105:260:3mm and 3.67mm);
+
+        % Camera Body
+        \draw[-, color=darkgray, thick] (-0.7mm, -3.5mm) -- (-4.6mm, -2.8mm) -- (-8.7mm, -3.4mm) -- 
+            (-8.9mm, 4mm) -- (0.6mm, 5.3mm) -- (-3mm, 6.1mm) -- (-12.7mm, 4.8mm)  -- (-12.4mm, -2.3mm) --
+            (-8.7mm, -3.4mm) -- (-8.9mm, 4mm) -- (-12.7mm, 4.8mm);
+        \draw[-, color=darkgray, thin] (0.6mm, 3.62mm) -- (-4.7mm, 4.55mm);
+        \draw[-, color=darkgray, thick] (1.2mm, 3.4mm) -- (1.2mm, 5.3mm);
+
+        % Sphere
+        \node[draw=axis_blue!20!darkgray, very thick, fill=axis_blue!45!gray, circle, inner sep=0pt, minimum size=36mm] (c) at (79.6mm, -20mm) {};
+
+        \begin{scope}
+            \begin{pgfinterruptboundingbox}
+                \path [clip, rotate=-10] (81mm, 2mm) ellipse (18mm and 10mm) [reverseclip];
+            \end{pgfinterruptboundingbox}
+            
+            \node[draw=axis_blue!20!darkgray, very thick, fill=axis_blue!65, circle, inner sep=0pt, minimum size=36mm] (c) at (79.6mm, -20mm) {};
+        \end{scope}
+
+        % Rays background
+        \draw[{Round Cap[]}-, color=axis_red, very thick] (0, 0) -- (24.5mm, -0.95mm);
+        \draw[{Round Cap[]}-, color=axis_red, very thick] (0, 0) -- (29mm, -18.34mm);
+
+        % Image Plane fill
+        \draw[-, color=white!0, fill=white, fill opacity=0.65] (6.8mm, -27.5mm) -- (6.2mm, 6.2mm) --
+            (44mm, 11mm) -- (43.3mm, -17.5mm) -- (6.8mm, -27.5mm) -- (6.2mm, 6.2mm);
+
+        \node[draw=axis_blue!20!darkgray, thin, fill=axis_blue!45!gray, circle, inner sep=0pt, minimum size=16mm, rotate=90, xslant=-0.1, fill opacity=0.65, draw opacity=0.65] (c) at (26.3mm, -7mm) {};
+
+        \begin{scope}
+            \path[clip, rotate=90, xslant=-0.1] (-9.7mm, -26.3mm) circle (8mm);
+            \node[fill=axis_blue!40, circle, inner sep=0pt, minimum size=16mm, rotate=90, xslant=-0.1, fill opacity=0.65, draw opacity=0.0] (c) at (26.5mm, 1mm) {};
+        \end{scope}
+
+        \draw[draw=white!0, fill=darkgray!40, circle, inner sep=0pt, minimum size=16mm, fill opacity=0.65, draw opacity=0, rotate=10] (22.3mm, -22.5mm) ellipse (10mm and 3mm) {};
+
+        % Image Plane inner lines 
+        \draw[-, color=gray, thin] (12mm, -26mm) -- (11.6mm, 6.8mm);
+        \draw[-, color=gray, thin] (17.3mm, -24.7mm) -- (16.9mm, 7.4mm);
+        \draw[-, color=gray, thin] (22mm, -23.5mm) -- (21.9mm, 8mm);
+        \draw[-, color=gray, thin] (26.8mm, -22.2mm) -- (26.7mm, 8.6mm);
+        \draw[-, color=gray, thin] (31.2mm, -21mm) -- (31.2mm, 9.2mm);
+        \draw[-, color=gray, thin] (35.2mm, -19.5mm) -- (35.5mm, 9.8mm);
+        \draw[-, color=gray, thin] (39.5mm, -18.5mm) -- (39.8mm, 10.4mm);
+
+        \draw[-, color=gray, thin] (6.8mm, -20.6mm) -- (43.5mm, -12mm);
+        \draw[-, color=gray, thin] (6.7mm, -14mm) -- (43.5mm, -6.3mm);
+        \draw[-, color=gray, thin] (6.5mm, -7.6mm) -- (43.6mm, -0.4mm);
+        \draw[-, color=gray, thin] (6.2mm, -0.2mm) -- (44mm, 5.2mm);
+
+        % Image Plane outer lines 
+        \draw[-, color=darkgray, very thick] (6.8mm, -27.5mm) -- (6.2mm, 6.2mm) -- (44mm, 11mm) -- 
+            (43.3mm, -17.5mm) -- (6.8mm, -27.5mm) -- (6.2mm, 6.2mm);
+
+        % Rays foreground
+        \draw[-{Round Cap[]}, color=axis_red, very thick] (29mm, -18.34mm) -- (72.5mm, -45.8mm) -- (74.7mm, -37.3mm);
+        \draw[-{Round Cap[]}, color=darkgray, very thick, dashed] (74.7mm, -37.3mm) -- (89.5mm, 19mm);
+        \draw[-{Round Cap[]}, color=axis_red, very thick] (24.5mm, -0.95mm) -- (73.5mm, -2.9mm) -- (89.5mm, 19mm);
+
+        % Rays tips
+        \draw[-{Latex[length=3mm]}, color=axis_red, ultra thin] (73.5mm, -2.9mm) -- (79.3mm, 5mm);
+        \draw[-{Latex[length=3mm]}, color=darkgray, ultra thin] (85.295mm, 3mm) -- (85.35mm, 3.2mm);
+
+        % Light source fading 
+        \begin{scope}
+            \path[clip] (50mm, 19mm) rectangle (100mm, -30mm);
+            \node[fill=white, circle, inner sep=0pt, minimum size=40mm, path fading=fadeout] (c) at (89.5mm, 19mm) {};
+        \end{scope}
+
+        % Light source
+        \node[fill=white, draw=darkgray, thick, circle, inner sep=0pt, minimum size=3.5mm] (c) at (89.5mm, 19mm) {};
+
+        \foreach\angle in { 0,40,...,360 }{
+            \draw[darkgray, thick, rotate around={\angle:(89.5mm, 19mm)}]
+                (89.5mm, 21.5mm) -- +(0, 1.5mm);
+        }
+
+        % Labels
+        \node[color=darkgray] (x) at (-7mm, 10mm) {\textbf{Camera}};
+        \node[color=axis_red,rotate=-2] (x) at (57mm, 1mm) {\textbf{Ray}};
+        \node[color=darkgray, rotate=6, xslant=0.15] (x) at (25mm, 12mm) {\textbf{Image}};
+        \node[color=axis_blue!80, align=left] (x) at (102mm, -8mm) {\textbf{Scene} \\ \textbf{\;\;Object}};
+        \node[color=darkgray, align=left] (x) at (103mm, 19mm) {\textbf{Light} \\ \textbf{Source}};
+
+    \end{tikzpicture}
+
+    \caption[Shadows]{
+        Shadows.}
+    \label{fig:Implementation/Shadows/shadows}
+\end{figure}
