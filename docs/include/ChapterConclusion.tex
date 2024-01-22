@@ -4,12 +4,15 @@
 
 \chapter{Conclusion} \label{ch:Conclusion}
 
-\dots
+This dissertation introduced YART, an interactive ray tracing application, capable of rendering complex, user-defined scenes on the CPU.
+The most fundamental elements of a ray tracing engine have been explored and explained through an implementation process of a basic rendering procedure, described in a bottom-up approach.
+Rendering of various geometric primitives has been accomplished by implementation of the M{\"o}ller-Trumbore algorithm, which enables highly efficient ray-triangle intersection testing.
+Representation of geometric objects using triangle meshes allows the application to compactly store various, highly detailed objects of arbitrary shapes, such as cubes, spheres, or cones. 
+Additionally, basic principles of simulating physically-based light propagation have been presented, employing the Blinn-Phong reflection model. 
+Use of this shading model aided us in rendering diffuse materials with specular highlights, resulting in realistic, matte and reflective objects.
+All of the described components were ultimately combined into a single ray tracing loop, which effectively defines YART's offline rendering engine. 
 
-\section{Limitations and Future Work}
-
-\dots
-
-\section{Further Reading}
-
-\dots
+Despite evaluating all ray tracing computations on the CPU, YART remains a highly flexible, interactive application, which can render complex scenes in real-time.
+Additionally, the modular and scalable nature of YART's architecture enables for further development of the system.
+A number of advanced shading models, new types of light sources, materials, as well as visual effects such as depth of field, or anti-aliasing can be added to the engine, in order to produce more visually stunning and realistic images.
+Then, in a case of potential deterioration of performance, a high amount of optimization techniques can be applied to the engine, such as bounding volume hierarchies (BVHs) \supercite{Wald2007}, which greatly accelerate the process of testing for intersections.  
