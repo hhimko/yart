@@ -16,7 +16,7 @@ While the highly parallel nature of a GPU is often preferred for commercial, rea
 
 \section{Ray Tracing}
 
-The concept of ray tracing has gained increased interest in most recent years, having seen a convergence of various advancements in hardware, algorithms, and an ever-growing industry demand for realism.
+The concept of ray tracing has gained increased interest in recent years, having seen a convergence of various advancements in hardware, algorithms, and an ever-growing industry demand for realism.
 Its origin however, dates back to as far as 16th century, when it was first described by a german artist and theorist Albrecht Dürer \supercite{Hofmann1990}.
 At its core, ray tracing is a graphics rendering technique, used to simulate the way light interacts with objects within a virtual environment. 
 The process involves scattering rays of light from a virtual camera, tracing their paths as they travel and interact with a scene. 
@@ -141,7 +141,7 @@ Since its first release in 2011, it has become a cornerstone for a variety of le
 In contrast to NVIDIA's OptiX, which was designed to simplify development of new renderers, Embree aims to accelerate ray tracing in existing systems. 
 This key design goal leads to highly optimized low-level kernels for accelerating ray generation and traversal that leverage modern CPU architectures.
 All ray tracing operations supported by the Embree kernels can be accessed through an easy to use and compact API.
-It exposes a number of functions for defining custom geometry and issuing intersection queries. 
+It possesses a number of functions for defining custom geometry and issuing intersection queries. 
 The API aims to hide implementation detail such as data structure memory layout, while ensuring high performance intersection testing. 
 Embree's lightweight and flexible API makes it in invaluable tool for developers seeking efficient ray tracing capabilities in their applications, without needing to worry about implementing lower-level optimizations and acceleration structures.
 

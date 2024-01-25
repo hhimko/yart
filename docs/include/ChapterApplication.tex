@@ -3,6 +3,7 @@
 %--------------------------------------------------------------------------------------------
 
 \chapter{YART: A Ray Tracing Application} \label{ch:Application}
+\vspace*{-2pt}
 
 Proposed by this dissertation, \textit{Yet Another Ray Tracer} (YART) is a cross-platform 3D rendering application with an integrated ray tracing engine. 
 It was build using the C++ programming language with a goal of exploring the inner workings of a ray tracing system and testing the capabilities of modern hardware.
@@ -12,7 +13,7 @@ While not prioritizing the engines performance, treading is used in various part
 In parts not directly related to ray tracing, the application's backend makes use of GPU capabilities for creating a window, and presenting subsequent frames onto it.
 Additionally, YART aims to be highly interactive and verbose.
 The application's graphical user interface (GUI) is designed to enable easy access to various parts of the engine, otherwise not exposed in similar, commercial software. 
-YART's source code can be found in the project's \href{https://github.com/hhimko/yart}{official GitHub repository}. 
+YART's source code can be found in the project's official GitHub repository: \url{https://github.com/hhimko/yart}. 
 
 \section{Application Architecture}
 
@@ -79,7 +80,7 @@ For example, the YART engine could be reused as an offline renderer within a new
 
 \section{Functionality Overview}
 
-YART allows for rendering complex, user-defined scenes, which mainly consist of mesh geometry, light sources and a customizable environment.
+YART allows for rendering complex, user-defined scenes, which are mainly composed of mesh geometry, light sources and a customizable environment.
 The application's UI introduces a set of tools and functionalities, which provide the end user with the ability to manage a scene, and customize various parts of the rendering engine.
 Users can open new and empty scenes, and populate them with numerous primitives, such as cubes, spheres or planes.
 Alternatively, a number of example scenes can be loaded via the application's main menu bar, and tailored depending on personal needs. 

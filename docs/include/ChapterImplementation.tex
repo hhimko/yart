@@ -203,7 +203,7 @@ Consequently, additional \verb|width| and \verb|height| parameters should be def
 
 In order to convert individual screen-space pixel coordinates to ray directions, we'll first need to transform them into the world-space.
 A common solution to this problem in computer graphics is to use an \textit{inverse view-projection matrix}, used for transforming vertices in screen-space into the world-space.
-Usually denoted as $ (\bm{VP})^{-1} $, it is defined as the mathematical inverse of combined view and projection matrices.
+It is defined as the mathematical inverse of combined view ($ \bm{V} $) and projection ($ \bm{P} $) matrices, and usually denoted as $ (\bm{VP})^{-1} $.
 Let's consider a point $ \bm{C}_{\textnormal{\small screen}} $ as a certain coordinate in screen-space.
 The transformation to obtain a corresponding point $ \bm{C}_{\textnormal{\small world}} $ in world-space can be expressed as:
 %
@@ -318,7 +318,7 @@ Finally, the vectors get truncated into three dimensions and normalized, resulti
 A number of optimization techniques can be applied to the ray generation procedure, which can greatly impact its performance. 
 One notable example involves the utilization of a caching mechanism, a strategy employed in the YART engine.
 It is built on the key observation, that once calculated ray directions may be cached under certain conditions and reused between subsequent frames.
-As seen in \cref{lst:Implementation/RayGeneration/ray_generation}, our implementation of ray generation depends on just a couple of variables: the camera's looking direction, FOV, and the output image's size.
+As seen in \cref{lst:Implementation/RayGeneration/ray_generation}, our implementation of ray generation depends on just a couple of variables: the camera's looking direction, field of view, and the output image's size.
 Consequently, change in the camera's position, as well as changes not directly related to the camera, should not require the ray directions to be recalculated. 
 They can therefore be stored in memory and reused until specific camera properties are modified, or the screen is resized.
 The current \verb|Camera| class implementation can be slightly altered to reflect this methodology, as seen in \cref{lst:Implementation/RayGeneration/camera_caching}.
@@ -577,11 +577,11 @@ While looping over scene objects, it's important to keep track of the smallest h
 
 \subsection{Miss Shader}
 
-For scenarios when the ray misses every possible geometry, a specialized procedure of rendering the world's sky is usually implemented. 
+For scenarios when the ray misses every geometry, a specialized procedure of rendering the world's background is usually implemented. 
 Numerous ways of rendering the environment can be employed within a ray tracing system, ranging from solid color and gradient skies, to highly detailed, textured skyboxes. 
 This functionality is often referred to as the \textit{miss shader} of a rendering pipeline. 
 The core purpose of a miss shader is to sample and return the color of the background for a given ray direction.
-For the sake of simplicity, the presented implementation will render solid color skies, which are defined by a singular color value, independent of the ray's direction.
+For the sake of simplicity, the presented implementation will render solid color skies, which are defined by a single color value, independent of the ray's direction.
 This idea is illustrated in \cref{lst:Implementation/Shading/miss_shader}, with an example \verb|MissShader| method, which simply returns the constant sky color.
 
 \begin{figure}[!ht]
