@@ -28,7 +28,7 @@ RelWithDebInfo
 *.opensdf
 
 # LaTeX
-docs/**/*.pdf
+docs/build/*.pdf
 docs/**/*.log
 docs/**/*.aux
 docs/**/*.fls
