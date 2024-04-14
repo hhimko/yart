@@ -210,6 +210,12 @@ namespace yart
 
                 float* spec_off = &selected_object->materialSpecularFalloff;
                 made_changes |= GUI::SliderFloat("Specular falloff", spec_off, 1.0f, 512.0f, "%.0f");
+
+                float reflection_percent = selected_object->materialReflection * 100.0f;
+                if (GUI::SliderFloat("Reflection strength", &reflection_percent, 0.0f, 100.0f, "%.1f%%")) {
+                    selected_object->materialReflection = reflection_percent / 100.0f;
+                    made_changes = true;
+                }
             }
             GUI::EndCollapsableSection(section_open);
 

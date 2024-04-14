@@ -61,20 +61,27 @@ namespace yart
         /// @brief Structure holding data returned as a result of tracing a ray into the scene 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
         struct HitPayload {
-            /// @brief Distance from the ray origin to a registered hit surface, or a negative value on ray miss
-            float hitDistance;
-
-            union {
-                glm::vec3 resultColor;
-                glm::vec3 hitPosition;
-            };
+            float hitDistance; ///< Distance from the ray origin to a registered hit surface, or a negative value on ray miss
+            yart::Object* hitObject; ///< Object hit by the ray
+            glm::vec3 hitNormal; ///< Normal vector of the hit surface
+            glm::vec3 hitPosition; ///< Hit position vector in world-space
+            glm::vec3 resultColor; ///< Color of the hit surface
         };
 
-        /// @brief Shoot a ray into the scene and store the results in a HitPayload structure
+        /// @brief Trace a ray with a specified number of max bounces and store the results in a HitPayload structure
         /// @param camera YART camera instance, from which to trace the rays
         /// @param ray Traced ray
         /// @param payload HitPayload structure, where the ray tracing results will be stored
-        void TraceRay(yart::Camera& camera, const yart::Ray& ray, HitPayload& payload);
+        /// @param bounces Max number of bounces
+        void TraceRay(yart::Camera& camera, const yart::Ray& ray, HitPayload& payload, uint8_t bounces);
+
+        /// @brief Shoot a single ray into the scene and store the results in a HitPayload structure
+        /// @param near Near clipping plane distance
+        /// @param far Far clipping plane distance
+        /// @param ray 
+        /// @param payload HitPayload structure, where the ray tracing results will be stored
+        /// @return Whether the ray has hit an object on it's path. Used for terminating reflection bounces
+        bool TraceRaySingle(float near, float far, const yart::Ray& ray, HitPayload& payload);
 
         /// @brief Sample the overlays/gizmos layer from a given ray
         /// @param ray Traced ray
@@ -100,6 +107,7 @@ namespace yart
         bool m_useThickerGrid = false; // Whether the overlay grid should use a thicker outline
         bool m_debugShading = false; // Whether to render the surface uvs or normals as the object's material 
         bool m_materialUvs = false; // Whether to render the surface uvs as the object's material when `m_debugShading` is true
+        bool m_shadows = true; // Whether to cast and render surface shadows
 
 
         // -- FRIEND DECLARATIONS -- //

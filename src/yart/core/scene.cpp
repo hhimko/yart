@@ -44,7 +44,7 @@ namespace yart
         object->position = { 0.1f + x_off, 1.0f, 0.8f + z_off };
         object->materialColor = { 1.0f, 0.1f, 0.1f };
 
-        Mesh* plane_mesh = MeshFactory::PlaneMesh({ 0, 0, 0 }, 1000.0f);
+        Mesh* plane_mesh = MeshFactory::PlaneMesh({ 0, -0.001f, 0 }, 1000.0f);
         object = AddMeshObject("Ground Plane", plane_mesh);
         object->materialColor = { 0.3f, 0.3f, 0.3f };
 

@@ -103,6 +103,7 @@ namespace yart
         float materialDiffuse = 1.0f; ///< Diffuse coefficient of the object's material 
         float materialSpecular = 1.0f; ///< Specular reflectance coefficient of the object's material 
         float materialSpecularFalloff = 64.0f; ///< Specular falloff exponent of the object's material 
+        float materialReflection = 0.0f; ///< Reflection strength of the object's material 
 
     private:
         const id_t m_id; ///< Uniquely identifying ID of the object
@@ -115,9 +116,11 @@ namespace yart
             /// @brief Objects mesh data
             /// @details Valid only when the `m_type` member variable is equal to ObjectType::MESH
             MeshData m_meshData;
+
             /// @brief Objects light data
             /// @details Valid only when the `m_type` member variable is equal to ObjectType::LIGHT
             LightData m_lightData;
+
             /// @brief Objects SDF data
             /// @details Valid only when the `m_type` member variable is equal to ObjectType::SDF
             SdfData m_sdfData;

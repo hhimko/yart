@@ -69,6 +69,8 @@ namespace yart
             if (!target->m_debugShading) 
                 ImGui::EndDisabled();
 
+            made_changes |= GUI::CheckBox("Cast shadows", &target->m_shadows);
+
             return made_changes;
         }
 
