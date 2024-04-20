@@ -1,5 +1,5 @@
 # Yet Another Ray Tracer 
-YART thesis LaTeX document.
+YART thesis LaTeX project.
 
 ## Building the document
 The only requirement for building the document is a LaTeX distribution in your system's PATH. It is strongly recommended to use [TeX Live], which is a free and comprehensive distribution for all major platforms that comes packaged with [Perl] for convenience. When using a different distribution such as [MiKTeX], you will need to install Perl yourself, which is required for running the `latexmk` script.
