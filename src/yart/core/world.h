@@ -27,7 +27,7 @@ namespace yart
         glm::vec3 SampleSkyColor(const glm::vec3& direction);
 
     public:
-        glm::vec3 ambientColor = { 0.131f, 0.241f, 0.500f };
+        glm::vec3 ambientColor = { 0.131f, 0.241f, 0.500f }; ///< World's ambient illumination color
 
     private:
         /// @brief Types of renderable environment skies

@@ -9,6 +9,7 @@
 #include <imgui.h>
 
 
+/// @brief Default view icon color 
 #define YART_VIEW_ICON_COLOR_GRAY 0xFF6F767D
 
 

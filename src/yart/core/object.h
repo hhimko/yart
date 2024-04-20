@@ -57,6 +57,9 @@ namespace yart
             m_shouldRecalculateTransformationMatrix = true;
         }
 
+        /// @brief Returns the cached object transformation matrix
+        /// @details This method is also responsible for recalculating the matrix when dirty 
+        /// @return The object's transformation matrix
         glm::mat4 GetTransformationMatrix(); 
 
     private:
@@ -127,7 +130,7 @@ namespace yart
         };
 
         glm::mat4 m_transformationMatrix { 0 }; ///< Cached object transformation matrix
-        bool m_shouldRecalculateTransformationMatrix = true; 
+        bool m_shouldRecalculateTransformationMatrix = true; ///< Wether the ached object transformation matrix should be recalculated
 
         // Temporary mesh variables 
         std::vector<glm::vec3> verts;

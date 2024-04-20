@@ -82,7 +82,7 @@ namespace yart
         void ToggleSelection(SceneCollection* collection);
 
         /// @brief Toggle the selection state for an object
-        /// @param collection Object instance, or `nullptr` to deselect all
+        /// @param object Object instance, or `nullptr` to deselect all
         void ToggleSelection(Object* object);
 
         /// @brief Test for ray-scene intersections

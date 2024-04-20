@@ -21,7 +21,7 @@ namespace yart
         class PanelSettings {
         public:
             /// @brief PanelSettings custom constructor
-            /// @param panel_type Panel instance, for which the settings apply
+            /// @param panel Panel instance, for which the settings apply
             PanelSettings(const Panel* const panel)
                 : panelType(panel->GetPanelType()), panelName(panel->GetPanelName()) { }
 
@@ -29,7 +29,7 @@ namespace yart
             virtual ~PanelSettings() = default;
 
             /// @brief Find saved settings for a particular panel
-            /// @param panel_type Panel instance, for which to find settings
+            /// @param panel Panel instance, for which to find settings
             /// @return Cached settings object, or `nullptr` if not found
             static PanelSettings* FindPanelSettings(const Panel* const panel);
 

@@ -94,6 +94,8 @@ namespace yart
 
         /// @brief Layout creation specification object
         struct LayoutCreateInfo {
+            /// @brief LayoutCreateInfo class constructor
+            /// @param direction Layout direction (vertical/horizontal)
             LayoutCreateInfo(LayoutDirection direction)
                 : direction(direction) { }
 
